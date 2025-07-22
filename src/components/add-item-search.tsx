@@ -49,12 +49,12 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
 
   // Effect to manage highlighted index
   useEffect(() => {
-    if (query && searchResults.length > 0) {
+    if (isFocused && query && searchResults.length > 0) {
       setHighlightedIndex(0);
     } else {
       setHighlightedIndex(-1);
     }
-  }, [query, searchResults.length]);
+  }, [isFocused, query, searchResults.length]);
 
   const handleSelect = (itemName: string) => {
     onAddItem(itemName);
@@ -76,9 +76,12 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
       e.preventDefault();
       if (highlightedIndex > -1 && searchResults[highlightedIndex]) {
         handleSelect(searchResults[highlightedIndex]);
+      } else if (query) {
+        handleSelect(query);
       }
     } else if (e.key === 'Escape') {
       setIsFocused(false);
+      setQuery('');
       inputRef.current?.blur();
     }
   };
@@ -94,6 +97,7 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
     const handleClickOutside = (event: MouseEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
         setIsFocused(false);
+        setQuery('');
         inputRef.current?.blur();
       }
     };
@@ -127,13 +131,6 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
       window.removeEventListener('keydown', handleGlobalKeyDown);
     };
   }, []);
-
-  useEffect(() => {
-    if (!isFocused) {
-      setQuery('');
-    }
-  }, [isFocused]);
-
 
   return (
     <div className="relative" ref={searchContainerRef}>
