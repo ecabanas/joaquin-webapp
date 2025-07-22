@@ -59,3 +59,11 @@ export const mockHistory: Purchase[] = [
     ],
   },
 ];
+
+export const popularItems: string[] = [
+  "Milk", "Eggs", "Bread", "Butter", "Cheese", "Apples", "Bananas", "Oranges",
+  "Chicken Breast", "Ground Beef", "Pasta", "Rice", "Cereal", "Coffee", "Tea",
+  "Lettuce", "Tomatoes", "Onions", "Potatoes", "Yogurt", "Olive Oil", "Flour",
+  "Sugar", "Salt", "Pepper", "Ketchup", "Mustard", "Mayonnaise", "Salsa",
+  "Tortilla Chips", "Soda", "Juice", "Water Bottles", "Frozen Pizza", "Ice Cream"
+];

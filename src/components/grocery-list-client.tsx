@@ -4,9 +4,10 @@ import type { Aisle, GroceryItem } from '@/lib/types';
 import { useMemo, useState } from 'react';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
-import { PlusCircle, Trash2 } from 'lucide-react';
-import { AddItemDialog } from './add-item-dialog';
+import { Trash2 } from 'lucide-react';
+import { AddItemSearch } from './add-item-search';
 import { cn } from '@/lib/utils';
+import { popularItems } from '@/lib/mock-data';
 
 type GroceryListClientProps = {
   initialAisles: Aisle[];
@@ -14,16 +15,17 @@ type GroceryListClientProps = {
 
 export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
   const [aisles, setAisles] = useState<Aisle[]>(initialAisles);
-  const [isAddDialogOpen, setAddDialogOpen] = useState(false);
 
   const sortedItems = useMemo(() => {
     const allItems = aisles.flatMap(aisle => 
-      aisle.items.map(item => ({ ...item, aisleId: aisle.id }))
+      aisle.items.map(item => ({ ...item, aisleName: aisle.name }))
     );
     return allItems.sort((a, b) => {
       if (a.checked && !b.checked) return 1;
       if (!a.checked && b.checked) return -1;
-      return 0;
+      // Simple sort by name for unchecked items
+      if (!a.checked && !b.checked) return a.name.localeCompare(b.name);
+      return 0; // Keep order for checked items
     });
   }, [aisles]);
 
@@ -41,15 +43,25 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
     );
   };
   
-  const handleAddItem = (newItem: Omit<GroceryItem, 'id' | 'checked'>, aisleName: string) => {
+  const handleAddItem = (itemName: string) => {
     setAisles(prevAisles => {
+      const allItems = prevAisles.flatMap(a => a.items);
+      const existingItem = allItems.find(i => i.name.toLowerCase() === itemName.toLowerCase());
+      
+      if (existingItem) {
+        // Item already exists, maybe increment quantity in the future? For now, do nothing.
+         return prevAisles;
+      }
+        
       const newAisles = [...prevAisles];
+      const aisleName = 'Uncategorized';
       let aisle = newAisles.find(a => a.name.toLowerCase() === aisleName.toLowerCase());
 
       const itemToAdd: GroceryItem = {
-        ...newItem,
+        name: itemName,
         id: `item-${Date.now()}`,
         checked: false,
+        quantity: 1,
       };
 
       if (aisle) {
@@ -57,7 +69,7 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
       } else {
         newAisles.push({
           id: `aisle-${Date.now()}`,
-          name: aisleName || 'Uncategorized',
+          name: aisleName,
           items: [itemToAdd],
         });
       }
@@ -73,14 +85,19 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
       })).filter(aisle => aisle.items.length > 0)
     );
   };
+  
+  const allItems = useMemo(() => aisles.flatMap(a => a.items), [aisles]);
 
   return (
     <>
-      <div className="flex justify-end">
-        <Button onClick={() => setAddDialogOpen(true)} variant="link" className="text-primary">
-          <PlusCircle className="mr-2 h-4 w-4" /> Add Item
-        </Button>
+      <div className="mb-4">
+        <AddItemSearch
+          onAddItem={handleAddItem}
+          popularItems={popularItems}
+          existingItems={allItems.map(i => i.name)}
+        />
       </div>
+
       <div className="bg-card rounded-lg shadow-sm">
         <div className="p-4">
           <ul className="space-y-3">
@@ -113,11 +130,9 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
                   >
                     {item.name}
                   </label>
-                  {item.notes && (
-                    <p className="text-sm text-muted-foreground">
-                      {item.notes}
+                   <p className="text-sm text-muted-foreground">
+                      {item.aisleName}
                     </p>
-                  )}
                 </div>
                 <span className="text-sm text-muted-foreground w-12 text-right">x{item.quantity}</span>
                 <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleDeleteItem(item.id)}>
@@ -126,15 +141,12 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
                 </Button>
               </li>
             ))}
+             {allItems.length === 0 && (
+              <p className="text-center text-muted-foreground py-8">Your list is empty. Add items using the search bar above.</p>
+            )}
           </ul>
         </div>
       </div>
-      <AddItemDialog 
-        isOpen={isAddDialogOpen} 
-        onOpenChange={setAddDialogOpen} 
-        onAddItem={handleAddItem}
-        aisles={aisles.map(a => a.name)}
-        />
     </>
   );
 }
