@@ -94,6 +94,7 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
     const handleClickOutside = (event: MouseEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
         setIsFocused(false);
+        inputRef.current?.blur();
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
