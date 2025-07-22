@@ -164,7 +164,6 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
                         <Minus className="h-4 w-4 text-muted-foreground" />
                         <span className="sr-only">Decrement item</span>
                     </Button>
-                    <span className="text-base font-medium w-4 text-center">{item.quantity}</span>
                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(item.id, item.quantity + 1)}>
                         <Plus className="h-4 w-4 text-muted-foreground" />
                         <span className="sr-only">Increment item</span>
@@ -174,7 +173,7 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
                         <span className="sr-only">Delete item</span>
                     </Button>
                 </div>
-                 <div className="flex items-center gap-2 opacity-100 group-hover:opacity-0 transition-opacity">
+                 <div className="flex items-center gap-2">
                     <span className="text-base text-muted-foreground w-12 text-right font-medium">x{item.quantity}</span>
                 </div>
               </li>
