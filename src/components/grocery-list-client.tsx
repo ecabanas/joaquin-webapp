@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Aisle, GroceryItem } from '@/lib/types';

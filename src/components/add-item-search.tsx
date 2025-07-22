@@ -69,6 +69,9 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
       e.preventDefault();
       if (highlightedIndex > -1 && searchResults[highlightedIndex]) {
         handleSelect(searchResults[highlightedIndex]);
+      } else if (query.trim()) {
+        onAddItem(query.trim());
+        setQuery('');
       }
     } else if (e.key === 'Escape') {
       setIsFocused(false);
@@ -98,15 +101,20 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      // If a modifier key is pressed, or if we are already focused on an input, ignore.
-      if (e.metaKey || e.ctrlKey || e.altKey || (e.target instanceof HTMLInputElement) || (e.target instanceof HTMLTextAreaElement)) {
+      if (
+        e.metaKey ||
+        e.ctrlKey ||
+        e.altKey ||
+        (e.target instanceof HTMLInputElement) ||
+        (e.target instanceof HTMLTextAreaElement)
+      ) {
         return;
       }
 
-      // Check if the key is a single letter
-      if (/^[a-zA-Z]$/.test(e.key)) {
+      if (/^[a-zA-Z0-9]$/.test(e.key)) {
         e.preventDefault();
         inputRef.current?.focus();
+        setQuery((q) => q + e.key);
       }
     };
 
@@ -134,12 +142,12 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
               setHighlightedIndex(-1);
             }}
             onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
             onKeyDown={handleKeyDown}
             className={cn(
-              "text-lg h-16 pl-12 pr-5 rounded-full border-2 border-transparent",
+              "text-lg h-16 pl-12 pr-5 rounded-full border-2 border-transparent transition-all duration-300",
               "focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary",
-              "bg-background/70 backdrop-blur-sm"
+              "bg-background/70 backdrop-blur-xl",
+               isFocused ? "bg-background/90" : "bg-background/70"
             )}
           />
       </div>
@@ -164,7 +172,7 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
               ))
             ) : (
                <li className="px-5 py-4 text-muted-foreground text-sm text-center">
-                No items match your search.
+                No items match your search. Press Enter to add.
               </li>
             )}
           </ul>
