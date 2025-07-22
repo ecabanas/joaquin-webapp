@@ -1,19 +1,54 @@
+
+'use client';
+
 import { GroceryListClient } from '@/components/grocery-list-client';
+import { Progress } from '@/components/ui/progress';
 import { mockAisles } from '@/lib/mock-data';
+import type { Aisle } from '@/lib/types';
+import { useMemo, useState } from 'react';
 
 export default function GroceryListPage() {
   // In a real app, you'd fetch this data from your database.
-  const aisles = mockAisles;
+  const [aisles, setAisles] = useState<Aisle[]>(mockAisles);
+
+  const { totalItems, checkedItems } = useMemo(() => {
+    const allItems = aisles.flatMap((aisle) => aisle.items);
+    return {
+      totalItems: allItems.length,
+      checkedItems: allItems.filter((item) => item.checked).length,
+    };
+  }, [aisles]);
+
+  const progressValue = totalItems > 0 ? (checkedItems / totalItems) * 100 : 0;
+  const allItemsComplete = totalItems > 0 && checkedItems === totalItems;
 
   return (
     <div className="max-w-2xl mx-auto">
       <header className="space-y-1 mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Grocery List</h1>
-        <p className="text-muted-foreground">
-          A shared list to keep your shopping organized.
-        </p>
+        {totalItems > 0 ? (
+          <div className="pt-2">
+            {allItemsComplete ? (
+              <p className="text-muted-foreground font-medium text-green-600">
+                You've got everything! 🎉
+              </p>
+            ) : (
+              <div className="space-y-2">
+                 <div className="flex justify-between items-center text-sm text-muted-foreground font-medium">
+                  <span>Shopping Progress</span>
+                  <span>{checkedItems} / {totalItems}</span>
+                </div>
+                <Progress value={progressValue} className="h-2" />
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="text-muted-foreground">
+            A shared list to keep your shopping organized.
+          </p>
+        )}
       </header>
-      <GroceryListClient initialAisles={aisles} />
+      <GroceryListClient aisles={aisles} onAislesChange={setAisles} />
     </div>
   );
 }

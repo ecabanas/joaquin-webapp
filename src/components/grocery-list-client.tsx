@@ -9,20 +9,18 @@ import { Trash2, Plus, Minus, ShoppingCart } from 'lucide-react';
 import { AddItemSearch } from './add-item-search';
 import { cn } from '@/lib/utils';
 import { popularItems } from '@/lib/mock-data';
-import { Progress } from './ui/progress';
 
 type GroceryListClientProps = {
-  initialAisles: Aisle[];
+  aisles: Aisle[];
+  onAislesChange: (aisles: Aisle[]) => void;
 };
 
-export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
-  const [aisles, setAisles] = useState<Aisle[]>(initialAisles);
+export function GroceryListClient({ aisles, onAislesChange }: GroceryListClientProps) {
 
   const { checkedItems, uncheckedItems, allItems } = useMemo(() => {
     const allItems = aisles.flatMap(aisle => 
       aisle.items.map(item => ({ ...item, aisleName: aisle.name }))
     );
-    // Sort checked items to the bottom
     const sorted = allItems.sort((a, b) => a.name.localeCompare(b.name));
     
     return {
@@ -32,18 +30,27 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
     }
   }, [aisles]);
 
+  const updateAisles = (newAisles: Aisle[]) => {
+    // Filter out aisles that have no items
+    const filteredAisles = newAisles.map(aisle => ({
+      ...aisle,
+      items: aisle.items,
+    })).filter(aisle => aisle.items.length > 0);
+    onAislesChange(filteredAisles);
+  };
+
+
   const handleItemCheckedChange = (
     itemId: string,
     checked: boolean
   ) => {
-    setAisles(
-      aisles.map((aisle) => ({
-        ...aisle,
-        items: aisle.items.map((item) =>
-          item.id === itemId ? { ...item, checked } : item
-        ),
-      }))
-    );
+    const newAisles = aisles.map((aisle) => ({
+      ...aisle,
+      items: aisle.items.map((item) =>
+        item.id === itemId ? { ...item, checked } : item
+      ),
+    }));
+    updateAisles(newAisles);
   };
   
   const handleAddItem = (itemName: string) => {
@@ -51,7 +58,7 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
     let itemExists = false;
 
     // First, check if item exists and increment quantity
-    const updatedAisles = aisles.map(aisle => {
+    let updatedAisles = aisles.map(aisle => {
       const updatedItems = aisle.items.map(item => {
         if (item.name.toLowerCase() === itemNameLower) {
           itemExists = true;
@@ -64,7 +71,7 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
     });
 
     if (itemExists) {
-      setAisles(updatedAisles);
+      updateAisles(updatedAisles);
     } else {
       // If item does not exist, add it to 'Uncategorized'
       const newAisles = [...aisles];
@@ -88,37 +95,33 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
           items: [newItem],
         });
       }
-      setAisles(newAisles);
+      updateAisles(newAisles);
     }
   };
 
 
   const handleDeleteItem = (itemId: string) => {
-     setAisles(
-      aisles.map((aisle) => ({
+     const newAisles = aisles.map((aisle) => ({
         ...aisle,
         items: aisle.items.filter((item) => item.id !== itemId),
-      })).filter(aisle => aisle.items.length > 0)
-    );
+      }));
+      updateAisles(newAisles);
   };
 
   const handleQuantityChange = (itemId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
       handleDeleteItem(itemId);
     } else {
-      setAisles(
-        aisles.map((aisle) => ({
-          ...aisle,
-          items: aisle.items.map((item) =>
-            item.id === itemId ? { ...item, quantity: newQuantity } : item
-          ),
-        }))
-      );
+      const newAisles = aisles.map((aisle) => ({
+        ...aisle,
+        items: aisle.items.map((item) =>
+          item.id === itemId ? { ...item, quantity: newQuantity } : item
+        ),
+      }));
+      updateAisles(newAisles);
     }
   };
   
-  const progressValue = allItems.length > 0 ? (checkedItems.length / allItems.length) * 100 : 0;
-
   const ItemRow = ({ item }: { item: GroceryItem & { aisleName: string } }) => (
     <li
       className={cn(
@@ -149,7 +152,7 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
         </label>
       </div>
 
-      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-0 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(item.id, item.quantity - 1)}>
               <Minus className="h-4 w-4 text-muted-foreground" />
               <span className="sr-only">Decrement item</span>
@@ -178,19 +181,7 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
         />
 
       <div className="bg-card rounded-lg border">
-        {allItems.length > 0 && (
-          <div className="p-4 sm:p-6 border-b">
-            <div className='space-y-2'>
-              <div className='flex justify-between items-center text-sm text-muted-foreground font-medium'>
-                <span>Shopping Progress</span>
-                <span>{checkedItems.length} / {allItems.length}</span>
-              </div>
-              <Progress value={progressValue} className="h-2" />
-            </div>
-          </div>
-        )}
-
-        <div className="p-4 sm:p-6">
+         <div className="p-4 sm:p-6">
            {allItems.length === 0 ? (
              <div className="text-center py-12 px-4">
                 <ShoppingCart className="mx-auto h-12 w-12 text-primary/40" strokeWidth={1.5} />
