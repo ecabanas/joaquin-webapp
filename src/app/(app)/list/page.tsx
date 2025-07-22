@@ -34,17 +34,18 @@ export default function GroceryListPage() {
                     You've got everything! 🎉
                   </p>
                 ) : (
-                  <div className="space-y-2 animate-in fade-in-25">
-                    <div className="flex justify-between items-center text-sm text-muted-foreground font-medium px-1">
-                      <span>Shopping Progress</span>
-                      <span>{checkedItems} / {totalItems}</span>
-                    </div>
-                    <Progress value={progressValue} className="h-1.5 rounded-full" />
+                  <div className="space-y-2 animate-in fade-in-25 relative">
+                     <Progress value={progressValue} className="h-4 rounded-full" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                         <span className="text-xs font-bold text-primary-foreground mix-blend-difference">
+                           {checkedItems} / {totalItems}
+                         </span>
+                      </div>
                   </div>
                 )}
               </div>
             ) : (
-              <p className="text-muted-foreground text-center">
+               <p className="text-muted-foreground text-center">
                 A shared list to keep your shopping organized.
               </p>
             )}
