@@ -35,9 +35,9 @@ export default function GroceryListPage() {
                   </p>
                 ) : (
                   <div className="space-y-2 animate-in fade-in-25 relative">
-                     <Progress value={progressValue} className="h-4 rounded-full" />
+                     <Progress value={progressValue} className="h-6 rounded-full bg-card/50 backdrop-blur-sm border" />
                       <div className="absolute inset-0 flex items-center justify-center">
-                         <span className="text-xs font-bold text-primary-foreground mix-blend-difference">
+                         <span className="text-sm font-bold text-primary-foreground mix-blend-difference">
                            {checkedItems} / {totalItems}
                          </span>
                       </div>
