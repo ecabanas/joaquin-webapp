@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -15,6 +16,7 @@ type AddItemSearchProps = {
 export function AddItemSearch({ onAddItem, popularItems }: AddItemSearchProps) {
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const fuse = useMemo(() => {
@@ -25,28 +27,50 @@ export function AddItemSearch({ onAddItem, popularItems }: AddItemSearchProps) {
   }, [popularItems]);
 
   const searchResults = useMemo(() => {
-    if (!query) return [];
-    return fuse.search(query).map(result => result.item);
+    if (!query) {
+      setHighlightedIndex(-1);
+      return [];
+    };
+    const results = fuse.search(query).map(result => result.item);
+    // Reset highlight when results change but not when navigating
+    if (highlightedIndex >= results.length) {
+      setHighlightedIndex(-1);
+    }
+    return results;
   }, [query, fuse]);
 
   const handleSelect = (itemName: string) => {
     onAddItem(itemName);
     setQuery('');
-  };
-  
-  const handleAddNew = () => {
-    if (query.trim()) {
-        onAddItem(query.trim());
-        setQuery('');
-    }
+    setHighlightedIndex(-1);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'ArrowDown') {
       e.preventDefault();
-      handleAddNew();
+      setHighlightedIndex((prevIndex) =>
+        Math.min(prevIndex + 1, searchResults.length - 1)
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex((prevIndex) => Math.max(prevIndex - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (highlightedIndex > -1 && searchResults[highlightedIndex]) {
+        handleSelect(searchResults[highlightedIndex]);
+      }
+    } else if (e.key === 'Escape') {
+      setIsFocused(false);
+      setHighlightedIndex(-1);
     }
   };
+  
+  useEffect(() => {
+    if (highlightedIndex > -1) {
+      const el = searchContainerRef.current?.querySelector(`[data-index="${highlightedIndex}"]`);
+      el?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [highlightedIndex]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -66,16 +90,13 @@ export function AddItemSearch({ onAddItem, popularItems }: AddItemSearchProps) {
       <div className="flex items-center gap-2">
         <Input
           type="text"
-          placeholder="Search or type to add an item..."
+          placeholder="Search items to add..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setIsFocused(true)}
           onKeyDown={handleKeyDown}
           className="text-base"
         />
-        <Button onClick={handleAddNew} disabled={!query.trim()} size="icon" aria-label="Add item">
-            <PlusCircle />
-        </Button>
       </div>
 
       {isFocused && query && (
@@ -85,15 +106,20 @@ export function AddItemSearch({ onAddItem, popularItems }: AddItemSearchProps) {
               searchResults.slice(0, 10).map((item, index) => (
                 <li
                   key={index}
+                  data-index={index}
                   onClick={() => handleSelect(item)}
-                  className="px-4 py-2 cursor-pointer hover:bg-accent"
+                  onMouseOver={() => setHighlightedIndex(index)}
+                  className={cn(
+                    "px-4 py-2 cursor-pointer",
+                    highlightedIndex === index && 'bg-accent'
+                  )}
                 >
                   {item}
                 </li>
               ))
             ) : (
               <li className="px-4 py-2 text-muted-foreground text-sm">
-                No popular matches. Press Enter or the add button to create "{query}".
+                No matches found.
               </li>
             )}
           </ul>
