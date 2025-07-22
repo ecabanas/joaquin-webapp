@@ -1,11 +1,12 @@
 'use client';
 
 import type { Aisle, GroceryItem } from '@/lib/types';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { AddItemDialog } from './add-item-dialog';
+import { cn } from '@/lib/utils';
 
 type GroceryListClientProps = {
   initialAisles: Aisle[];
@@ -15,9 +16,16 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
   const [aisles, setAisles] = useState<Aisle[]>(initialAisles);
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
 
-  const allItems: (GroceryItem & { aisleId: string })[] = aisles.flatMap(aisle => 
-    aisle.items.map(item => ({ ...item, aisleId: aisle.id }))
-  );
+  const sortedItems = useMemo(() => {
+    const allItems = aisles.flatMap(aisle => 
+      aisle.items.map(item => ({ ...item, aisleId: aisle.id }))
+    );
+    return allItems.sort((a, b) => {
+      if (a.checked && !b.checked) return 1;
+      if (!a.checked && b.checked) return -1;
+      return 0;
+    });
+  }, [aisles]);
 
   const handleItemCheckedChange = (
     itemId: string,
@@ -76,10 +84,13 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
       <div className="bg-card rounded-lg shadow-sm">
         <div className="p-4">
           <ul className="space-y-3">
-            {allItems.map((item) => (
+            {sortedItems.map((item) => (
               <li
                 key={item.id}
-                className="flex items-center gap-3 group justify-center"
+                className={cn(
+                  "flex items-center gap-3 group justify-center transition-all duration-300 ease-in-out",
+                   item.checked && "opacity-60"
+                )}
               >
                 <Checkbox
                   id={`item-${item.id}`}
@@ -95,9 +106,10 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
                 <div className="flex-1 max-w-sm">
                   <label
                     htmlFor={`item-${item.id}`}
-                    className={`text-base transition-colors ${
+                    className={cn(
+                      "text-base transition-colors", 
                       item.checked ? 'text-muted-foreground line-through' : 'font-medium'
-                    }`}
+                    )}
                   >
                     {item.name}
                   </label>
