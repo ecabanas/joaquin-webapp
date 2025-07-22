@@ -44,21 +44,29 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
   };
   
   const handleAddItem = (itemName: string) => {
-    setAisles(prevAisles => {
-      const allItems = prevAisles.flatMap(a => a.items);
-      const existingItem = allItems.find(i => i.name.toLowerCase() === itemName.toLowerCase());
-      
-      if (existingItem) {
-        // Item already exists, maybe increment quantity in the future? For now, do nothing.
-         return prevAisles;
-      }
-        
-      const newAisles = [...prevAisles];
+    const itemNameLower = itemName.toLowerCase();
+    let itemExists = false;
+
+    const updatedAisles = aisles.map(aisle => {
+      const updatedItems = aisle.items.map(item => {
+        if (item.name.toLowerCase() === itemNameLower) {
+          itemExists = true;
+          return { ...item, quantity: item.quantity + 1, checked: false };
+        }
+        return item;
+      });
+      return { ...aisle, items: updatedItems };
+    });
+
+    if (itemExists) {
+      setAisles(updatedAisles);
+    } else {
+      const newAisles = [...aisles];
       const aisleName = 'Uncategorized';
       let aisle = newAisles.find(a => a.name.toLowerCase() === aisleName.toLowerCase());
 
       const itemToAdd: GroceryItem = {
-        name: itemName,
+        name: itemName.trim(),
         id: `item-${Date.now()}`,
         checked: false,
         quantity: 1,
@@ -73,8 +81,8 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
           items: [itemToAdd],
         });
       }
-      return newAisles;
-    });
+      setAisles(newAisles);
+    }
   };
 
   const handleDeleteItem = (itemId: string) => {
@@ -94,7 +102,6 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
         <AddItemSearch
           onAddItem={handleAddItem}
           popularItems={popularItems}
-          existingItems={allItems.map(i => i.name)}
         />
       </div>
 
