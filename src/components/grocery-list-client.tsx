@@ -103,7 +103,7 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
   const allItems = useMemo(() => aisles.flatMap(a => a.items), [aisles]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 relative z-0">
        <AddItemSearch
           onAddItem={handleAddItem}
           popularItems={popularItems}
@@ -117,7 +117,7 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
               <li
                 key={item.id}
                 className={cn(
-                  "flex items-center gap-4 group transition-opacity",
+                  "flex items-center gap-4 group transition-all duration-300",
                    item.checked && "opacity-50"
                 )}
               >

@@ -137,9 +137,12 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
 
   return (
     <div className="relative" ref={searchContainerRef}>
+      {isFocused && (
+         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity animate-in fade-in-0" />
+       )}
        <div className={cn(
-           "relative transition-all duration-300 rounded-full",
-           isFocused ? "shadow-2xl shadow-primary/20" : "shadow-lg shadow-primary/5"
+           "relative transition-all duration-300 rounded-full z-50",
+           isFocused ? "shadow-2xl shadow-primary/40 scale-[1.01]" : "shadow-lg shadow-primary/5"
        )}>
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
           <Input
@@ -155,15 +158,15 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
             onKeyDown={handleKeyDown}
             className={cn(
               "text-lg h-16 pl-12 pr-5 rounded-full border-2 border-transparent transition-all duration-300",
-              "focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary",
-              "bg-background/60 backdrop-blur-2xl",
-               isFocused ? "bg-background/80" : "bg-background/60"
+              "focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary/50",
+              "bg-background/60 backdrop-blur-xl",
+              isFocused ? "bg-background/80" : "bg-background/60"
             )}
           />
       </div>
 
       {isFocused && query && (
-        <div className="absolute z-10 w-full mt-2 bg-card/80 backdrop-blur-xl border rounded-2xl shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-2 bg-card/80 backdrop-blur-xl border rounded-2xl shadow-lg max-h-60 overflow-y-auto">
           <ul className="py-2">
             {searchResults.length > 0 ? (
               searchResults.slice(0, 10).map((item, index) => (
