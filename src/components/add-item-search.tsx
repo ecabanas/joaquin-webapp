@@ -16,7 +16,7 @@ type AddItemSearchProps = {
 export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddItemSearchProps) {
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
-  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -133,57 +133,64 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
   }, []);
 
   return (
-    <div className="relative" ref={searchContainerRef}>
-       <div className={cn(
-           "relative transition-all duration-300 rounded-full z-50",
-           isFocused ? "shadow-2xl shadow-primary/40 scale-[1.01]" : "shadow-lg shadow-primary/5"
-       )}>
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
-          <Input
-            ref={inputRef}
-            type="text"
-            placeholder="Search to add an item..."
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-            }}
-            onFocus={() => setIsFocused(true)}
-            onKeyDown={handleKeyDown}
-            className={cn(
-              "text-lg h-16 pl-12 pr-5 rounded-full border-2 border-transparent transition-all duration-300",
-              "focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary/50",
-              "bg-background/60 backdrop-blur-xl",
-              isFocused ? "bg-background/80" : "bg-background/60"
-            )}
-          />
-      </div>
-
-      {isFocused && query && (
-        <div className="absolute z-50 w-full mt-2 bg-card/80 backdrop-blur-xl border rounded-2xl shadow-lg max-h-60 overflow-y-auto">
-          <ul className="py-2">
-            {searchResults.length > 0 ? (
-              searchResults.slice(0, 10).map((item, index) => (
-                <li
-                  key={item}
-                  data-index={index}
-                  onClick={() => handleSelect(item)}
-                  onMouseOver={() => setHighlightedIndex(index)}
-                  className={cn(
-                    "px-5 py-3 cursor-pointer text-base transition-colors",
-                    highlightedIndex === index && 'bg-primary/10 text-primary'
-                  )}
-                >
-                  {item}
-                </li>
-              ))
-            ) : (
-               <li className="px-5 py-4 text-muted-foreground text-sm text-center">
-                No items match your search.
-              </li>
-            )}
-          </ul>
-        </div>
+    <>
+      {isFocused && (
+        <div 
+          onClick={handleDismiss}
+          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm"
+        />
       )}
-    </div>
+      <div className="relative z-50" ref={searchContainerRef}>
+         <div className={cn(
+             "relative transition-all duration-300 rounded-full",
+             isFocused ? "shadow-2xl shadow-primary/40 scale-[1.01]" : "shadow-lg shadow-primary/5"
+         )}>
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
+            <Input
+              ref={inputRef}
+              type="text"
+              placeholder="Search to add an item..."
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+              }}
+              onFocus={() => setIsFocused(true)}
+              onKeyDown={handleKeyDown}
+              className={cn(
+                "text-lg h-16 pl-12 pr-5 rounded-full border-2 border-transparent transition-all duration-300",
+                "focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary/50",
+                isFocused ? "bg-background" : "bg-background/60 backdrop-blur-xl"
+              )}
+            />
+        </div>
+
+        {isFocused && query && (
+          <div className="absolute z-50 w-full mt-2 bg-card border rounded-2xl shadow-lg max-h-60 overflow-y-auto">
+            <ul className="py-2">
+              {searchResults.length > 0 ? (
+                searchResults.slice(0, 10).map((item, index) => (
+                  <li
+                    key={item}
+                    data-index={index}
+                    onClick={() => handleSelect(item)}
+                    onMouseOver={() => setHighlightedIndex(index)}
+                    className={cn(
+                      "px-5 py-3 cursor-pointer text-base transition-colors",
+                      highlightedIndex === index && 'bg-primary/10 text-primary'
+                    )}
+                  >
+                    {item}
+                  </li>
+                ))
+              ) : (
+                 <li className="px-5 py-4 text-muted-foreground text-sm text-center">
+                  No items match your search.
+                </li>
+              )}
+            </ul>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
