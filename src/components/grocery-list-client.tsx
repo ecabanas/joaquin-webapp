@@ -5,7 +5,7 @@ import type { Aisle, GroceryItem } from '@/lib/types';
 import { useMemo, useState } from 'react';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Plus, Minus } from 'lucide-react';
 import { AddItemSearch } from './add-item-search';
 import { cn } from '@/lib/utils';
 import { popularItems } from '@/lib/mock-data';
@@ -99,6 +99,21 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
       })).filter(aisle => aisle.items.length > 0)
     );
   };
+
+  const handleQuantityChange = (itemId: string, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      handleDeleteItem(itemId);
+    } else {
+      setAisles(
+        aisles.map((aisle) => ({
+          ...aisle,
+          items: aisle.items.map((item) =>
+            item.id === itemId ? { ...item, quantity: newQuantity } : item
+          ),
+        }))
+      );
+    }
+  };
   
   const allItems = useMemo(() => aisles.flatMap(a => a.items), [aisles]);
 
@@ -143,11 +158,25 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
                     {item.name}
                   </label>
                 </div>
-                <span className="text-base text-muted-foreground w-12 text-right font-medium">x{item.quantity}</span>
-                <Button variant="ghost" size="icon" className="h-9 w-9 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleDeleteItem(item.id)}>
-                    <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive transition-colors" />
-                    <span className="sr-only">Delete item</span>
-                </Button>
+
+                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(item.id, item.quantity - 1)}>
+                        <Minus className="h-4 w-4 text-muted-foreground" />
+                        <span className="sr-only">Decrement item</span>
+                    </Button>
+                    <span className="text-base font-medium w-4 text-center">{item.quantity}</span>
+                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(item.id, item.quantity + 1)}>
+                        <Plus className="h-4 w-4 text-muted-foreground" />
+                        <span className="sr-only">Increment item</span>
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => handleDeleteItem(item.id)}>
+                        <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive transition-colors" />
+                        <span className="sr-only">Delete item</span>
+                    </Button>
+                </div>
+                 <div className="flex items-center gap-2 opacity-100 group-hover:opacity-0 transition-opacity">
+                    <span className="text-base text-muted-foreground w-12 text-right font-medium">x{item.quantity}</span>
+                </div>
               </li>
             ))}
              {allItems.length === 0 && (
