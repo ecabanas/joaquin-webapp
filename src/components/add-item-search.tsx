@@ -138,7 +138,7 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
   return (
     <div className="relative" ref={searchContainerRef}>
       {isFocused && (
-         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity animate-in fade-in-0" />
+         <div className="fixed inset-0 bg-black/10 z-40 transition-opacity animate-in fade-in-0" />
        )}
        <div className={cn(
            "relative transition-all duration-300 rounded-full z-50",
