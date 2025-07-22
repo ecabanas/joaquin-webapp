@@ -5,8 +5,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import Fuse from 'fuse.js';
 import { Input } from './ui/input';
 import { cn } from '@/lib/utils';
-import { Plus, Search } from 'lucide-react';
-import { Button } from './ui/button';
+import { Search } from 'lucide-react';
 
 type AddItemSearchProps = {
   onAddItem: (itemName: string) => void;
@@ -50,14 +49,11 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
     }
     return uniqueResults;
   }, [query, fuse, searchPool, highlightedIndex]);
-  
-  const canAddItem = query.trim().length > 0 && !searchResults.includes(query.trim());
 
   const handleSelect = (itemName: string) => {
     onAddItem(itemName);
     setQuery('');
     setHighlightedIndex(-1);
-    inputRef.current?.focus();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -73,8 +69,6 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
       e.preventDefault();
       if (highlightedIndex > -1 && searchResults[highlightedIndex]) {
         handleSelect(searchResults[highlightedIndex]);
-      } else if (query.trim()) {
-        handleSelect(query.trim());
       }
     } else if (e.key === 'Escape') {
       setIsFocused(false);
@@ -102,33 +96,57 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
     };
   }, []);
 
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // If a modifier key is pressed, or if we are already focused on an input, ignore.
+      if (e.metaKey || e.ctrlKey || e.altKey || (e.target instanceof HTMLInputElement) || (e.target instanceof HTMLTextAreaElement)) {
+        return;
+      }
+
+      // Check if the key is a single letter
+      if (/^[a-zA-Z]$/.test(e.key)) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, []);
+
+
   return (
     <div className="relative" ref={searchContainerRef}>
-       <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+       <div className={cn(
+           "relative transition-all duration-300",
+           isFocused ? "shadow-2xl shadow-primary/20" : "shadow-lg shadow-primary/5"
+       )}>
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
           <Input
             ref={inputRef}
             type="text"
-            placeholder="Add an item..."
+            placeholder="Search to add an item..."
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
-              setHighlightedIndex(-1); // Reset highlight on new typing
+              setHighlightedIndex(-1);
             }}
             onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             onKeyDown={handleKeyDown}
-            className="text-lg h-14 pl-10 pr-12"
+            className={cn(
+              "text-lg h-16 pl-12 pr-5 rounded-full border-2 border-transparent",
+              "focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary",
+              "bg-background/70 backdrop-blur-sm"
+            )}
           />
-          {canAddItem && (
-            <Button size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10" onClick={() => handleSelect(query.trim())}>
-              <Plus className="h-5 w-5" />
-            </Button>
-          )}
       </div>
 
       {isFocused && query && (
-        <div className="absolute z-10 w-full mt-2 bg-card border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-          <ul className="py-1">
+        <div className="absolute z-10 w-full mt-2 bg-card/95 backdrop-blur-sm border rounded-2xl shadow-lg max-h-60 overflow-y-auto">
+          <ul className="py-2">
             {searchResults.length > 0 ? (
               searchResults.slice(0, 10).map((item, index) => (
                 <li
@@ -137,16 +155,16 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
                   onClick={() => handleSelect(item)}
                   onMouseOver={() => setHighlightedIndex(index)}
                   className={cn(
-                    "px-4 py-2.5 cursor-pointer text-base",
-                    highlightedIndex === index && 'bg-accent'
+                    "px-5 py-3 cursor-pointer text-base transition-colors",
+                    highlightedIndex === index && 'bg-primary/10 text-primary'
                   )}
                 >
                   {item}
                 </li>
               ))
             ) : (
-              <li className="px-4 py-2.5 text-muted-foreground text-sm">
-                No matches found. You can still add it.
+               <li className="px-5 py-4 text-muted-foreground text-sm text-center">
+                No items match your search.
               </li>
             )}
           </ul>
