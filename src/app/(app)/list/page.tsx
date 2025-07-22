@@ -40,7 +40,7 @@ export default function GroceryListPage() {
                       <div
                         className="absolute inset-0 flex items-center justify-center"
                       >
-                         <span className="text-xs font-semibold text-muted-foreground" style={{ textShadow: '0 0 5px hsl(var(--card))' }}>
+                         <span className="text-xs font-semibold" style={{ color: 'hsl(var(--card))', mixBlendMode: 'difference' }}>
                           {progressText}
                         </span>
                       </div>
