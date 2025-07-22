@@ -54,6 +54,8 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
     onAddItem(itemName);
     setQuery('');
     setHighlightedIndex(-1);
+    setIsFocused(false);
+    inputRef.current?.blur();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -125,6 +127,12 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
       window.removeEventListener('keydown', handleGlobalKeyDown);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isFocused) {
+      setQuery('');
+    }
+  }, [isFocused]);
 
 
   return (
