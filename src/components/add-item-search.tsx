@@ -125,7 +125,7 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
       {isFocused && (
         <div 
           onClick={handleDismiss}
-          className="fixed inset-0 z-40 bg-background/60 backdrop-blur-sm"
+          className="fixed inset-0 z-40 bg-background/40 backdrop-blur-sm"
         />
       )}
       <div className="relative z-50" ref={searchContainerRef}>
