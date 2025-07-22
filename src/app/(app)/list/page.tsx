@@ -28,7 +28,7 @@ export default function GroceryListPage() {
         <h1 className="text-3xl font-bold tracking-tight text-center">Grocery List</h1>
         <div className="h-10 flex items-center justify-center">
             {totalItems > 0 ? (
-              <div className="w-full">
+              <div className="w-full max-w-sm mx-auto">
                 {allItemsComplete ? (
                   <p className="text-center text-lg font-medium text-primary animate-in fade-in-25">
                     You've got everything! 🎉
