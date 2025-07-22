@@ -176,18 +176,20 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
           popularItems={popularItems}
           existingItems={allItems.map(i => i.name)}
         />
-        
-      {allItems.length > 0 && (
-        <div className="space-y-2">
-          <div className='flex justify-between items-center text-sm text-muted-foreground font-medium'>
-            <span>Shopping Progress</span>
-            <span>{checkedItems.length} / {allItems.length}</span>
-          </div>
-          <Progress value={progressValue} className="h-2" />
-        </div>
-      )}
 
       <div className="bg-card rounded-lg border">
+        {allItems.length > 0 && (
+          <div className="p-4 sm:p-6 border-b">
+            <div className='space-y-2'>
+              <div className='flex justify-between items-center text-sm text-muted-foreground font-medium'>
+                <span>Shopping Progress</span>
+                <span>{checkedItems.length} / {allItems.length}</span>
+              </div>
+              <Progress value={progressValue} className="h-2" />
+            </div>
+          </div>
+        )}
+
         <div className="p-4 sm:p-6">
            {allItems.length === 0 ? (
              <div className="text-center py-12 px-4">
