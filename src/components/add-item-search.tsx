@@ -138,7 +138,7 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
   return (
     <div className="relative" ref={searchContainerRef}>
        <div className={cn(
-           "relative transition-all duration-300",
+           "relative transition-all duration-300 rounded-full",
            isFocused ? "shadow-2xl shadow-primary/20" : "shadow-lg shadow-primary/5"
        )}>
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
@@ -156,14 +156,14 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
             className={cn(
               "text-lg h-16 pl-12 pr-5 rounded-full border-2 border-transparent transition-all duration-300",
               "focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary",
-              "bg-background/70 backdrop-blur-xl",
-               isFocused ? "bg-background/90" : "bg-background/70"
+              "bg-background/60 backdrop-blur-2xl",
+               isFocused ? "bg-background/80" : "bg-background/60"
             )}
           />
       </div>
 
       {isFocused && query && (
-        <div className="absolute z-10 w-full mt-2 bg-card/95 backdrop-blur-sm border rounded-2xl shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-10 w-full mt-2 bg-card/80 backdrop-blur-xl border rounded-2xl shadow-lg max-h-60 overflow-y-auto">
           <ul className="py-2">
             {searchResults.length > 0 ? (
               searchResults.slice(0, 10).map((item, index) => (
