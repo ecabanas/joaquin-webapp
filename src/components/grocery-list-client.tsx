@@ -180,8 +180,8 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
       {allItems.length > 0 && (
         <div className="space-y-2">
           <div className='flex justify-between items-center text-sm text-muted-foreground font-medium'>
-            <span>Progress</span>
-            <span>{checkedItems.length} / {allItems.length} completed</span>
+            <span>Shopping Progress</span>
+            <span>{checkedItems.length} / {allItems.length}</span>
           </div>
           <Progress value={progressValue} className="h-2" />
         </div>
