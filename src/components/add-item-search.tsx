@@ -16,7 +16,7 @@ type AddItemSearchProps = {
 export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddItemSearchProps) {
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
-  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -44,16 +44,21 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
     const results = [...(exactMatch ? [exactMatch] : []), ...fuseResults];
     const uniqueResults = Array.from(new Set(results));
     
-    if (highlightedIndex >= uniqueResults.length) {
+    return uniqueResults;
+  }, [query, fuse, searchPool]);
+
+  // Effect to manage highlighted index
+  useEffect(() => {
+    if (query && searchResults.length > 0) {
+      setHighlightedIndex(0);
+    } else {
       setHighlightedIndex(-1);
     }
-    return uniqueResults;
-  }, [query, fuse, searchPool, highlightedIndex]);
+  }, [query, searchResults.length]);
 
   const handleSelect = (itemName: string) => {
     onAddItem(itemName);
     setQuery('');
-    setHighlightedIndex(-1);
     setIsFocused(false);
     inputRef.current?.blur();
   };
@@ -71,15 +76,9 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
       e.preventDefault();
       if (highlightedIndex > -1 && searchResults[highlightedIndex]) {
         handleSelect(searchResults[highlightedIndex]);
-      } else if (searchResults.length > 0) {
-        // If the user presses Enter and there are results, but none are highlighted,
-        // add the first item from the results.
-        handleSelect(searchResults[0]);
       }
-      // If there are no search results, do nothing. This prevents adding new items.
     } else if (e.key === 'Escape') {
       setIsFocused(false);
-      setHighlightedIndex(-1);
       inputRef.current?.blur();
     }
   };
@@ -152,7 +151,6 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
-              setHighlightedIndex(-1);
             }}
             onFocus={() => setIsFocused(true)}
             onKeyDown={handleKeyDown}
