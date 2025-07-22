@@ -37,19 +37,10 @@ export default function GroceryListPage() {
                 ) : (
                   <div className="animate-in fade-in-25 relative flex items-center justify-center">
                      <Progress value={progressValue} className="h-6 w-full rounded-full bg-card/50 backdrop-blur-sm border" />
-                     <div
-                        className="absolute inset-0 flex items-center justify-center"
-                        style={{ width: `${progressValue}%`, overflow: 'hidden' }}
-                      >
-                       <span className="text-xs font-semibold text-primary-foreground pl-px" style={{ minWidth: 'max-content' }}>
-                          {progressText}
-                        </span>
-                     </div>
                       <div
                         className="absolute inset-0 flex items-center justify-center"
-                        style={{ width: `${100 - progressValue}%`, right: 0, left: 'auto', overflow: 'hidden' }}
                       >
-                         <span className="text-xs font-semibold text-muted-foreground pr-px" style={{ minWidth: 'max-content' }}>
+                         <span className="text-xs font-semibold text-muted-foreground" style={{ textShadow: '0 0 5px hsl(var(--card))' }}>
                           {progressText}
                         </span>
                       </div>
