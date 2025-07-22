@@ -9,7 +9,7 @@ import { Trash2, Plus, Minus, ShoppingCart } from 'lucide-react';
 import { AddItemSearch } from './add-item-search';
 import { cn } from '@/lib/utils';
 import { popularItems } from '@/lib/mock-data';
-import { Separator } from './ui/separator';
+import { Progress } from './ui/progress';
 
 type GroceryListClientProps = {
   initialAisles: Aisle[];
@@ -18,7 +18,7 @@ type GroceryListClientProps = {
 export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
   const [aisles, setAisles] = useState<Aisle[]>(initialAisles);
 
-  const { checkedItems, uncheckedItems } = useMemo(() => {
+  const { checkedItems, uncheckedItems, allItems } = useMemo(() => {
     const allItems = aisles.flatMap(aisle => 
       aisle.items.map(item => ({ ...item, aisleName: aisle.name }))
     );
@@ -26,6 +26,7 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
     const sorted = allItems.sort((a, b) => a.name.localeCompare(b.name));
     
     return {
+      allItems,
       checkedItems: sorted.filter(item => item.checked),
       uncheckedItems: sorted.filter(item => !item.checked),
     }
@@ -116,7 +117,7 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
     }
   };
   
-  const allItems = useMemo(() => aisles.flatMap(a => a.items), [aisles]);
+  const progressValue = allItems.length > 0 ? (checkedItems.length / allItems.length) * 100 : 0;
 
   const ItemRow = ({ item }: { item: GroceryItem & { aisleName: string } }) => (
     <li
@@ -175,6 +176,16 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
           popularItems={popularItems}
           existingItems={allItems.map(i => i.name)}
         />
+        
+      {allItems.length > 0 && (
+        <div className="space-y-2">
+          <div className='flex justify-between items-center text-sm text-muted-foreground font-medium'>
+            <span>Progress</span>
+            <span>{checkedItems.length} / {allItems.length} completed</span>
+          </div>
+          <Progress value={progressValue} className="h-2" />
+        </div>
+      )}
 
       <div className="bg-card rounded-lg border">
         <div className="p-4 sm:p-6">
@@ -204,5 +215,3 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
     </div>
   );
 }
-
-    
