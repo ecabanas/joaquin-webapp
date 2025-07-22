@@ -182,7 +182,7 @@ export function GroceryListClient({ aisles, onAislesChange, progress }: GroceryL
           existingItems={allItems.map(i => i.name)}
         />
 
-      <div className="bg-card rounded-lg border border-t-0 overflow-hidden">
+      <div className="bg-card rounded-lg border overflow-hidden">
         {allItems.length > 0 && <Progress value={progress} className="h-2 rounded-none" />}
          <div className="p-4 sm:p-6">
            {allItems.length === 0 ? (
