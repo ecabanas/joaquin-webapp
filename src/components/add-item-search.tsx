@@ -47,15 +47,6 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
     return uniqueResults;
   }, [query, fuse, searchPool]);
 
-  // Effect to manage highlighted index
-  useEffect(() => {
-    if (isFocused && query && searchResults.length > 0) {
-      setHighlightedIndex(0);
-    } else {
-      setHighlightedIndex(-1);
-    }
-  }, [isFocused, query, searchResults.length]);
-
   const handleDismiss = () => {
     setQuery('');
     setIsFocused(false);
@@ -88,24 +79,21 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
     }
   };
   
+  // Effect to manage highlighted index
+  useEffect(() => {
+    if (isFocused && query && searchResults.length > 0) {
+      setHighlightedIndex(0);
+    } else {
+      setHighlightedIndex(-1);
+    }
+  }, [isFocused, query, searchResults.length]);
+  
   useEffect(() => {
     if (highlightedIndex > -1) {
       const el = searchContainerRef.current?.querySelector(`[data-index="${highlightedIndex}"]`);
       el?.scrollIntoView({ block: 'nearest' });
     }
   }, [highlightedIndex]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
-        handleDismiss();
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -137,7 +125,7 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
       {isFocused && (
         <div 
           onClick={handleDismiss}
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm"
+          className="fixed inset-0 z-40 bg-background/60 backdrop-blur-sm"
         />
       )}
       <div className="relative z-50" ref={searchContainerRef}>
