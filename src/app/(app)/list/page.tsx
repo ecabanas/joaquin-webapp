@@ -39,7 +39,7 @@ export default function GroceryListPage() {
                       <span>Shopping Progress</span>
                       <span>{checkedItems} / {totalItems}</span>
                     </div>
-                    <Progress value={progressValue} className="h-1.5" />
+                    <Progress value={progressValue} className="h-1.5 rounded-full" />
                   </div>
                 )}
               </div>
