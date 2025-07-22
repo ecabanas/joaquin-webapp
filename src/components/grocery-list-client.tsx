@@ -192,7 +192,7 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
 
               {checkedItems.length > 0 && uncheckedItems.length > 0 && (
                  <li className="py-2">
-                    <Separator />
+                    <div className="h-[1px] w-full" style={{ background: 'linear-gradient(to right, transparent, hsl(var(--border)), transparent)' }} />
                   </li>
               )}
               
