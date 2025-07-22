@@ -2,17 +2,10 @@
 
 import type { Aisle, GroceryItem } from '@/lib/types';
 import { useState } from 'react';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { AddItemDialog } from './add-item-dialog';
-import { Card, CardContent } from './ui/card';
 
 type GroceryListClientProps = {
   initialAisles: Aisle[];
@@ -22,23 +15,21 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
   const [aisles, setAisles] = useState<Aisle[]>(initialAisles);
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
 
+  const allItems: (GroceryItem & { aisleId: string })[] = aisles.flatMap(aisle => 
+    aisle.items.map(item => ({ ...item, aisleId: aisle.id }))
+  );
+
   const handleItemCheckedChange = (
-    aisleId: string,
     itemId: string,
     checked: boolean
   ) => {
     setAisles(
-      aisles.map((aisle) => {
-        if (aisle.id === aisleId) {
-          return {
-            ...aisle,
-            items: aisle.items.map((item) =>
-              item.id === itemId ? { ...item, checked } : item
-            ),
-          };
-        }
-        return aisle;
-      })
+      aisles.map((aisle) => ({
+        ...aisle,
+        items: aisle.items.map((item) =>
+          item.id === itemId ? { ...item, checked } : item
+        ),
+      }))
     );
   };
   
@@ -66,21 +57,14 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
     });
   };
 
-  const handleDeleteItem = (aisleId: string, itemId: string) => {
+  const handleDeleteItem = (itemId: string) => {
      setAisles(
-      aisles.map((aisle) => {
-        if (aisle.id === aisleId) {
-          return {
-            ...aisle,
-            items: aisle.items.filter((item) => item.id !== itemId),
-          };
-        }
-        return aisle;
-      }).filter(aisle => aisle.items.length > 0)
+      aisles.map((aisle) => ({
+        ...aisle,
+        items: aisle.items.filter((item) => item.id !== itemId),
+      })).filter(aisle => aisle.items.length > 0)
     );
   };
-
-  const allAisleIds = aisles.map((aisle) => aisle.id);
 
   return (
     <>
@@ -90,62 +74,48 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
         </Button>
       </div>
       <div className="bg-card rounded-lg shadow-sm">
-          <Accordion
-            type="multiple"
-            defaultValue={allAisleIds}
-            className="w-full"
-          >
-            {aisles.map((aisle) => (
-              <AccordionItem value={aisle.id} key={aisle.id} className="border-b last:border-b-0">
-                <AccordionTrigger className="px-4 py-3 text-lg font-bold hover:no-underline">
-                  {aisle.name}
-                </AccordionTrigger>
-                <AccordionContent className="px-4 pb-4">
-                  <ul className="space-y-3">
-                    {aisle.items.map((item) => (
-                      <li
-                        key={item.id}
-                        className="flex items-center gap-3 group"
-                      >
-                        <Checkbox
-                          id={`item-${item.id}`}
-                          checked={item.checked}
-                          onCheckedChange={(checked) =>
-                            handleItemCheckedChange(
-                              aisle.id,
-                              item.id,
-                              !!checked
-                            )
-                          }
-                          className="w-5 h-5 rounded-full"
-                        />
-                        <div className="flex-1">
-                          <label
-                            htmlFor={`item-${item.id}`}
-                            className={`text-base transition-colors ${
-                              item.checked ? 'text-muted-foreground line-through' : 'font-medium'
-                            }`}
-                          >
-                            {item.name}
-                          </label>
-                          {item.notes && (
-                            <p className="text-sm text-muted-foreground">
-                              {item.notes}
-                            </p>
-                          )}
-                        </div>
-                        <span className="text-sm text-muted-foreground">x{item.quantity}</span>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleDeleteItem(aisle.id, item.id)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                            <span className="sr-only">Delete item</span>
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
+        <div className="p-4">
+          <ul className="space-y-3">
+            {allItems.map((item) => (
+              <li
+                key={item.id}
+                className="flex items-center gap-3 group justify-center"
+              >
+                <Checkbox
+                  id={`item-${item.id}`}
+                  checked={item.checked}
+                  onCheckedChange={(checked) =>
+                    handleItemCheckedChange(
+                      item.id,
+                      !!checked
+                    )
+                  }
+                  className="w-5 h-5 rounded-full"
+                />
+                <div className="flex-1 max-w-sm">
+                  <label
+                    htmlFor={`item-${item.id}`}
+                    className={`text-base transition-colors ${
+                      item.checked ? 'text-muted-foreground line-through' : 'font-medium'
+                    }`}
+                  >
+                    {item.name}
+                  </label>
+                  {item.notes && (
+                    <p className="text-sm text-muted-foreground">
+                      {item.notes}
+                    </p>
+                  )}
+                </div>
+                <span className="text-sm text-muted-foreground w-12 text-right">x{item.quantity}</span>
+                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleDeleteItem(item.id)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                    <span className="sr-only">Delete item</span>
+                </Button>
+              </li>
             ))}
-          </Accordion>
+          </ul>
+        </div>
       </div>
       <AddItemDialog 
         isOpen={isAddDialogOpen} 
