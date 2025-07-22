@@ -4,10 +4,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   History,
-  Home,
   Menu,
   Settings,
-  ShoppingCart,
+  List,
   Users,
 } from 'lucide-react';
 import { Logo } from '@/components/icons';
@@ -15,15 +14,12 @@ import { Button } from '@/components/ui/button';
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
-  SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
 
 const navItems = [
-  { href: '/list', icon: ShoppingCart, label: 'Grocery List' },
+  { href: '/list', icon: List, label: 'Grocery List' },
   { href: '/history', icon: History, label: 'Purchase History' },
   { href: '/settings', icon: Settings, label: 'Settings' },
 ];
@@ -32,18 +28,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   const NavContent = () => (
-    <div className="flex flex-col h-full">
-      <div className="p-4 flex items-center gap-2">
-        <Logo className="w-8 h-8 text-primary" />
-        <h1 className="text-xl font-bold">Aisle Together</h1>
+    <div className="flex flex-col h-full bg-card">
+      <div className="p-4 flex items-center gap-3">
+        <Logo className="w-7 h-7 text-primary" />
+        <h1 className="text-xl font-bold tracking-tight">Aisle Together</h1>
       </div>
-      <Separator />
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 px-3 py-2 space-y-1">
         {navItems.map((item) => (
           <Button
             key={item.href}
-            variant={pathname === item.href ? 'secondary' : 'ghost'}
-            className="w-full justify-start gap-2"
+            variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
+            className="w-full justify-start h-11 gap-3 px-4 text-base"
             asChild
           >
             <Link href={item.href}>
@@ -53,9 +48,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </Button>
         ))}
       </nav>
-      <Separator />
-      <div className="p-4">
-        <Button variant="outline" className="w-full justify-start gap-2">
+      <div className="p-4 mt-auto">
+        <Button variant="outline" className="w-full justify-start gap-3">
           <Users className="w-5 h-5" />
           Share List
         </Button>
@@ -64,15 +58,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="min-h-screen w-full flex">
-      <aside className="hidden md:block md:w-64 lg:w-72 border-r bg-card">
+    <div className="min-h-screen w-full flex bg-muted/40">
+      <aside className="hidden md:block md:w-64 lg:w-72 border-r">
         <NavContent />
       </aside>
       <div className="flex-1 flex flex-col">
-        <header className="md:hidden sticky top-0 z-10 flex items-center justify-between h-16 px-4 border-b bg-background/80 backdrop-blur-sm">
-          <div className="flex items-center gap-2">
+        <header className="md:hidden sticky top-0 z-40 flex items-center justify-between h-16 px-4 border-b bg-background/95 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
             <Logo className="w-6 h-6 text-primary" />
-            <span className="font-bold">Aisle Together</span>
+            <span className="font-bold text-lg">Aisle Together</span>
           </div>
           <Sheet>
             <SheetTrigger asChild>
@@ -80,12 +74,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <Menu className="w-6 h-6" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-72 p-0">
+            <SheetContent side="left" className="w-72 p-0 border-r-0">
               <NavContent />
             </SheetContent>
           </Sheet>
         </header>
-        <main className="flex-1 p-4 sm:p-6 md:p-8">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

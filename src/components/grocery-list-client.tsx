@@ -20,12 +20,12 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
     const allItems = aisles.flatMap(aisle => 
       aisle.items.map(item => ({ ...item, aisleName: aisle.name }))
     );
+    // Sort checked items to the bottom
     return allItems.sort((a, b) => {
-      if (a.checked && !b.checked) return 1;
-      if (!a.checked && b.checked) return -1;
-      // Simple sort by name for unchecked items
-      if (!a.checked && !b.checked) return a.name.localeCompare(b.name);
-      return 0; // Keep order for checked items
+      if (a.checked === b.checked) {
+        return a.name.localeCompare(b.name); // Sort by name if checked status is the same
+      }
+      return a.checked ? 1 : -1;
     });
   }, [aisles]);
 
@@ -47,10 +47,12 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
     const itemNameLower = itemName.toLowerCase();
     let itemExists = false;
 
+    // First, check if item exists and increment quantity
     const updatedAisles = aisles.map(aisle => {
       const updatedItems = aisle.items.map(item => {
         if (item.name.toLowerCase() === itemNameLower) {
           itemExists = true;
+          // If item is already on list, uncheck it and increment quantity
           return { ...item, quantity: item.quantity + 1, checked: false };
         }
         return item;
@@ -61,29 +63,32 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
     if (itemExists) {
       setAisles(updatedAisles);
     } else {
+      // If item does not exist, add it to 'Uncategorized'
       const newAisles = [...aisles];
-      const aisleName = 'Uncategorized';
+      const aisleName = 'Uncategorized'; // Or determine aisle based on item
       let aisle = newAisles.find(a => a.name.toLowerCase() === aisleName.toLowerCase());
 
-      const itemToAdd: GroceryItem = {
+      const newItem: GroceryItem = {
+        id: `item-${Date.now()}-${Math.random()}`,
         name: itemName.trim(),
-        id: `item-${Date.now()}`,
-        checked: false,
         quantity: 1,
+        checked: false,
       };
 
       if (aisle) {
-        aisle.items.push(itemToAdd);
+        aisle.items.push(newItem);
       } else {
+        // Create the aisle if it doesn't exist
         newAisles.push({
           id: `aisle-${Date.now()}`,
           name: aisleName,
-          items: [itemToAdd],
+          items: [newItem],
         });
       }
       setAisles(newAisles);
     }
   };
+
 
   const handleDeleteItem = (itemId: string) => {
      setAisles(
@@ -97,23 +102,22 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
   const allItems = useMemo(() => aisles.flatMap(a => a.items), [aisles]);
 
   return (
-    <>
-      <div className="mb-4">
-        <AddItemSearch
+    <div className="space-y-4">
+       <AddItemSearch
           onAddItem={handleAddItem}
           popularItems={popularItems}
+          existingItems={allItems.map(i => i.name)}
         />
-      </div>
 
-      <div className="bg-card rounded-lg shadow-sm">
-        <div className="p-4">
+      <div className="bg-card rounded-lg border">
+        <div className="p-4 sm:p-6">
           <ul className="space-y-3">
             {sortedItems.map((item) => (
               <li
                 key={item.id}
                 className={cn(
-                  "flex items-center gap-3 group justify-center transition-all duration-300 ease-in-out",
-                   item.checked && "opacity-60"
+                  "flex items-center gap-4 group transition-opacity",
+                   item.checked && "opacity-50"
                 )}
               >
                 <Checkbox
@@ -125,35 +129,35 @@ export function GroceryListClient({ initialAisles }: GroceryListClientProps) {
                       !!checked
                     )
                   }
-                  className="w-5 h-5 rounded-full"
+                  className="w-6 h-6 rounded-full"
                 />
-                <div className="flex-1 max-w-sm">
+                <div className="flex-1">
                   <label
                     htmlFor={`item-${item.id}`}
                     className={cn(
-                      "text-base transition-colors", 
-                      item.checked ? 'text-muted-foreground line-through' : 'font-medium'
+                      "text-base font-medium transition-colors cursor-pointer", 
+                      item.checked ? 'line-through text-muted-foreground' : 'text-foreground'
                     )}
                   >
                     {item.name}
                   </label>
-                   <p className="text-sm text-muted-foreground">
-                      {item.aisleName}
-                    </p>
                 </div>
-                <span className="text-sm text-muted-foreground w-12 text-right">x{item.quantity}</span>
-                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleDeleteItem(item.id)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
+                <span className="text-base text-muted-foreground w-12 text-right font-medium">x{item.quantity}</span>
+                <Button variant="ghost" size="icon" className="h-9 w-9 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleDeleteItem(item.id)}>
+                    <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive transition-colors" />
                     <span className="sr-only">Delete item</span>
                 </Button>
               </li>
             ))}
              {allItems.length === 0 && (
-              <p className="text-center text-muted-foreground py-8">Your list is empty. Add items using the search bar above.</p>
+              <div className="text-center py-12">
+                <p className="text-lg font-medium text-muted-foreground">Your list is empty</p>
+                <p className="text-sm text-muted-foreground">Add items using the search bar above.</p>
+              </div>
             )}
           </ul>
         </div>
       </div>
-    </>
+    </div>
   );
 }

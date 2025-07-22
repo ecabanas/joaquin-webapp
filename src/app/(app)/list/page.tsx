@@ -6,11 +6,11 @@ export default function GroceryListPage() {
   const aisles = mockAisles;
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-1.5">
+    <div className="max-w-2xl mx-auto">
+      <header className="space-y-1 mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Grocery List</h1>
         <p className="text-muted-foreground">
-          Here's your shared list. Add, check, and manage items together.
+          A shared list to keep your shopping organized.
         </p>
       </header>
       <GroceryListClient initialAisles={aisles} />

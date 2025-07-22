@@ -24,19 +24,20 @@ export default function SettingsPage() {
         </p>
       </header>
 
-      <div className="grid gap-8">
-        <Card>
+      <div className="grid gap-8 lg:grid-cols-3">
+        <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" /> Profile
+            <CardTitle className="flex items-center gap-3">
+              <User className="w-6 h-6" />
+              <span className="text-2xl">Profile</span>
             </CardTitle>
             <CardDescription>
               This is how others will see you on the app.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
+            <div className="flex items-center gap-6">
+              <Avatar className="h-24 w-24">
                 <AvatarImage src="https://placehold.co/100x100" />
                 <AvatarFallback>JD</AvatarFallback>
               </Avatar>
@@ -49,17 +50,20 @@ export default function SettingsPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" defaultValue="jane.doe@example.com" />
+                <Input id="email" type="email" defaultValue="jane.doe@example.com" readOnly disabled/>
               </div>
             </div>
-            <Button>Save Profile</Button>
           </CardContent>
+          <CardFooter>
+             <Button>Save Profile</Button>
+          </CardFooter>
         </Card>
 
-        <Card>
+        <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="w-5 h-5" /> Notifications
+            <CardTitle className="flex items-center gap-3">
+              <Bell className="w-6 h-6" />
+              <span className="text-2xl">Notifications</span>
             </CardTitle>
             <CardDescription>
               Choose how you want to be notified.
@@ -67,15 +71,15 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between rounded-lg border p-4">
-              <div>
-                <Label htmlFor="item-added" className="font-semibold">Item Added</Label>
+              <div className="space-y-0.5">
+                <Label htmlFor="item-added" className="font-semibold text-base">Item Added</Label>
                 <p className="text-sm text-muted-foreground">When someone adds an item to the list.</p>
               </div>
               <Switch id="item-added" defaultChecked />
             </div>
              <div className="flex items-center justify-between rounded-lg border p-4">
-              <div>
-                <Label htmlFor="item-checked" className="font-semibold">Item Checked Off</Label>
+              <div className="space-y-0.5">
+                <Label htmlFor="item-checked" className="font-semibold text-base">Item Checked Off</Label>
                 <p className="text-sm text-muted-foreground">When an item is marked as purchased.</p>
               </div>
               <Switch id="item-checked" />
@@ -85,19 +89,20 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" /> Sharing
+            <CardTitle className="flex items-center gap-3">
+              <Users className="w-6 h-6" />
+              <span className="text-2xl">Sharing</span>
             </CardTitle>
             <CardDescription>Manage who has access to your list.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-             <div className="flex items-center gap-4">
+             <div className="flex items-center gap-2">
                 <Label htmlFor="invite-email" className="sr-only">Invite by email</Label>
                 <Input id="invite-email" placeholder="partner@example.com" type="email" />
-                <Button>Send Invite</Button>
+                <Button>Invite</Button>
             </div>
             <Separator />
-            <div className="space-y-2">
+            <div className="space-y-4">
               <h4 className="font-medium">People with access</h4>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -105,7 +110,10 @@ export default function SettingsPage() {
                     <AvatarImage src="https://placehold.co/40x40" />
                     <AvatarFallback>JD</AvatarFallback>
                   </Avatar>
-                  <span className="font-medium">Jane Doe (you)</span>
+                  <div>
+                    <p className="font-medium">Jane Doe</p>
+                    <p className="text-sm text-muted-foreground">you</p>
+                  </div>
                 </div>
                 <span className="text-sm text-muted-foreground">Owner</span>
               </div>
@@ -115,7 +123,10 @@ export default function SettingsPage() {
                     <AvatarImage src="https://placehold.co/40x40" />
                     <AvatarFallback>JD</AvatarFallback>
                   </Avatar>
-                  <span className="font-medium">John Doe</span>
+                   <div>
+                    <p className="font-medium">John Doe</p>
+                    <p className="text-sm text-muted-foreground">john.doe@example.com</p>
+                  </div>
                 </div>
                 <Button variant="ghost" size="sm">Remove</Button>
               </div>
