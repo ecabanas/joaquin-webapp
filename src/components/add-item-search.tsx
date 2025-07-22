@@ -56,11 +56,15 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
     }
   }, [isFocused, query, searchResults.length]);
 
-  const handleSelect = (itemName: string) => {
-    onAddItem(itemName);
+  const handleDismiss = () => {
     setQuery('');
     setIsFocused(false);
     inputRef.current?.blur();
+  };
+
+  const handleSelect = (itemName: string) => {
+    onAddItem(itemName);
+    handleDismiss();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -80,9 +84,7 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
         handleSelect(query);
       }
     } else if (e.key === 'Escape') {
-      setIsFocused(false);
-      setQuery('');
-      inputRef.current?.blur();
+      handleDismiss();
     }
   };
   
@@ -96,9 +98,7 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
-        setIsFocused(false);
-        setQuery('');
-        inputRef.current?.blur();
+        handleDismiss();
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
