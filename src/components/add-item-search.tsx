@@ -69,10 +69,12 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
       e.preventDefault();
       if (highlightedIndex > -1 && searchResults[highlightedIndex]) {
         handleSelect(searchResults[highlightedIndex]);
-      } else if (query.trim()) {
-        onAddItem(query.trim());
-        setQuery('');
+      } else if (searchResults.length > 0) {
+        // If the user presses Enter and there are results, but none are highlighted,
+        // add the first item from the results.
+        handleSelect(searchResults[0]);
       }
+      // If there are no search results, do nothing. This prevents adding new items.
     } else if (e.key === 'Escape') {
       setIsFocused(false);
       setHighlightedIndex(-1);
@@ -172,7 +174,7 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
               ))
             ) : (
                <li className="px-5 py-4 text-muted-foreground text-sm text-center">
-                No items match your search. Press Enter to add.
+                No items match your search.
               </li>
             )}
           </ul>
