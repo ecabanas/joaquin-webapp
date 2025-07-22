@@ -88,12 +88,12 @@ export default {
             "background-position": "right center",
           },
         },
-        "pulse-glow": {
-          "0%, 100%": {
-            "box-shadow": "0 0 0 0 hsla(var(--primary), 0.5)",
+        "shimmer": {
+          "0%": {
+            "background-position": "-200% 0",
           },
-          "50%": {
-            "box-shadow": "0 0 8px 2px hsla(var(--primary), 0.2)",
+          "100%": {
+            "background-position": "200% 0",
           },
         },
       },
@@ -101,7 +101,7 @@ export default {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         "gradient-x": "gradient-x 5s ease infinite",
-        "pulse-glow": "pulse-glow 3s ease-in-out infinite",
+        "shimmer": "shimmer 1s ease-in-out forwards",
       },
     },
   },
