@@ -24,29 +24,31 @@ export default function GroceryListPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <header className="space-y-1 mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Grocery List</h1>
-        {totalItems > 0 ? (
-          <div className="pt-2">
-            {allItemsComplete ? (
-              <p className="text-muted-foreground font-medium text-green-600">
-                You've got everything! 🎉
-              </p>
-            ) : (
-              <div className="space-y-2">
-                 <div className="flex justify-between items-center text-sm text-muted-foreground font-medium">
-                  <span>Shopping Progress</span>
-                  <span>{checkedItems} / {totalItems}</span>
-                </div>
-                <Progress value={progressValue} className="h-2" />
+      <header className="space-y-1.5 mb-6">
+        <h1 className="text-3xl font-bold tracking-tight text-center">Grocery List</h1>
+        <div className="h-10 flex items-center justify-center">
+            {totalItems > 0 ? (
+              <div className="w-full">
+                {allItemsComplete ? (
+                  <p className="text-center text-lg font-medium text-primary animate-in fade-in-25">
+                    You've got everything! 🎉
+                  </p>
+                ) : (
+                  <div className="space-y-2 animate-in fade-in-25">
+                    <div className="flex justify-between items-center text-sm text-muted-foreground font-medium px-1">
+                      <span>Shopping Progress</span>
+                      <span>{checkedItems} / {totalItems}</span>
+                    </div>
+                    <Progress value={progressValue} className="h-1.5" />
+                  </div>
+                )}
               </div>
+            ) : (
+              <p className="text-muted-foreground text-center">
+                A shared list to keep your shopping organized.
+              </p>
             )}
-          </div>
-        ) : (
-          <p className="text-muted-foreground">
-            A shared list to keep your shopping organized.
-          </p>
-        )}
+        </div>
       </header>
       <GroceryListClient aisles={aisles} onAislesChange={setAisles} />
     </div>
