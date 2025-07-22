@@ -9,13 +9,15 @@ import { Trash2, Plus, Minus, ShoppingCart } from 'lucide-react';
 import { AddItemSearch } from './add-item-search';
 import { cn } from '@/lib/utils';
 import { popularItems } from '@/lib/mock-data';
+import { Progress } from './ui/progress';
 
 type GroceryListClientProps = {
   aisles: Aisle[];
   onAislesChange: (aisles: Aisle[]) => void;
+  progress: number;
 };
 
-export function GroceryListClient({ aisles, onAislesChange }: GroceryListClientProps) {
+export function GroceryListClient({ aisles, onAislesChange, progress }: GroceryListClientProps) {
 
   const { checkedItems, uncheckedItems, allItems } = useMemo(() => {
     const allItems = aisles.flatMap(aisle => 
@@ -180,7 +182,8 @@ export function GroceryListClient({ aisles, onAislesChange }: GroceryListClientP
           existingItems={allItems.map(i => i.name)}
         />
 
-      <div className="bg-card rounded-lg border">
+      <div className="bg-card rounded-lg border border-t-0 overflow-hidden">
+        {allItems.length > 0 && <Progress value={progress} className="h-2 rounded-none" />}
          <div className="p-4 sm:p-6">
            {allItems.length === 0 ? (
              <div className="text-center py-12 px-4">
