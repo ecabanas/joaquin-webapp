@@ -21,6 +21,7 @@ export default function GroceryListPage() {
 
   const progressValue = totalItems > 0 ? (checkedItems / totalItems) * 100 : 0;
   const allItemsComplete = totalItems > 0 && checkedItems === totalItems;
+  const progressText = `${checkedItems} / ${totalItems}`;
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -36,9 +37,22 @@ export default function GroceryListPage() {
                 ) : (
                   <div className="animate-in fade-in-25 relative flex items-center justify-center">
                      <Progress value={progressValue} className="h-6 w-full rounded-full bg-card/50 backdrop-blur-sm border" />
-                     <span className="absolute text-xs font-semibold text-muted-foreground">
-                       {checkedItems} / {totalItems}
-                     </span>
+                     <div
+                        className="absolute inset-0 flex items-center justify-center"
+                        style={{ width: `${progressValue}%`, overflow: 'hidden' }}
+                      >
+                       <span className="text-xs font-semibold text-primary-foreground pl-px" style={{ minWidth: 'max-content' }}>
+                          {progressText}
+                        </span>
+                     </div>
+                      <div
+                        className="absolute inset-0 flex items-center justify-center"
+                        style={{ width: `${100 - progressValue}%`, right: 0, left: 'auto', overflow: 'hidden' }}
+                      >
+                         <span className="text-xs font-semibold text-muted-foreground pr-px" style={{ minWidth: 'max-content' }}>
+                          {progressText}
+                        </span>
+                      </div>
                   </div>
                 )}
               </div>
