@@ -27,10 +27,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const SidebarContent = () => (
      <TooltipProvider delayDuration={0}>
         <div className="group flex flex-col h-full bg-card rounded-2xl border shadow-lg overflow-hidden transition-all duration-300 ease-in-out">
-          <div className="flex items-center border-b h-16">
-            <Link href="/list" className="flex items-center justify-center group-hover:justify-start gap-3 w-full px-4 transition-all duration-300">
+          <div className="flex items-center justify-center border-b h-16 px-4">
+            <Link href="/list" className="flex items-center justify-center group-hover:justify-start gap-3 w-full transition-all duration-300">
               <Logo className="w-7 h-7 text-primary flex-shrink-0" />
-              <h1 className="text-xl font-bold tracking-tight truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200">Joaquin</h1>
+              <div className="overflow-hidden transition-all duration-300 w-0 group-hover:w-auto">
+                <h1 className="text-xl font-bold tracking-tight truncate">Joaquin</h1>
+              </div>
             </Link>
           </div>
           <nav className="flex-1 px-2 py-4 space-y-2">
@@ -44,7 +46,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   >
                     <Link href={item.href} className="flex items-center justify-center group-hover:justify-start gap-3 w-full px-4 transition-all duration-300">
                       <item.icon className="w-6 h-6 flex-shrink-0" />
-                      <span className="truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200">{item.label}</span>
+                      <div className="overflow-hidden transition-all duration-300 w-0 group-hover:w-auto">
+                        <span className="truncate">{item.label}</span>
+                      </div>
                     </Link>
                   </Button>
                 </TooltipTrigger>
@@ -59,10 +63,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <TooltipTrigger asChild>
                   <Button variant="ghost" className="w-full h-12 p-0" asChild>
                      <Link href="#" className="flex items-center justify-center group-hover:justify-start gap-3 w-full px-4 transition-all duration-300">
-                       <Avatar className="h-8 w-8">
+                       <Avatar className="h-8 w-8 flex-shrink-0">
                          <AvatarFallback><Users className="w-5 h-5" /></AvatarFallback>
                        </Avatar>
-                       <span className="truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200">Share List</span>
+                        <div className="overflow-hidden transition-all duration-300 w-0 group-hover:w-auto">
+                         <span className="truncate">Share List</span>
+                       </div>
                     </Link>
                   </Button>
                  </TooltipTrigger>
