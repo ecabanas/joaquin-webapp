@@ -28,10 +28,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
      <TooltipProvider delayDuration={0}>
         <div className="group flex flex-col h-full bg-card rounded-2xl border shadow-lg overflow-hidden transition-all duration-300 ease-in-out">
           <div className="flex items-center border-b h-16">
-            <Link href="/list" className="flex items-center gap-3 w-full px-4">
-              <div className="w-12 flex items-center justify-center">
-                  <Logo className="w-7 h-7 text-primary flex-shrink-0" />
-              </div>
+            <Link href="/list" className="flex items-center justify-center group-hover:justify-start gap-3 w-full px-4 transition-all duration-300">
+              <Logo className="w-7 h-7 text-primary flex-shrink-0" />
               <h1 className="text-xl font-bold tracking-tight truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200">Joaquin</h1>
             </Link>
           </div>
@@ -41,14 +39,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <TooltipTrigger asChild>
                    <Button
                     variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
-                    className="w-full h-12 p-0 relative"
+                    className="w-full h-12 p-0"
                     asChild
                   >
-                    <Link href={item.href} className="flex items-center">
-                      <div className="w-full flex items-center justify-center absolute left-0 top-0 right-0 bottom-0 group-hover:justify-start group-hover:pl-4 transition-all duration-300">
-                         <item.icon className="w-6 h-6" />
-                      </div>
-                      <span className="truncate opacity-0 group-hover:opacity-100 group-hover:pl-12 transition-all duration-300">{item.label}</span>
+                    <Link href={item.href} className="flex items-center justify-center group-hover:justify-start gap-3 w-full px-4 transition-all duration-300">
+                      <item.icon className="w-6 h-6 flex-shrink-0" />
+                      <span className="truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200">{item.label}</span>
                     </Link>
                   </Button>
                 </TooltipTrigger>
@@ -61,13 +57,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="mt-auto border-t p-2">
              <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" className="w-full h-12 p-0 relative">
-                     <div className="w-full flex items-center justify-center absolute left-0 top-0 right-0 bottom-0 group-hover:justify-start group-hover:pl-4 transition-all duration-300">
+                  <Button variant="ghost" className="w-full h-12 p-0" asChild>
+                     <Link href="#" className="flex items-center justify-center group-hover:justify-start gap-3 w-full px-4 transition-all duration-300">
                        <Avatar className="h-8 w-8">
                          <AvatarFallback><Users className="w-5 h-5" /></AvatarFallback>
                        </Avatar>
-                    </div>
-                     <span className="truncate opacity-0 group-hover:opacity-100 group-hover:pl-12 transition-all duration-300">Share List</span>
+                       <span className="truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200">Share List</span>
+                    </Link>
                   </Button>
                  </TooltipTrigger>
                  <TooltipContent side="right" className="flex items-center gap-4">
