@@ -38,13 +38,20 @@ export default function HistoryPage() {
   const [purchases] = useState<Purchase[]>(() => mockHistory.sort((a, b) => b.date.getTime() - a.date.getTime()));
   const [searchQuery, setSearchQuery] = useState('');
 
+  const searchableData = useMemo(() => {
+    return purchases.map(purchase => ({
+      ...purchase,
+      searchableDate: formatDate(purchase.date),
+    }));
+  }, [purchases]);
+  
   const fuse = useMemo(() => {
-    return new Fuse(purchases, {
-      keys: ['store', 'items.name', 'completedBy', 'date'],
+    return new Fuse(searchableData, {
+      keys: ['store', 'items.name', 'completedBy', 'searchableDate'],
       includeScore: true,
       threshold: 0.3,
     });
-  }, [purchases]);
+  }, [searchableData]);
   
   const filteredPurchases = useMemo(() => {
     if (!searchQuery) return purchases;
