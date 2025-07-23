@@ -9,7 +9,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter
 } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { GlobalSearchInput } from '@/components/global-search-input';
@@ -83,7 +82,7 @@ export default function HistoryPage() {
               <ul className="space-y-3">
                 {purchase.items.map((item, itemIndex) => (
                   <li key={itemIndex} className="flex justify-between items-center text-base">
-                    <span className="text-foreground">{item.name} <span className="text-sm text-muted-foreground"> (x{item.quantity})</span></span>
+                    <span className="text-foreground">{item.name} <span className="text-sm text-muted-foreground">(x{item.quantity})</span></span>
                     <span className="font-medium">{formatCurrency(item.price * item.quantity)}</span>
                   </li>
                 ))}
