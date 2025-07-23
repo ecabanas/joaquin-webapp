@@ -13,6 +13,7 @@ import { Logo } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const navItems = [
   { href: '/list', icon: List, label: 'List' },
@@ -26,21 +27,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const SidebarContent = () => (
      <TooltipProvider delayDuration={0}>
         <div className="group flex flex-col h-full bg-card rounded-2xl border shadow-lg transition-all duration-300 ease-in-out overflow-hidden">
-          <div className="p-4 flex items-center gap-3 border-b h-16">
+          <div className="p-3 flex items-center justify-center gap-3 border-b h-16">
             <Logo className="w-7 h-7 text-primary flex-shrink-0" />
             <h1 className="text-xl font-bold tracking-tight truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200">Aisle Together</h1>
           </div>
-          <nav className="flex-1 px-3 py-4 space-y-1">
+          <nav className="flex-1 px-2 py-4 space-y-2">
             {navItems.map((item) => (
               <Tooltip key={item.href}>
                 <TooltipTrigger asChild>
                    <Button
                     variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
-                    className="w-full justify-start h-11 gap-3 px-4 text-base"
+                    className="w-full justify-center group-hover:justify-start h-12 gap-3 px-4 text-base"
                     asChild
                   >
                     <Link href={item.href}>
-                      <item.icon className="w-5 h-5 flex-shrink-0" />
+                      <item.icon className="w-6 h-6 flex-shrink-0" />
                       <span className="truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200">{item.label}</span>
                     </Link>
                   </Button>
@@ -51,11 +52,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </Tooltip>
             ))}
           </nav>
-          <div className="p-3 mt-auto border-t">
+          <div className="p-2 mt-auto border-t">
              <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start gap-3">
-                    <Users className="w-5 h-5 flex-shrink-0" />
+                  <Button variant="ghost" className="w-full justify-center group-hover:justify-start h-12 gap-3 px-4">
+                     <Avatar className="h-8 w-8">
+                       <AvatarFallback><Users className="w-5 h-5" /></AvatarFallback>
+                     </Avatar>
                      <span className="truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200">Share List</span>
                   </Button>
                  </TooltipTrigger>
@@ -71,7 +74,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-muted/40">
       {/* --- Desktop Sidebar --- */}
-      <aside className="hidden md:block transition-all duration-300 ease-in-out md:w-20 lg:w-20 hover:md:w-64 hover:lg:w-72 p-3">
+      <aside className="hidden md:block transition-all duration-300 ease-in-out w-24 group hover:w-64 p-3">
         <div className="h-full">
            <SidebarContent />
         </div>
