@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -22,18 +23,26 @@ type FinishShoppingDialogProps = {
 
 export function FinishShoppingDialog({ onConfirm, disabled }: FinishShoppingDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [storeName, setStoreName] = useState('');
+  const [storeName, setStoreName] = useState('Mercadona');
 
   const handleConfirm = () => {
     if (storeName.trim()) {
       onConfirm(storeName.trim());
-      setStoreName('');
+      setStoreName('Mercadona'); // Reset to default for next time
       setIsOpen(false);
     }
   };
+  
+  const handleOpenChange = (open: boolean) => {
+    if (open) {
+      // When dialog opens, ensure the default value is set.
+      setStoreName('Mercadona');
+    }
+    setIsOpen(open);
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button size="lg" disabled={disabled} className="w-full">
           <CheckCircle className="mr-2" />
