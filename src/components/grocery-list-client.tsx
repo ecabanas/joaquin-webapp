@@ -15,10 +15,11 @@ import { FinishShoppingDialog } from './finish-shopping-dialog';
 type GroceryListClientProps = {
   list: GroceryList;
   onItemsChange: (items: ListItem[]) => void;
+  onFinishShopping: (storeName: string) => void;
   progress: number;
 };
 
-export function GroceryListClient({ list, onItemsChange, progress }: GroceryListClientProps) {
+export function GroceryListClient({ list, onItemsChange, onFinishShopping, progress }: GroceryListClientProps) {
 
   const { checkedItems, uncheckedItems } = useMemo(() => {
     const sorted = [...list.items].sort((a, b) => a.name.localeCompare(b.name));
@@ -166,7 +167,7 @@ export function GroceryListClient({ list, onItemsChange, progress }: GroceryList
          {list.items.length > 0 && (
           <div className="p-4 sm:p-6 pt-0">
              <FinishShoppingDialog
-                onConfirm={(storeName) => console.log('Store name:', storeName)}
+                onConfirm={onFinishShopping}
                 disabled={checkedItems.length === 0}
               />
           </div>

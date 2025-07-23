@@ -28,14 +28,13 @@ export function FinishShoppingDialog({ onConfirm, disabled }: FinishShoppingDial
   const handleConfirm = () => {
     if (storeName.trim()) {
       onConfirm(storeName.trim());
-      setStoreName('Mercadona'); // Reset to default for next time
       setIsOpen(false);
     }
   };
   
   const handleOpenChange = (open: boolean) => {
-    if (open) {
-      // When dialog opens, ensure the default value is set.
+    // When dialog closes, reset its state for next time
+    if (!open) {
       setStoreName('Mercadona');
     }
     setIsOpen(open);
