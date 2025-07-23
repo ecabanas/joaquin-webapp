@@ -27,8 +27,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const SidebarContent = () => (
      <TooltipProvider delayDuration={0}>
         <div className="group flex flex-col h-full bg-card rounded-2xl border shadow-lg overflow-hidden transition-all duration-300 ease-in-out">
-          <div className="flex items-center justify-center group-hover:justify-start border-b h-16 px-4">
-            <Link href="/list" className="flex items-center gap-3">
+          <div className="flex items-center border-b h-16">
+            <Link href="/list" className="flex items-center justify-center group-hover:justify-start gap-3 w-full px-4">
               <Logo className="w-7 h-7 text-primary flex-shrink-0" />
               <div className="overflow-hidden transition-all duration-300 w-0 group-hover:w-auto">
                 <h1 className="text-xl font-bold tracking-tight truncate">Joaquin</h1>
@@ -84,7 +84,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-muted/40">
       {/* --- Desktop Sidebar --- */}
-      <aside className="hidden md:block transition-all duration-300 ease-in-out w-20 hover:w-64 p-3 pl-5">
+      <aside className="hidden md:block transition-all duration-300 ease-in-out w-24 hover:w-64 p-3">
         <div className="h-full">
            <SidebarContent />
         </div>
