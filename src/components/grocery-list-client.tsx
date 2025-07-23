@@ -10,6 +10,7 @@ import { AddItemSearch } from './add-item-search';
 import { cn } from '@/lib/utils';
 import { defaultCatalog } from '@/lib/mock-data';
 import { Progress } from './ui/progress';
+import { FinishShoppingDialog } from './finish-shopping-dialog';
 
 type GroceryListClientProps = {
   list: GroceryList;
@@ -162,6 +163,14 @@ export function GroceryListClient({ list, onItemsChange, progress }: GroceryList
             </ul>
            )}
         </div>
+         {list.items.length > 0 && (
+          <div className="p-4 sm:p-6 pt-0">
+             <FinishShoppingDialog
+                onConfirm={(storeName) => console.log('Store name:', storeName)}
+                disabled={checkedItems.length === 0}
+              />
+          </div>
+        )}
       </div>
     </div>
   );
