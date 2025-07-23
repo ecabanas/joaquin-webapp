@@ -16,6 +16,7 @@ import { GlobalSearchInput } from '@/components/global-search-input';
 import { mockHistory } from "@/lib/mock-data";
 import { ChevronDown, User, FileText } from 'lucide-react';
 import type { Purchase } from '@/lib/types';
+import { ReceiptAnalyzer } from '@/components/receipt-analyzer';
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-US', {
@@ -96,13 +97,11 @@ export default function HistoryPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        <div className="space-y-1.5">
-          <h1 className="text-3xl font-bold tracking-tight">Purchase History</h1>
-          <p className="text-muted-foreground">
-            Review and search past shopping trips.
-          </p>
-        </div>
+      <header className="space-y-1.5 mb-6">
+        <h1 className="text-3xl font-bold tracking-tight text-center">Purchase History</h1>
+        <p className="text-muted-foreground text-center">
+          Review and search past shopping trips.
+        </p>
       </header>
       
       <div className="relative mb-6">
