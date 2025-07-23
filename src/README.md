@@ -1,8 +1,8 @@
-# Joaquin - Shared List App
+# Joaquin - App Architecture & Core Concepts
 
-This is a Next.js application built with Firebase Studio that functions as a collaborative list manager. It allows users within a shared "workspace" to manage an ongoing grocery list, track purchase history, and analyze receipts using generative AI.
+This document provides a detailed overview of the core architectural concepts, data structures, and logic flow for the Joaquin application. It is intended as a technical reference for developers.
 
-## Core Concepts & Architecture
+## Core Concepts
 
 The application is designed around a continuous, collaborative shopping experience for a group of users (e.g., a family, roommates) within a **Workspace**.
 
@@ -12,14 +12,40 @@ The entire application operates within the context of a shared workspace. All da
 
 ### 2. The List Lifecycle
 
-Instead of creating separate, disposable lists, the app uses a continuous lifecycle model with a single **"Active List"**.
+Instead of creating separate, disposable lists, the app uses a continuous lifecycle model with a single **"Active List"**. This process is designed to mirror the natural, recurring rhythm of household shopping.
+
+```
++--------------------------------+
+|         Active List            |
+| (Users add/check items)        |
++--------------------------------+
+             |
+             | User completes the shopping trip
+             | (e.g., clicks "Finish Shopping")
+             v
++--------------------------------+
+|      Archiving Process         |
+| - List is saved to History     |
+| - Includes store name & date   |
+| - Log who completed the list   |
++--------------------------------+
+             |
+             |
+             v
++--------------------------------+
+|       New Active List          |
+|  (A new, empty list is born)   |
+|                                |
+|  * Unchecked items from the    |
+|    previous list are carried   |
+|    over automatically.         |
++--------------------------------+
+```
 
 1.  **Active List:** There is always one, and only one, active grocery list for the workspace. All users in the workspace can view and add items to this list in real-time. This is the primary focus of the `/list` page.
-2.  **Completing a List:** When a user has finished a shopping trip, any user can "complete" the current active list. This action triggers the archiving process. We log which user completed the list for accountability.
-3.  **Archiving to History:** The completed list (including items, quantities, and who completed it) is saved as an immutable record in the **Purchase History**. This history is viewable on the `/history` page.
+2.  **Completing a List:** When a user has finished a shopping trip (e.g., at "Mercadona"), any user can "complete" the current active list. This action triggers the archiving process. We log which user completed the list for accountability.
+3.  **Archiving to History:** The completed list (including items, quantities, store name, and who completed it) is saved as an immutable record in the **Purchase History**. This history is viewable on the `/history` page.
 4.  **Rebirth of the Active List:** A new, empty "active" list is immediately generated. Any items that were **left unchecked** on the previous list are **automatically carried over** to this new list, ensuring they are not forgotten on the next trip.
-
-This cyclical process (Active -> Archive -> New Active) mirrors the natural, recurring rhythm of household shopping.
 
 ### 3. The Item Catalog
 
@@ -28,17 +54,6 @@ To ensure data consistency (e.g., avoiding duplicates like "Milk" and "milk"), e
 *   **Default Catalog:** Workspaces start with a pre-populated list of common grocery items to provide initial search suggestions.
 *   **Custom Catalog:** When a user adds an item that doesn't exist in the catalog (e.g., "Kombucha"), they are prompted to add it. If they agree, the new item is saved to the workspace's shared catalog, making it easily searchable for all members in the future.
 *   **User Management:** Users can manage their workspace's custom catalog (e.g., edit typos, delete old items) through the settings page.
-
-## Tech Stack
-
-This project is built with a modern, full-stack TypeScript setup:
-
--   **Framework:** [Next.js](https://nextjs.org/) (with App Router)
--   **Styling:** [Tailwind CSS](https://tailwindcss.com/) with [shadcn/ui](https://ui.shadcn.com/) for pre-built, accessible components.
--   **Generative AI:** [Genkit](https://firebase.google.com/docs/genkit) (with Google AI) for server-side AI flows.
--   **UI:** [React](https://reactjs.org/), TypeScript
--   **Icons:** [Lucide React](https://lucide.dev/guide/packages/lucide-react)
--   **Fuzzy Search:** [Fuse.js](https://fusejs.io/) for intelligent item searching.
 
 ## Project Structure
 
@@ -80,19 +95,3 @@ The application's AI capabilities are powered by **Genkit**. The core flow is `a
 -   **Input:** A base64-encoded data URI of a receipt image.
 -   **Process:** The Genkit flow sends the image to a Google AI model with a prompt instructing it to act as a receipt analyzer.
 -   **Output:** A structured JSON object containing an array of items with their name, quantity, and price. This JSON can then be used to populate a purchase history record.
-
-## Getting Started
-
-To run the application locally:
-
-1.  **Install Dependencies:**
-    ```bash
-    npm install
-    ```
-
-2.  **Run the Development Server:**
-    ```bash
-    npm run dev
-    ```
-
-The application will be available at `http://localhost:9002`.
