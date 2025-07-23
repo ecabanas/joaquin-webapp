@@ -2,26 +2,28 @@
 'use client';
 
 import { GroceryListClient } from '@/components/grocery-list-client';
-import { Progress } from '@/components/ui/progress';
-import { mockAisles } from '@/lib/mock-data';
-import type { Aisle } from '@/lib/types';
+import { mockActiveList } from '@/lib/mock-data';
+import type { GroceryList, ListItem } from '@/lib/types';
 import { useMemo, useState } from 'react';
 
 export default function GroceryListPage() {
   // In a real app, you'd fetch this data from your database.
-  const [aisles, setAisles] = useState<Aisle[]>(mockAisles);
+  const [activeList, setActiveList] = useState<GroceryList>(mockActiveList);
 
   const { totalItems, checkedItems } = useMemo(() => {
-    const allItems = aisles.flatMap((aisle) => aisle.items);
     return {
-      totalItems: allItems.length,
-      checkedItems: allItems.filter((item) => item.checked).length,
+      totalItems: activeList.items.length,
+      checkedItems: activeList.items.filter((item) => item.checked).length,
     };
-  }, [aisles]);
+  }, [activeList]);
 
   const progressValue = totalItems > 0 ? (checkedItems / totalItems) * 100 : 0;
   const allItemsComplete = totalItems > 0 && checkedItems === totalItems;
   
+  const handleItemsChange = (items: ListItem[]) => {
+    setActiveList(prev => ({...prev, items}));
+  };
+
   return (
     <div className="max-w-2xl mx-auto">
       <header className="space-y-1.5 mb-6">
@@ -38,7 +40,11 @@ export default function GroceryListPage() {
             )}
         </div>
       </header>
-      <GroceryListClient aisles={aisles} onAislesChange={setAisles} progress={progressValue} />
+      <GroceryListClient 
+        list={activeList} 
+        onItemsChange={handleItemsChange} 
+        progress={progressValue} 
+      />
     </div>
   );
 }

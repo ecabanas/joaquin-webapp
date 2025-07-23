@@ -1,40 +1,21 @@
-import type { Aisle, Purchase } from './types';
 
-export const mockAisles: Aisle[] = [
-  {
-    id: 'aisle-1',
-    name: 'Produce',
-    items: [
-      { id: 'item-1', name: 'Avocado', quantity: 3, checked: false },
-      { id: 'item-2', name: 'Organic Bananas', quantity: 1, checked: true, notes: 'bunch' },
-      { id: 'item-3', name: 'Roma Tomato', quantity: 5, checked: false },
-    ],
-  },
-  {
-    id: 'aisle-2',
-    name: 'Bakery',
-    items: [
-      { id: 'item-4', name: 'Sourdough Bread', quantity: 1, checked: false, notes: 'sliced' },
-      { id: 'item-5', name: 'Croissants', quantity: 4, checked: false },
-    ],
-  },
-  {
-    id: 'aisle-3',
-    name: 'Dairy & Eggs',
-    items: [
-      { id: 'item-6', name: 'Organic Milk', quantity: 1, checked: false, notes: '1 gallon' },
-      { id: 'item-7', name: 'Large Brown Eggs', quantity: 1, checked: true, notes: 'dozen' },
-      { id: 'item-8', name: 'Greek Yogurt', quantity: 2, checked: false, notes: 'plain' },
-    ],
-  },
-  {
-    id: 'aisle-4',
-    name: 'Snacks',
-    items: [
-      { id: 'item-9', name: 'Kettle Cooked Chips', quantity: 1, checked: false },
-    ],
-  },
-];
+import type { GroceryList, Purchase } from './types';
+
+export const mockActiveList: GroceryList = {
+  id: 'list-1',
+  items: [
+    { id: 'item-1', name: 'Avocado', quantity: 3, checked: false },
+    { id: 'item-2', name: 'Organic Bananas', quantity: 1, checked: true, notes: 'bunch' },
+    { id: 'item-3', name: 'Roma Tomato', quantity: 5, checked: false },
+    { id: 'item-4', name: 'Sourdough Bread', quantity: 1, checked: false, notes: 'sliced' },
+    { id: 'item-5', name: 'Croissants', quantity: 4, checked: false },
+    { id: 'item-6', name: 'Organic Milk', quantity: 1, checked: false, notes: '1 gallon' },
+    { id: 'item-7', name: 'Large Brown Eggs', quantity: 1, checked: true, notes: 'dozen' },
+    { id: 'item-8', name: 'Greek Yogurt', quantity: 2, checked: false, notes: 'plain' },
+    { id: 'item-9', name: 'Kettle Cooked Chips', quantity: 1, checked: false },
+  ],
+};
+
 
 export const mockHistory: Purchase[] = [
   {
@@ -60,7 +41,7 @@ export const mockHistory: Purchase[] = [
   },
 ];
 
-export const popularItems: string[] = [
+export const defaultCatalog: string[] = [
   "Milk", "Eggs", "Bread", "Butter", "Cheese", "Apples", "Bananas", "Oranges",
   "Chicken Breast", "Ground Beef", "Pasta", "Rice", "Cereal", "Coffee", "Tea",
   "Lettuce", "Tomatoes", "Onions", "Potatoes", "Yogurt", "Olive Oil", "Flour",

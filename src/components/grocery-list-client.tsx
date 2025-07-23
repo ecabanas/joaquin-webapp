@@ -1,130 +1,85 @@
 
 'use client';
 
-import type { Aisle, GroceryItem } from '@/lib/types';
-import { useMemo, useState } from 'react';
+import type { GroceryList, ListItem } from '@/lib/types';
+import { useMemo } from 'react';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Trash2, Plus, Minus, ShoppingCart } from 'lucide-react';
 import { AddItemSearch } from './add-item-search';
 import { cn } from '@/lib/utils';
-import { popularItems } from '@/lib/mock-data';
+import { defaultCatalog } from '@/lib/mock-data';
 import { Progress } from './ui/progress';
 
 type GroceryListClientProps = {
-  aisles: Aisle[];
-  onAislesChange: (aisles: Aisle[]) => void;
+  list: GroceryList;
+  onItemsChange: (items: ListItem[]) => void;
   progress: number;
 };
 
-export function GroceryListClient({ aisles, onAislesChange, progress }: GroceryListClientProps) {
+export function GroceryListClient({ list, onItemsChange, progress }: GroceryListClientProps) {
 
-  const { checkedItems, uncheckedItems, allItems } = useMemo(() => {
-    const allItems = aisles.flatMap(aisle => 
-      aisle.items.map(item => ({ ...item, aisleName: aisle.name }))
-    );
-    const sorted = allItems.sort((a, b) => a.name.localeCompare(b.name));
+  const { checkedItems, uncheckedItems } = useMemo(() => {
+    const sorted = [...list.items].sort((a, b) => a.name.localeCompare(b.name));
     
     return {
-      allItems,
       checkedItems: sorted.filter(item => item.checked),
       uncheckedItems: sorted.filter(item => !item.checked),
     }
-  }, [aisles]);
-
-  const updateAisles = (newAisles: Aisle[]) => {
-    // Filter out aisles that have no items
-    const filteredAisles = newAisles.map(aisle => ({
-      ...aisle,
-      items: aisle.items,
-    })).filter(aisle => aisle.items.length > 0);
-    onAislesChange(filteredAisles);
-  };
-
+  }, [list.items]);
 
   const handleItemCheckedChange = (
     itemId: string,
     checked: boolean
   ) => {
-    const newAisles = aisles.map((aisle) => ({
-      ...aisle,
-      items: aisle.items.map((item) =>
-        item.id === itemId ? { ...item, checked } : item
-      ),
-    }));
-    updateAisles(newAisles);
+    const newItems = list.items.map((item) =>
+      item.id === itemId ? { ...item, checked } : item
+    );
+    onItemsChange(newItems);
   };
   
   const handleAddItem = (itemName: string) => {
     const itemNameLower = itemName.toLowerCase();
-    let itemExists = false;
+    const existingItem = list.items.find(item => item.name.toLowerCase() === itemNameLower);
 
-    // First, check if item exists and increment quantity
-    let updatedAisles = aisles.map(aisle => {
-      const updatedItems = aisle.items.map(item => {
-        if (item.name.toLowerCase() === itemNameLower) {
-          itemExists = true;
-          // If item is already on list, uncheck it and increment quantity
-          return { ...item, quantity: item.quantity + 1, checked: false };
-        }
-        return item;
-      });
-      return { ...aisle, items: updatedItems };
-    });
-
-    if (itemExists) {
-      updateAisles(updatedAisles);
+    if (existingItem) {
+        // If item is already on list, uncheck it and increment quantity
+       const newItems = list.items.map(item => 
+         item.id === existingItem.id 
+         ? { ...item, quantity: item.quantity + 1, checked: false } 
+         : item
+       );
+       onItemsChange(newItems);
     } else {
-      // If item does not exist, add it to 'Uncategorized'
-      const newAisles = [...aisles];
-      const aisleName = 'Uncategorized'; // Or determine aisle based on item
-      let aisle = newAisles.find(a => a.name.toLowerCase() === aisleName.toLowerCase());
-
-      const newItem: GroceryItem = {
+      // If item does not exist, add it
+      const newItem: ListItem = {
         id: `item-${Date.now()}-${Math.random()}`,
         name: itemName.trim(),
         quantity: 1,
         checked: false,
       };
-
-      if (aisle) {
-        aisle.items.push(newItem);
-      } else {
-        // Create the aisle if it doesn't exist
-        newAisles.push({
-          id: `aisle-${Date.now()}`,
-          name: aisleName,
-          items: [newItem],
-        });
-      }
-      updateAisles(newAisles);
+      onItemsChange([...list.items, newItem]);
     }
   };
 
 
   const handleDeleteItem = (itemId: string) => {
-     const newAisles = aisles.map((aisle) => ({
-        ...aisle,
-        items: aisle.items.filter((item) => item.id !== itemId),
-      }));
-      updateAisles(newAisles);
+     const newItems = list.items.filter((item) => item.id !== itemId);
+     onItemsChange(newItems);
   };
 
   const handleQuantityChange = (itemId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
       handleDeleteItem(itemId);
     } else {
-      const newAisles = aisles.map((aisle) => ({
-        ...aisle,
-        items: aisle.items.map((item) =>
-          item.id === itemId ? { ...item, quantity: newQuantity } : item
-        ),
-      }));
-      updateAisles(newAisles);
+      const newItems = list.items.map((item) =>
+        item.id === itemId ? { ...item, quantity: newQuantity } : item
+      );
+      onItemsChange(newItems);
     }
   };
   
-  const ItemRow = ({ item }: { item: GroceryItem & { aisleName: string } }) => (
+  const ItemRow = ({ item }: { item: ListItem }) => (
     <li
       className={cn(
         "flex items-center gap-4 group transition-all duration-300",
@@ -178,14 +133,14 @@ export function GroceryListClient({ aisles, onAislesChange, progress }: GroceryL
     <div className="space-y-4 relative z-0">
        <AddItemSearch
           onAddItem={handleAddItem}
-          popularItems={popularItems}
-          existingItems={allItems.map(i => i.name)}
+          popularItems={defaultCatalog}
+          existingItems={list.items.map(i => i.name)}
         />
 
       <div className="bg-card rounded-lg border overflow-hidden">
         <Progress value={progress} className="h-2 rounded-none" />
          <div className="p-4 sm:p-6">
-           {allItems.length === 0 ? (
+           {list.items.length === 0 ? (
              <div className="text-center py-12 px-4">
                 <ShoppingCart className="mx-auto h-12 w-12 text-primary/40" strokeWidth={1.5} />
                 <h3 className="mt-4 text-xl font-semibold text-foreground">Your list is ready for action!</h3>

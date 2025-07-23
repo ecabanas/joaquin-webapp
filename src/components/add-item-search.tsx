@@ -44,8 +44,12 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
     const results = [...(exactMatch ? [exactMatch] : []), ...fuseResults];
     const uniqueResults = Array.from(new Set(results));
     
-    return uniqueResults;
-  }, [query, fuse, searchPool]);
+    // Don't suggest items that already exist on the list.
+    const existingLower = existingItems.map(i => i.toLowerCase());
+    const finalResults = uniqueResults.filter(item => !existingLower.includes(item.toLowerCase()));
+
+    return finalResults;
+  }, [query, fuse, searchPool, existingItems]);
 
   const handleDismiss = () => {
     setQuery('');
@@ -172,7 +176,7 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
                 ))
               ) : (
                  <li className="px-5 py-4 text-muted-foreground text-sm text-center">
-                  No items match your search.
+                  No items match your search. Try adding it!
                 </li>
               )}
             </ul>

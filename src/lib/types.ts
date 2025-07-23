@@ -1,4 +1,5 @@
-export type GroceryItem = {
+
+export type ListItem = {
   id: string;
   name: string;
   quantity: number;
@@ -6,10 +7,9 @@ export type GroceryItem = {
   checked: boolean;
 };
 
-export type Aisle = {
+export type GroceryList = {
   id: string;
-  name: string;
-  items: GroceryItem[];
+  items: ListItem[];
 };
 
 export type Purchase = {
