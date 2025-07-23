@@ -3,20 +3,18 @@
 
 import { useState, useMemo } from 'react';
 import Fuse from 'fuse.js';
-import { ReceiptAnalyzer } from "@/components/receipt-analyzer";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter
 } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { GlobalSearchInput } from '@/components/global-search-input';
 import { mockHistory } from "@/lib/mock-data";
-import { ChevronDown, Search, User, FileText } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ChevronDown, User, FileText } from 'lucide-react';
 import type { Purchase } from '@/lib/types';
 
 function formatCurrency(amount: number) {
@@ -64,7 +62,7 @@ export default function HistoryPage() {
               <div className="flex-1 space-y-1">
                 <CardTitle className="text-xl">{purchase.store}</CardTitle>
                 <CardDescription>{formatDate(purchase.date)}</CardDescription>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground pt-1">
+                 <div className="flex items-center gap-2 text-sm text-muted-foreground pt-1">
                   <User className="h-4 w-4" />
                   <span>{purchase.completedBy}</span>
                 </div>
@@ -105,16 +103,14 @@ export default function HistoryPage() {
             Review and search past shopping trips.
           </p>
         </div>
-        <ReceiptAnalyzer />
       </header>
       
       <div className="relative mb-6">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-        <Input
+        <GlobalSearchInput
           placeholder="Search by store, item, user, or date..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="text-lg h-16 pl-12 pr-5 rounded-full border-2 bg-background/60 backdrop-blur-xl shadow-lg shadow-primary/5 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary/50"
+          onSearchChange={setSearchQuery}
+          suggestions={[]}
+          onSelectSuggestion={() => {}}
         />
       </div>
 

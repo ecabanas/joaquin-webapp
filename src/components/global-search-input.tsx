@@ -1,64 +1,43 @@
 
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
-import Fuse from 'fuse.js';
+import { useState, useRef, useEffect } from 'react';
 import { Input } from './ui/input';
 import { cn } from '@/lib/utils';
 import { Search } from 'lucide-react';
 
-type AddItemSearchProps = {
-  onAddItem: (itemName: string) => void;
-  popularItems: string[];
-  existingItems: string[];
+type GlobalSearchInputProps = {
+  onSearchChange: (query: string) => void;
+  onSelectSuggestion: (suggestion: string) => void;
+  suggestions: string[];
+  placeholder: string;
 };
 
-export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddItemSearchProps) {
+export function GlobalSearchInput({
+  onSearchChange,
+  onSelectSuggestion,
+  suggestions,
+  placeholder,
+}: GlobalSearchInputProps) {
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const searchPool = useMemo(() => {
-    // Combine popular items and existing items, ensuring no duplicates.
-    const combined = new Set([...popularItems, ...existingItems]);
-    return Array.from(combined);
-  }, [popularItems, existingItems]);
-
-  const fuse = useMemo(() => {
-    return new Fuse(searchPool, {
-      includeScore: true,
-      threshold: 0.4,
-    });
-  }, [searchPool]);
-
-  const searchResults = useMemo(() => {
-    if (!query) return [];
-    
-    // Prioritize exact matches and then fuzzy search results
-    const exactMatch = searchPool.find(item => item.toLowerCase() === query.toLowerCase());
-    const fuseResults = fuse.search(query).map(result => result.item);
-    
-    // Combine and remove duplicates
-    const results = [...(exactMatch ? [exactMatch] : []), ...fuseResults];
-    const uniqueResults = Array.from(new Set(results));
-    
-    // Don't suggest items that already exist on the list.
-    const existingLower = existingItems.map(i => i.toLowerCase());
-    const finalResults = uniqueResults.filter(item => !existingLower.includes(item.toLowerCase()));
-
-    return finalResults;
-  }, [query, fuse, searchPool, existingItems]);
+  
+  const handleQueryChange = (newQuery: string) => {
+    setQuery(newQuery);
+    onSearchChange(newQuery);
+  }
 
   const handleDismiss = () => {
-    setQuery('');
+    handleQueryChange('');
     setIsFocused(false);
     inputRef.current?.blur();
   };
 
   const handleSelect = (itemName: string) => {
-    onAddItem(itemName);
+    onSelectSuggestion(itemName);
     handleDismiss();
   };
 
@@ -66,15 +45,15 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setHighlightedIndex((prevIndex) =>
-        Math.min(prevIndex + 1, searchResults.length - 1)
+        Math.min(prevIndex + 1, suggestions.length - 1)
       );
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setHighlightedIndex((prevIndex) => Math.max(prevIndex - 1, 0));
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (highlightedIndex > -1 && searchResults[highlightedIndex]) {
-        handleSelect(searchResults[highlightedIndex]);
+      if (highlightedIndex > -1 && suggestions[highlightedIndex]) {
+        handleSelect(suggestions[highlightedIndex]);
       } else if (query) {
         handleSelect(query);
       }
@@ -83,14 +62,13 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
     }
   };
   
-  // Effect to manage highlighted index
   useEffect(() => {
-    if (isFocused && query && searchResults.length > 0) {
+    if (isFocused && query && suggestions.length > 0) {
       setHighlightedIndex(0);
     } else {
       setHighlightedIndex(-1);
     }
-  }, [isFocused, query, searchResults.length]);
+  }, [isFocused, query, suggestions.length]);
   
   useEffect(() => {
     if (highlightedIndex > -1) {
@@ -114,7 +92,7 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
       if (/^[a-zA-Z0-9]$/.test(e.key)) {
         e.preventDefault();
         inputRef.current?.focus();
-        setQuery((q) => q + e.key);
+        handleQueryChange(query + e.key);
       }
     };
 
@@ -122,7 +100,7 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
     return () => {
       window.removeEventListener('keydown', handleGlobalKeyDown);
     };
-  }, []);
+  }, [query]);
 
   return (
     <>
@@ -141,10 +119,10 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
             <Input
               ref={inputRef}
               type="text"
-              placeholder="Search to add an item..."
+              placeholder={placeholder}
               value={query}
               onChange={(e) => {
-                setQuery(e.target.value);
+                handleQueryChange(e.target.value);
               }}
               onFocus={() => setIsFocused(true)}
               onKeyDown={handleKeyDown}
@@ -156,29 +134,23 @@ export function AddItemSearch({ onAddItem, popularItems, existingItems }: AddIte
             />
         </div>
 
-        {isFocused && query && (
+        {isFocused && query && suggestions.length > 0 && (
           <div className="absolute z-50 w-full mt-2 bg-card border rounded-2xl shadow-lg max-h-60 overflow-y-auto">
             <ul className="py-2">
-              {searchResults.length > 0 ? (
-                searchResults.slice(0, 10).map((item, index) => (
-                  <li
-                    key={item}
-                    data-index={index}
-                    onClick={() => handleSelect(item)}
-                    onMouseOver={() => setHighlightedIndex(index)}
-                    className={cn(
-                      "px-5 py-3 cursor-pointer text-base transition-colors",
-                      highlightedIndex === index && 'bg-primary/10 text-primary'
-                    )}
-                  >
-                    {item}
-                  </li>
-                ))
-              ) : (
-                 <li className="px-5 py-4 text-muted-foreground text-sm text-center">
-                  No items match your search. Try adding it!
+              {suggestions.slice(0, 10).map((item, index) => (
+                <li
+                  key={item}
+                  data-index={index}
+                  onClick={() => handleSelect(item)}
+                  onMouseOver={() => setHighlightedIndex(index)}
+                  className={cn(
+                    "px-5 py-3 cursor-pointer text-base transition-colors",
+                    highlightedIndex === index && 'bg-primary/10 text-primary'
+                  )}
+                >
+                  {item}
                 </li>
-              )}
+              ))}
             </ul>
           </div>
         )}

@@ -6,9 +6,7 @@ import { useMemo } from 'react';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Trash2, Plus, Minus, ShoppingCart } from 'lucide-react';
-import { AddItemSearch } from './add-item-search';
 import { cn } from '@/lib/utils';
-import { defaultCatalog } from '@/lib/mock-data';
 import { Progress } from './ui/progress';
 import { FinishShoppingDialog } from './finish-shopping-dialog';
 
@@ -17,9 +15,10 @@ type GroceryListClientProps = {
   onItemsChange: (items: ListItem[]) => void;
   onFinishShopping: (storeName: string) => void;
   progress: number;
+  onAddItem: (itemName: string) => void;
 };
 
-export function GroceryListClient({ list, onItemsChange, onFinishShopping, progress }: GroceryListClientProps) {
+export function GroceryListClient({ list, onItemsChange, onFinishShopping, progress, onAddItem }: GroceryListClientProps) {
 
   const { checkedItems, uncheckedItems } = useMemo(() => {
     const sorted = [...list.items].sort((a, b) => a.name.localeCompare(b.name));
@@ -39,31 +38,6 @@ export function GroceryListClient({ list, onItemsChange, onFinishShopping, progr
     );
     onItemsChange(newItems);
   };
-  
-  const handleAddItem = (itemName: string) => {
-    const itemNameLower = itemName.toLowerCase();
-    const existingItem = list.items.find(item => item.name.toLowerCase() === itemNameLower);
-
-    if (existingItem) {
-        // If item is already on list, uncheck it and increment quantity
-       const newItems = list.items.map(item => 
-         item.id === existingItem.id 
-         ? { ...item, quantity: item.quantity + 1, checked: false } 
-         : item
-       );
-       onItemsChange(newItems);
-    } else {
-      // If item does not exist, add it
-      const newItem: ListItem = {
-        id: `item-${Date.now()}-${Math.random()}`,
-        name: itemName.trim(),
-        quantity: 1,
-        checked: false,
-      };
-      onItemsChange([...list.items, newItem]);
-    }
-  };
-
 
   const handleDeleteItem = (itemId: string) => {
      const newItems = list.items.filter((item) => item.id !== itemId);
@@ -133,12 +107,6 @@ export function GroceryListClient({ list, onItemsChange, onFinishShopping, progr
 
   return (
     <div className="space-y-4 relative z-0">
-       <AddItemSearch
-          onAddItem={handleAddItem}
-          popularItems={defaultCatalog}
-          existingItems={list.items.map(i => i.name)}
-        />
-
       <div className="bg-card rounded-lg border overflow-hidden">
         <Progress value={progress} className="h-2 rounded-none" />
          <div className="p-4 sm:p-6">
