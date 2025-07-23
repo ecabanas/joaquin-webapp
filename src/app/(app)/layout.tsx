@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -11,6 +12,7 @@ import {
 import { Logo } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const navItems = [
   { href: '/list', icon: List, label: 'List' },
@@ -22,40 +24,57 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-card">
-      <div className="p-4 flex items-center gap-3 border-b">
-        <Logo className="w-7 h-7 text-primary" />
-        <h1 className="text-xl font-bold tracking-tight">Aisle Together</h1>
-      </div>
-      <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems.map((item) => (
-          <Button
-            key={item.href}
-            variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
-            className="w-full justify-start h-11 gap-3 px-4 text-base"
-            asChild
-          >
-            <Link href={item.href}>
-              <item.icon className="w-5 h-5" />
-              {item.label}
-            </Link>
-          </Button>
-        ))}
-      </nav>
-      <div className="p-4 mt-auto border-t">
-        <Button variant="outline" className="w-full justify-start gap-3">
-          <Users className="w-5 h-5" />
-          Share List
-        </Button>
-      </div>
-    </div>
+     <TooltipProvider delayDuration={0}>
+        <div className="group flex flex-col h-full bg-card rounded-2xl border shadow-lg transition-all duration-300 ease-in-out">
+          <div className="p-4 flex items-center gap-3 border-b h-16">
+            <Logo className="w-7 h-7 text-primary flex-shrink-0" />
+            <h1 className="text-xl font-bold tracking-tight truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200">Aisle Together</h1>
+          </div>
+          <nav className="flex-1 px-3 py-4 space-y-1">
+            {navItems.map((item) => (
+              <Tooltip key={item.href}>
+                <TooltipTrigger asChild>
+                   <Button
+                    variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
+                    className="w-full justify-start h-11 gap-3 px-4 text-base"
+                    asChild
+                  >
+                    <Link href={item.href}>
+                      <item.icon className="w-5 h-5 flex-shrink-0" />
+                      <span className="truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200">{item.label}</span>
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                 <TooltipContent side="right" className="flex items-center gap-4 group-hover:hidden">
+                  {item.label}
+                </TooltipContent>
+              </Tooltip>
+            ))}
+          </nav>
+          <div className="p-3 mt-auto border-t">
+             <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start gap-3">
+                    <Users className="w-5 h-5 flex-shrink-0" />
+                     <span className="truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200">Share List</span>
+                  </Button>
+                 </TooltipTrigger>
+                 <TooltipContent side="right" className="flex items-center gap-4 group-hover:hidden">
+                   Share List
+                </TooltipContent>
+              </Tooltip>
+          </div>
+        </div>
+      </TooltipProvider>
   );
 
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-muted/40">
       {/* --- Desktop Sidebar --- */}
-      <aside className="hidden md:block md:w-64 lg:w-72 border-r">
-        <SidebarContent />
+      <aside className="hidden md:block transition-all duration-300 ease-in-out md:w-20 lg:w-20 hover:md:w-64 hover:lg:w-72 p-3">
+        <div className="h-full">
+           <SidebarContent />
+        </div>
       </aside>
 
       <div className="flex-1 flex flex-col">
