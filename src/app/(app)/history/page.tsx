@@ -7,6 +7,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -15,6 +16,7 @@ import { GlobalSearchInput } from '@/components/global-search-input';
 import { mockHistory } from "@/lib/mock-data";
 import { ChevronDown, User, FileText } from 'lucide-react';
 import type { Purchase } from '@/lib/types';
+import { Button } from '@/components/ui/button';
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-US', {
@@ -48,23 +50,6 @@ export default function HistoryPage() {
     if (!searchQuery) return purchases;
     return fuse.search(searchQuery).map(result => result.item);
   }, [searchQuery, purchases, fuse]);
-
-  const suggestionPool = useMemo(() => {
-    const stores = purchases.map(p => p.store);
-    const items = purchases.flatMap(p => p.items.map(i => i.name));
-    const users = purchases.map(p => p.completedBy);
-    const uniqueSuggestions = new Set([...stores, ...items, ...users]);
-    return Array.from(uniqueSuggestions);
-  }, [purchases]);
-  
-  const suggestionFuse = useMemo(() => {
-    return new Fuse(suggestionPool, { threshold: 0.3 });
-  }, [suggestionPool]);
-
-  const searchSuggestions = useMemo(() => {
-    if (!searchQuery) return [];
-    return suggestionFuse.search(searchQuery).map(result => result.item).slice(0, 5);
-  }, [searchQuery, suggestionFuse]);
 
 
   const PurchaseCard = ({ purchase }: { purchase: Purchase }) => {
@@ -112,9 +97,9 @@ export default function HistoryPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <header className="space-y-1.5 mb-6">
-        <h1 className="text-3xl font-bold tracking-tight text-center">Purchase History</h1>
-        <p className="text-muted-foreground text-center">
+      <header className="space-y-1.5 mb-6 text-center">
+        <h1 className="text-3xl font-bold tracking-tight">Purchase History</h1>
+        <p className="text-muted-foreground">
           Review and search past shopping trips.
         </p>
       </header>
@@ -123,8 +108,9 @@ export default function HistoryPage() {
         <GlobalSearchInput
           placeholder="Search by store, item, user, or date..."
           onSearchChange={setSearchQuery}
-          suggestions={searchSuggestions}
-          onSelectSuggestion={setSearchQuery}
+          suggestions={[]}
+          onSelectSuggestion={() => {}}
+          showBackdrop={false}
         />
       </div>
 

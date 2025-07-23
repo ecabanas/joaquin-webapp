@@ -11,6 +11,7 @@ type GlobalSearchInputProps = {
   onSelectSuggestion: (suggestion: string) => void;
   suggestions: string[];
   placeholder: string;
+  showBackdrop?: boolean;
 };
 
 export function GlobalSearchInput({
@@ -18,6 +19,7 @@ export function GlobalSearchInput({
   onSelectSuggestion,
   suggestions,
   placeholder,
+  showBackdrop = true,
 }: GlobalSearchInputProps) {
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
@@ -104,7 +106,7 @@ export function GlobalSearchInput({
 
   return (
     <>
-      {isFocused && (
+      {isFocused && showBackdrop && (
         <div 
           onClick={handleDismiss}
           className="fixed inset-0 z-40 bg-background/40 backdrop-blur-sm"

@@ -38,7 +38,7 @@ export default function GroceryListPage() {
          ? { ...item, quantity: item.quantity + 1, checked: false } 
          : item
        );
-       onItemsChange(newItems);
+       handleItemsChange(newItems);
     } else {
       // If item does not exist, add it
       const newItem: ListItem = {
@@ -47,7 +47,7 @@ export default function GroceryListPage() {
         quantity: 1,
         checked: false,
       };
-      onItemsChange([...activeList.items, newItem]);
+      handleItemsChange([...activeList.items, newItem]);
     }
   };
 
@@ -102,7 +102,7 @@ export default function GroceryListPage() {
     const finalResults = uniqueResults.filter(item => !existingLower.includes(item.toLowerCase()));
 
     return finalResults;
-  }, [searchQuery, fuse, searchPool, activeList.items]);
+  }, [searchQuery, fuse, activeList.items]);
 
 
   return (
@@ -127,6 +127,7 @@ export default function GroceryListPage() {
         onSearchChange={setSearchQuery}
         suggestions={searchResults}
         onSelectSuggestion={handleAddItem}
+        showBackdrop={true}
       />
       
       <div className="mt-4">
