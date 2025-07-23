@@ -27,13 +27,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const SidebarContent = () => (
      <TooltipProvider delayDuration={0}>
         <div className="group flex flex-col h-full bg-card rounded-2xl border shadow-lg overflow-hidden transition-all duration-300 ease-in-out">
-          <div className="flex items-center border-b h-16">
+          <div className="flex items-center h-16">
             <Link href="/list" className="flex items-center justify-center group-hover:justify-start gap-3 w-full px-4">
               <Logo className="w-7 h-7 text-primary flex-shrink-0" />
               <div className="overflow-hidden transition-all duration-300 w-0 group-hover:w-auto">
                 <h1 className="text-xl font-bold tracking-tight truncate">Joaquin</h1>
               </div>
             </Link>
+          </div>
+          <div className="px-4">
+            <div className="h-[1px] w-full" style={{ background: 'linear-gradient(to right, transparent, hsl(var(--border)), transparent)' }} />
           </div>
           <nav className="flex-1 px-2 py-4 space-y-2">
             {navItems.map((item) => (
@@ -58,7 +61,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </Tooltip>
             ))}
           </nav>
-          <div className="mt-auto border-t p-2">
+          <div className="mt-auto p-2">
+             <div className="px-2 pb-2">
+               <div className="h-[1px] w-full" style={{ background: 'linear-gradient(to right, transparent, hsl(var(--border)), transparent)' }} />
+             </div>
              <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="ghost" className="w-full h-12 p-0" asChild>
