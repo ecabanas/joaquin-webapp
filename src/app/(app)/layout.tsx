@@ -84,7 +84,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-muted/40">
       {/* --- Desktop Sidebar --- */}
-      <aside className="hidden md:block transition-all duration-300 ease-in-out w-20 hover:w-64 p-3 pl-4">
+      <aside className="hidden md:block transition-all duration-300 ease-in-out w-20 hover:w-64 p-3 pl-5">
         <div className="h-full">
            <SidebarContent />
         </div>
