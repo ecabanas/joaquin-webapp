@@ -22,6 +22,7 @@ export const mockHistory: Purchase[] = [
     id: 'purchase-1',
     date: new Date('2024-05-18T14:20:00Z'),
     store: 'Super Grocer',
+    completedBy: 'Jane Doe',
     items: [
       { name: 'Organic Milk', quantity: 1, price: 4.50 },
       { name: 'Large Brown Eggs', quantity: 1, price: 3.25 },
@@ -32,6 +33,7 @@ export const mockHistory: Purchase[] = [
     id: 'purchase-2',
     date: new Date('2024-05-11T18:05:00Z'),
     store: 'Grocery Mart',
+    completedBy: 'John Doe',
     items: [
       { name: 'Avocado', quantity: 4, price: 6.00 },
       { name: 'Organic Bananas', quantity: 1, price: 2.50 },

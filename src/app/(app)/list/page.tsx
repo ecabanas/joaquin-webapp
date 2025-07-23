@@ -36,6 +36,7 @@ export default function GroceryListPage() {
         id: `purchase-${Date.now()}`,
         date: new Date(),
         store: storeName,
+        completedBy: 'Jane Doe', // In a real app, this would be the logged-in user
         items: checkedItems.map(item => ({
           name: item.name,
           quantity: item.quantity,

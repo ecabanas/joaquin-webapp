@@ -16,6 +16,7 @@ export type Purchase = {
   id: string;
   date: Date;
   store: string;
+  completedBy: string;
   items: {
     name: string;
     quantity: number;
