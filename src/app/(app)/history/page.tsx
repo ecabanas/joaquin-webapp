@@ -59,7 +59,7 @@ export default function HistoryPage() {
     return (
       <Collapsible defaultOpen={false}>
         <Card className="shadow-sm overflow-hidden">
-          <CollapsibleTrigger className="w-full text-left">
+          <CollapsibleTrigger className="w-full text-left group">
              <CardHeader className="flex flex-row items-start justify-between gap-4 p-4 md:p-6 cursor-pointer hover:bg-muted/50 transition-colors">
               <div className="flex-1 space-y-1">
                 <CardTitle className="text-xl">{purchase.store}</CardTitle>
@@ -97,24 +97,24 @@ export default function HistoryPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <header className="space-y-1.5">
+    <div className="max-w-2xl mx-auto">
+      <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+        <div className="space-y-1.5">
           <h1 className="text-3xl font-bold tracking-tight">Purchase History</h1>
           <p className="text-muted-foreground">
             Review and search past shopping trips.
           </p>
-        </header>
+        </div>
         <ReceiptAnalyzer />
-      </div>
+      </header>
       
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+      <div className="relative mb-6">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
         <Input
           placeholder="Search by store, item, user, or date..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 h-12 text-base"
+          className="text-lg h-16 pl-12 pr-5 rounded-full border-2 bg-background/60 backdrop-blur-xl shadow-lg shadow-primary/5 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary/50"
         />
       </div>
 
