@@ -29,7 +29,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="group flex flex-col h-full bg-card rounded-2xl border shadow-lg overflow-hidden transition-all duration-300 ease-in-out">
           <div className="p-3 flex items-center justify-center gap-3 border-b h-16">
             <Logo className="w-7 h-7 text-primary flex-shrink-0" />
-            <h1 className="text-xl font-bold tracking-tight truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200">Aisle Together</h1>
+            <h1 className="text-xl font-bold tracking-tight truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200">Joaquin</h1>
           </div>
           <nav className="flex-1 px-2 py-4 space-y-2">
             {navItems.map((item) => (
@@ -85,7 +85,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <header className="md:hidden sticky top-0 z-40 flex items-center justify-between h-16 px-4 border-b bg-background/95 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <Logo className="w-6 h-6 text-primary" />
-            <span className="font-bold text-lg">Aisle Together</span>
+            <span className="font-bold text-lg">Joaquin</span>
           </div>
            <Button variant="ghost" size="icon">
             <Users className="w-5 h-5" />

@@ -1,6 +1,6 @@
-# Aisle Together - Shared Grocery List App
+# Joaquin - Shared List App
 
-Thisss is a Next.js application built with Firebase Studio that functions as a collaborative grocery list manager. It allows users to manage a shared shopping list, track purchase history, and analyze receipts using generative AI.
+This is a Next.js application built with Firebase Studio that functions as a collaborative list manager. It allows users to manage a shared list, track purchase history, and analyze receipts using generative AI.
 
 ## Tech Stack
 
@@ -96,4 +96,3 @@ The application will be available at `http://localhost:9002`.
 -   `npm run build`: Creates a production build of the application.
 -   `npm run start`: Starts the production server.
 -   `npm run lint`: Lints the codebase.
-```
