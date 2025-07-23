@@ -25,7 +25,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const SidebarContent = () => (
      <TooltipProvider delayDuration={0}>
-        <div className="group flex flex-col h-full bg-card rounded-2xl border shadow-lg transition-all duration-300 ease-in-out">
+        <div className="group flex flex-col h-full bg-card rounded-2xl border shadow-lg transition-all duration-300 ease-in-out overflow-hidden">
           <div className="p-4 flex items-center gap-3 border-b h-16">
             <Logo className="w-7 h-7 text-primary flex-shrink-0" />
             <h1 className="text-xl font-bold tracking-tight truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200">Aisle Together</h1>
