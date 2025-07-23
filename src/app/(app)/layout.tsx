@@ -27,9 +27,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const SidebarContent = () => (
      <TooltipProvider delayDuration={0}>
         <div className="group flex flex-col h-full bg-card rounded-2xl border shadow-lg overflow-hidden transition-all duration-300 ease-in-out">
-          <div className="flex items-center justify-start gap-3 border-b h-16 px-4">
-            <Logo className="w-7 h-7 text-primary flex-shrink-0" />
-            <h1 className="text-xl font-bold tracking-tight truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200">Joaquin</h1>
+          <div className="flex items-center border-b h-16 px-3">
+             <Link href="/list" className="flex items-center justify-center gap-3 w-full">
+                <Logo className="w-7 h-7 text-primary flex-shrink-0" />
+                <h1 className="text-xl font-bold tracking-tight truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200">Joaquin</h1>
+            </Link>
           </div>
           <nav className="flex-1 px-2 py-4 space-y-2">
             {navItems.map((item) => (
@@ -37,7 +39,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <TooltipTrigger asChild>
                    <Button
                     variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
-                    className="w-full justify-start h-12 gap-3 px-4 text-base"
+                    className="w-full h-12 gap-3 px-3 justify-center group-hover:justify-start"
                     asChild
                   >
                     <Link href={item.href}>
@@ -46,7 +48,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </Link>
                   </Button>
                 </TooltipTrigger>
-                 <TooltipContent side="right" className="flex items-center gap-4 group-hover:hidden">
+                 <TooltipContent side="right" className="flex items-center gap-4">
                   {item.label}
                 </TooltipContent>
               </Tooltip>
@@ -55,14 +57,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="mt-auto border-t p-2">
              <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-start h-12 gap-3 px-4">
+                  <Button variant="ghost" className="w-full h-12 gap-3 px-3 justify-center group-hover:justify-start">
                      <Avatar className="h-8 w-8 flex-shrink-0">
                        <AvatarFallback><Users className="w-5 h-5" /></AvatarFallback>
                      </Avatar>
                      <span className="truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200">Share List</span>
                   </Button>
                  </TooltipTrigger>
-                 <TooltipContent side="right" className="flex items-center gap-4 group-hover:hidden">
+                 <TooltipContent side="right" className="flex items-center gap-4">
                    Share List
                 </TooltipContent>
               </Tooltip>
@@ -74,7 +76,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-muted/40">
       {/* --- Desktop Sidebar --- */}
-      <aside className="hidden md:block transition-all duration-300 ease-in-out w-20 group hover:w-60 p-3">
+      <aside className="hidden md:block transition-all duration-300 ease-in-out w-20 hover:w-60 p-3">
         <div className="h-full">
            <SidebarContent />
         </div>
