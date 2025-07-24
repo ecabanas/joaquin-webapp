@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/icons';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getAuthErrorMessage } from '@/lib/utils';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -37,7 +38,7 @@ export default function LoginPage() {
       console.error(error);
       toast({
         title: 'Login Failed',
-        description: error.message || 'An unexpected error occurred.',
+        description: getAuthErrorMessage(error.code),
         variant: 'destructive',
       });
       setLoading(false);

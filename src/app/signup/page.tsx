@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/icons';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getAuthErrorMessage } from '@/lib/utils';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
@@ -38,7 +39,7 @@ export default function SignupPage() {
       console.error(error);
       toast({
         title: 'Signup Failed',
-        description: error.message || 'An unexpected error occurred.',
+        description: getAuthErrorMessage(error.code),
         variant: 'destructive',
       });
       setLoading(false);
