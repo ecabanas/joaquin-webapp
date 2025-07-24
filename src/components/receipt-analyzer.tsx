@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -123,10 +124,10 @@ export function ReceiptAnalyzer({
 
   const renderPreviewView = () => (
      <>
-        <div className="p-6 pb-0 text-center">
-            <h2 className="text-xl font-semibold">Confirm Photo</h2>
-            <p className="text-muted-foreground text-sm mt-1">Is this photo clear enough to analyze?</p>
-        </div>
+        <DialogHeader className="p-6 pb-0 text-center">
+            <DialogTitle>Confirm Photo</DialogTitle>
+            <DialogDescription>Is this photo clear enough to analyze?</DialogDescription>
+        </DialogHeader>
         <div className="p-4">
              <div className="relative aspect-[9/16] w-full max-h-[60vh] rounded-lg overflow-hidden border bg-muted">
                  {preview && <Image src={preview} alt="Receipt preview" layout="fill" objectFit="contain" />}
@@ -163,7 +164,7 @@ export function ReceiptAnalyzer({
     <>
        <DialogHeader className="p-6 pb-4">
           <DialogTitle>Analysis Complete</DialogTitle>
-          <p className="text-sm text-muted-foreground">Review the items below. When you're ready, add them to your history.</p>
+          <DialogDescription>Review the items below. When you're ready, add them to your history.</DialogDescription>
         </DialogHeader>
       <div className="px-6 max-h-80 overflow-y-auto rounded-md border-y">
         <Table>
