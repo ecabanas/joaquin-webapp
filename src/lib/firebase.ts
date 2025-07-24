@@ -3,13 +3,12 @@ import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  "projectId": "joaquin-q0wvv",
-  "appId": "1:371246421587:web:f6e518edfb2e6c509418a6",
-  "storageBucket": "joaquin-q0wvv.firebasestorage.app",
-  "apiKey": "AIzaSyBrlpoPUpIp03EpVB9lamNFgx5UYLtUOWo",
-  "authDomain": "joaquin-q0wvv.firebaseapp.com",
-  "measurementId": "",
-  "messagingSenderId": "371246421587"
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
 };
 
 // Initialize Firebase App only if it's not already initialized
