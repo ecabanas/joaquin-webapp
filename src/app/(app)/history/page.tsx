@@ -15,7 +15,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { GlobalSearchInput } from '@/components/global-search-input';
 import { ChevronDown, User, FileText, Loader2, ScanLine } from 'lucide-react';
 import type { Purchase } from '@/lib/types';
-import { getPurchaseHistory } from '@/lib/firestore';
+import { getPurchaseHistory, createNewPurchase } from '@/lib/firestore';
 import { useAuth } from '@/contexts/auth-context';
 import { ReceiptAnalyzer } from '@/components/receipt-analyzer';
 import { Button } from '@/components/ui/button';
@@ -36,7 +36,7 @@ export default function HistoryPage() {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   
-  const [selectedPurchaseId, setSelectedPurchaseId] = useState<string | null>(null);
+  const [activePurchaseId, setActivePurchaseId] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -73,23 +73,21 @@ export default function HistoryPage() {
     return fuse.search(searchQuery).map(result => result.item);
   }, [searchQuery, purchases, fuse]);
 
-  const handleAnalyzeClick = (purchaseId: string) => {
-    setSelectedPurchaseId(purchaseId);
+  const handleNewAnalysis = async () => {
+    if (!workspaceId || !userProfile?.name) return;
+    try {
+      const newPurchaseId = await createNewPurchase(workspaceId, userProfile.name);
+      setActivePurchaseId(newPurchaseId);
+      // Let the file input selection trigger the next step
+    } catch (error) {
+      console.error("Error creating new purchase record:", error);
+    }
     fileInputRef.current?.click();
-  };
-
-  const handleRetake = () => {
-    // Keep selected purchase ID, clear file, and re-trigger input
-    setSelectedFile(null); 
-    // A brief timeout allows the dialog to close before the file input is re-triggered
-    setTimeout(() => {
-      fileInputRef.current?.click();
-    }, 100);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && selectedPurchaseId) {
+    if (file) {
       setSelectedFile(file);
     }
      // Reset file input to allow re-selection of the same file
@@ -98,7 +96,7 @@ export default function HistoryPage() {
 
   const handleAnalyzerClose = () => {
     setSelectedFile(null);
-    setSelectedPurchaseId(null);
+    setActivePurchaseId(null);
   };
 
 
@@ -120,7 +118,7 @@ export default function HistoryPage() {
           <CollapsibleTrigger className="w-full text-left group">
              <CardHeader className="flex flex-row items-start justify-between gap-4 p-4 md:p-6 cursor-pointer hover:bg-muted/50 transition-colors">
               <div className="flex-1 space-y-1">
-                <CardTitle className="text-xl">{purchase.store}</CardTitle>
+                <CardTitle className="text-xl">{purchase.store || "Untitled Purchase"}</CardTitle>
                 <CardDescription>{formatDate(purchase.date)}</CardDescription>
                  <div className="flex items-center gap-2 text-sm text-muted-foreground pt-1">
                   <User className="h-4 w-4" />
@@ -148,13 +146,6 @@ export default function HistoryPage() {
                 ))}
               </ul>
             </CardContent>
-            {!hasPrices && (
-              <CardFooter className="px-4 pb-4 md:px-6 md:pb-6">
-                <Button onClick={() => handleAnalyzeClick(purchase.id)}>
-                   <ScanLine className="mr-2 h-4 w-4" /> Analyze Receipt
-                </Button>
-              </CardFooter>
-            )}
           </CollapsibleContent>
         </Card>
       </Collapsible>
@@ -170,7 +161,7 @@ export default function HistoryPage() {
         </p>
       </header>
       
-      <div className="relative mb-6">
+      <div className="flex gap-4 mb-6">
         <GlobalSearchInput
           placeholder="Search by store, item, user, or date..."
           onSearchChange={setSearchQuery}
@@ -178,7 +169,11 @@ export default function HistoryPage() {
           onSelectSuggestion={() => {}}
           showBackdrop={false}
         />
+        <Button onClick={handleNewAnalysis} className="flex-shrink-0">
+          <ScanLine className="mr-2 h-4 w-4" /> Analyze Receipt
+        </Button>
       </div>
+
 
       <div className="grid gap-4">
         {filteredPurchases.length > 0 ? (
@@ -207,12 +202,11 @@ export default function HistoryPage() {
       />
       
       {/* Receipt Analyzer Dialog, controlled by state */}
-      {selectedFile && selectedPurchaseId && (
+      {selectedFile && activePurchaseId && (
         <ReceiptAnalyzer
           receiptFile={selectedFile}
-          purchaseId={selectedPurchaseId}
+          purchaseId={activePurchaseId}
           onDone={handleAnalyzerClose}
-          onRetake={handleRetake}
         />
       )}
     </div>

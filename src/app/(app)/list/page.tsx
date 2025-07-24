@@ -87,10 +87,9 @@ export default function GroceryListPage() {
     }
   };
 
-  const handleFinishShopping = async (storeName: string) => {
-    if (!workspaceId || !userProfile) return;
-    await finishShopping(workspaceId, storeName, userProfile.name);
-    console.log(`New purchase at ${storeName} added to history.`);
+  const handleFinishShopping = async () => {
+    if (!workspaceId) return;
+    await finishShopping(workspaceId);
   };
 
   const searchPool = useMemo(() => {

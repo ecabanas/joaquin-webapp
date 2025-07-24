@@ -1,7 +1,6 @@
 
 'use client';
 
-import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,36 +11,16 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { CheckCircle } from 'lucide-react';
 
 type FinishShoppingDialogProps = {
-  onConfirm: (storeName: string) => void;
+  onConfirm: () => void;
   disabled?: boolean;
 };
 
 export function FinishShoppingDialog({ onConfirm, disabled }: FinishShoppingDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [storeName, setStoreName] = useState('Mercadona');
-
-  const handleConfirm = () => {
-    if (storeName.trim()) {
-      onConfirm(storeName.trim());
-      setIsOpen(false);
-    }
-  };
-  
-  const handleOpenChange = (open: boolean) => {
-    // When dialog closes, reset its state for next time
-    if (!open) {
-      setStoreName('Mercadona');
-    }
-    setIsOpen(open);
-  }
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog>
       <DialogTrigger asChild>
         <Button size="lg" disabled={disabled} className="w-full">
           <CheckCircle className="mr-2" />
@@ -52,24 +31,12 @@ export function FinishShoppingDialog({ onConfirm, disabled }: FinishShoppingDial
         <DialogHeader>
           <DialogTitle>Complete Shopping Trip</DialogTitle>
           <DialogDescription>
-            Enter the name of the store to archive this list to your purchase history.
+            This will archive all checked items and clear them from your active list. You can add prices and details later by analyzing a receipt from your history.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-2 py-4">
-          <Label htmlFor="store-name" className="text-left">Store Name</Label>
-          <Input
-            id="store-name"
-            placeholder="e.g. Super Grocer"
-            value={storeName}
-            onChange={(e) => setStoreName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleConfirm();
-            }}
-          />
-        </div>
         <DialogFooter>
-          <Button type="button" onClick={handleConfirm} disabled={!storeName.trim()}>
-            Confirm and Archive List
+          <Button type="button" onClick={onConfirm}>
+            Confirm and Archive
           </Button>
         </DialogFooter>
       </DialogContent>

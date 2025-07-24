@@ -15,7 +15,7 @@ type GroceryListClientProps = {
   list: GroceryList;
   onItemsChange: (items: ListItem[]) => void;
   onItemUpdate: (itemId: string, updates: Partial<ListItem>) => void;
-  onFinishShopping: (storeName: string) => void;
+  onFinishShopping: () => void;
   progress: number;
   onAddItem: (itemName: string) => void;
 };
