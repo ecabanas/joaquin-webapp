@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { analyzeReceipt, type AnalyzeReceiptOutput } from '@/ai/flows/analyze-receipt';
 import { updatePurchaseItems } from '@/lib/firestore';
 import { useAuth } from '@/contexts/auth-context';
-import { Loader2, ScanLine, Camera, Upload, RefreshCcw, ArrowLeft, Check } from 'lucide-react';
+import { Loader2, ScanLine, Camera, Upload, RefreshCcw, ArrowLeft, Check, X } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import {
   Table,
