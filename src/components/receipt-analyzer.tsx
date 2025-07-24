@@ -1,22 +1,20 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { analyzeReceipt, type AnalyzeReceiptOutput } from '@/ai/flows/analyze-receipt';
 import { updatePurchaseItems } from '@/lib/firestore';
 import { useAuth } from '@/contexts/auth-context';
-import { Loader2, ScanLine, Check } from 'lucide-react';
+import { Loader2, ScanLine, Check, Camera } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -25,17 +23,21 @@ import {
   TableHeader,
   TableRow,
 } from './ui/table';
+import { cn } from '@/lib/utils';
+
 
 type ReceiptAnalyzerProps = {
   receiptFile: File | null;
   purchaseId: string | null;
   onDone: () => void;
+  onRetake: () => void;
 };
 
 export function ReceiptAnalyzer({
   receiptFile,
   purchaseId,
   onDone,
+  onRetake,
 }: ReceiptAnalyzerProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,6 +46,9 @@ export function ReceiptAnalyzer({
   const { userProfile } = useAuth();
   
   const handleClose = () => {
+    // Guard against closing while loading
+    if (isLoading) return;
+    
     setPreview(null);
     setResult(null);
     setIsLoading(false);
@@ -85,6 +90,7 @@ export function ReceiptAnalyzer({
         description: 'Could not analyze the receipt. Please try again.',
         variant: 'destructive',
       });
+      // Don't close on failure, let user decide to retry or cancel.
     } finally {
       setIsLoading(false);
     }
@@ -117,18 +123,24 @@ export function ReceiptAnalyzer({
 
   const renderPreviewView = () => (
      <>
-      <DialogHeader>
-          <DialogTitle>Confirm Photo</DialogTitle>
-          <DialogDescription>Use this photo to analyze the receipt, or take another one.</DialogDescription>
-      </DialogHeader>
-      <div className="my-4 relative aspect-video w-full rounded-md overflow-hidden border">
-         {preview && <Image src={preview} alt="Receipt preview" fill={true} style={{objectFit:"contain"}} />}
-      </div>
-       <DialogFooter>
+        <div className="p-6 pb-0 text-center">
+            <h2 className="text-xl font-semibold">Confirm Photo</h2>
+            <p className="text-muted-foreground text-sm mt-1">Is this photo clear enough to analyze?</p>
+        </div>
+        <div className="p-4">
+             <div className="relative aspect-[9/16] w-full max-h-[60vh] rounded-lg overflow-hidden border bg-muted">
+                 {preview && <Image src={preview} alt="Receipt preview" layout="fill" objectFit="contain" />}
+              </div>
+        </div>
+       <div className="flex items-center justify-end gap-3 p-4 border-t bg-background">
+         <Button type="button" variant="outline" onClick={onRetake}>
+            <Camera className="mr-2" />
+            Retake
+          </Button>
          <Button type="button" onClick={handleAnalyzeSubmit}>
             Use Photo <Check className="ml-2" />
           </Button>
-      </DialogFooter>
+      </div>
     </>
   );
 
@@ -136,26 +148,26 @@ export function ReceiptAnalyzer({
     <>
       <DialogHeader>
         <DialogTitle>Analyzing Receipt</DialogTitle>
-        <DialogDescription>This may take a moment...</DialogDescription>
       </DialogHeader>
       <div className="flex flex-col items-center justify-center gap-4 text-muted-foreground p-8 h-64">
         <div className="relative h-24 w-24">
           <Loader2 className="h-24 w-24 animate-spin text-primary/20" />
           <ScanLine className="absolute inset-0 h-24 w-24 text-primary animate-pulse" />
         </div>
+         <p>Extracting items from your receipt...</p>
       </div>
     </>
   );
 
   const renderResultsView = () => (
     <>
-       <DialogHeader>
+       <DialogHeader className="p-6 pb-4">
           <DialogTitle>Analysis Complete</DialogTitle>
-          <DialogDescription>Review the items below. When you're ready, add them to your history.</DialogDescription>
+          <p className="text-sm text-muted-foreground">Review the items below. When you're ready, add them to your history.</p>
         </DialogHeader>
-      <div className="my-4 max-h-80 overflow-y-auto rounded-md border">
+      <div className="px-6 max-h-80 overflow-y-auto rounded-md border-y">
         <Table>
-          <TableHeader>
+          <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm">
             <TableRow>
               <TableHead>Item</TableHead>
               <TableHead className="text-center w-[60px]">Qty</TableHead>
@@ -173,20 +185,27 @@ export function ReceiptAnalyzer({
           </TableBody>
         </Table>
       </div>
-       <DialogFooter className="sm:justify-between gap-2 flex-col-reverse sm:flex-row">
+       <div className="flex items-center justify-end gap-3 p-4 bg-background">
          <Button type="button" variant="ghost" onClick={handleClose}>
             Cancel
           </Button>
          <Button type="button" onClick={handleSaveToHistory} disabled={isLoading}>
-            {isLoading ? 'Saving...' : 'Add to History'}
+            {isLoading ? <Loader2 className="mr-2 animate-spin"/> : <Check className="mr-2"/>}
+            Save to History
           </Button>
-      </DialogFooter>
+      </div>
     </>
   );
   
   return (
-    <Dialog open={!!preview} onOpenChange={(isOpen) => !isOpen && handleClose()}>
-      <DialogContent>
+    <Dialog open={!!receiptFile} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+      <DialogContent 
+         hideCloseButton={true} 
+         className={cn(
+            "p-0 gap-0 w-[calc(100%-2rem)] sm:max-w-md rounded-xl overflow-hidden",
+            isLoading && "sm:max-w-sm" // Shrink for loading view
+         )}
+      >
         {isLoading ? renderLoadingView() : result ? renderResultsView() : renderPreviewView()}
       </DialogContent>
     </Dialog>

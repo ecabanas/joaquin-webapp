@@ -83,6 +83,15 @@ export default function HistoryPage() {
     fileInputRef.current?.click();
   };
 
+  const handleRetake = () => {
+    // Keep selected purchase ID, clear file, and re-trigger input
+    setSelectedFile(null); 
+    // A brief timeout allows the dialog to close before the file input is re-triggered
+    setTimeout(() => {
+      fileInputRef.current?.click();
+    }, 100);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && selectedPurchaseId) {
@@ -208,6 +217,7 @@ export default function HistoryPage() {
           receiptFile={selectedFile}
           purchaseId={selectedPurchaseId}
           onDone={handleAnalyzerClose}
+          onRetake={handleRetake}
         />
       )}
     </div>
