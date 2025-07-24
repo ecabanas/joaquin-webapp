@@ -31,7 +31,6 @@ import { useEffect } from 'react';
 const navItems = [
   { href: '/list', icon: List, label: 'List' },
   { href: '/history', icon: History, label: 'History' },
-  { href: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -148,16 +147,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </TooltipProvider>
   );
 
+  const mobileNavItems = [
+    ...navItems,
+    { href: '/settings', icon: Settings, label: 'Settings' },
+  ]
+
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-muted/40">
       {/* --- Desktop Sidebar --- */}
-      <aside className="hidden md:block transition-all duration-300 ease-in-out w-24 hover:w-64 p-3">
+      <aside className="hidden md:block transition-all duration-300 ease-in-out w-24 hover:w-64 p-3 flex-shrink-0">
         <div className="h-full">
            <SidebarContent />
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col md:h-screen md:overflow-hidden">
         {/* --- Mobile Header --- */}
         <header className="md:hidden sticky top-0 z-40 flex items-center justify-between h-16 px-4 border-b bg-background/95 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -170,7 +174,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Add padding-bottom to account for the mobile nav bar height */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8 overflow-y-auto">
           {children}
         </main>
       </div>
@@ -178,7 +182,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* --- Mobile Bottom Tab Bar --- */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-background border-t shadow-lg z-50">
         <div className="h-full grid grid-cols-3">
-          {navItems.map((item) => {
+          {mobileNavItems.map((item) => {
             const isActive = pathname.startsWith(item.href);
             return (
               <Link
