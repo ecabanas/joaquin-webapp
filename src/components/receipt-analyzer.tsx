@@ -25,14 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from './ui/table';
-
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-  }).format(amount);
-}
+import { useCurrency } from '@/hooks/use-currency';
 
 type ReceiptAnalyzerProps = {
   receiptFile: File | null;
@@ -54,6 +47,7 @@ export function ReceiptAnalyzer({
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { userProfile } = useAuth();
+  const { formatCurrency } = useCurrency();
 
   const stage: Stage = useMemo(() => {
     if (isProcessing) return 'loading';
@@ -156,13 +150,22 @@ export function ReceiptAnalyzer({
 
   const renderLoading = () => (
     <>
-      <DialogHeader className="p-4 sm:p-6 text-center">
-        <DialogTitle>Analyzing...</DialogTitle>
-        <DialogDescription>Extracting items from your receipt.</DialogDescription>
+       <DialogHeader className="p-4 sm:p-6 text-center">
+        <DialogTitle>Analyzing Receipt</DialogTitle>
       </DialogHeader>
-      <div className="flex-1 overflow-hidden p-4 pt-0 sm:p-6 sm:pt-0">
-        <div className="relative w-full h-full rounded-lg overflow-hidden border bg-muted/40 flex items-center justify-center">
-          {preview && <Image src={preview} alt="Receipt preview" layout="fill" objectFit="contain" className="opacity-20" />}
+      <div className="flex-1 overflow-hidden p-4 pt-0 sm:p-6 sm:pt-0 flex flex-col items-center justify-center">
+        <div className="relative w-full max-w-[200px] aspect-[9/16] rounded-lg overflow-hidden border bg-muted/40 flex items-center justify-center">
+          {preview && (
+            <Image
+              src={preview}
+              alt="Receipt preview"
+              layout="fill"
+              objectFit="cover"
+              className="opacity-20"
+            />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/30 animate-pulse" />
+
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/20 text-white p-8 z-10">
             <div className="relative h-16 w-16">
               <div className="absolute inset-0 bg-white/20 rounded-full animate-ping" />
@@ -217,7 +220,6 @@ export function ReceiptAnalyzer({
       </DialogFooter>
     </>
   );
-
 
   const renderContent = () => {
     switch(stage) {

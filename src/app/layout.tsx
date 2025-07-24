@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import { AuthProvider } from '@/contexts/auth-context';
+import { CurrencyProvider } from '@/hooks/use-currency';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -32,7 +33,9 @@ export default function RootLayout({
         )}
       >
         <AuthProvider>
-          {children}
+          <CurrencyProvider>
+            {children}
+          </CurrencyProvider>
         </AuthProvider>
         <Toaster />
       </body>

@@ -13,13 +13,22 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/auth-context';
-import { User, Bell, Users, Loader2 } from 'lucide-react';
+import { User, Bell, Users, Loader2, Landmark } from 'lucide-react';
+import { useCurrency } from '@/hooks/use-currency';
 
 export default function SettingsPage() {
   const { user, userProfile, loading } = useAuth();
+  const { currency, setCurrency } = useCurrency();
   
   if (loading || !user || !userProfile) {
     return (
@@ -77,7 +86,30 @@ export default function SettingsPage() {
           </CardFooter>
         </Card>
 
-        <Card className="lg:col-span-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <Landmark className="w-6 h-6" />
+              <span className="text-2xl">Currency</span>
+            </CardTitle>
+            <CardDescription>Choose your preferred currency.</CardDescription>
+          </CardHeader>
+          <CardContent>
+             <Select value={currency} onValueChange={setCurrency}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a currency" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="USD">USD ($)</SelectItem>
+                <SelectItem value="EUR">EUR (€)</SelectItem>
+                <SelectItem value="GBP">GBP (£)</SelectItem>
+                <SelectItem value="JPY">JPY (¥)</SelectItem>
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-3">
               <Bell className="w-6 h-6" />

@@ -11,7 +11,7 @@ import {
   User 
 } from 'firebase/auth';
 import { app } from '@/lib/firebase';
-import { createUserProfile, getUserProfile } from '@/lib/firestore';
+import { createUserProfile, getUserProfile, updateUserProfile } from '@/lib/firestore';
 import type { UserProfile } from '@/lib/types';
 
 interface AuthContextType {
@@ -21,6 +21,7 @@ interface AuthContextType {
   login: (email: string, pass: string) => Promise<any>;
   signup: (name: string, email: string, pass: string) => Promise<any>;
   logout: () => Promise<void>;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -88,6 +89,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     await signOut(auth);
   };
+  
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    if (user) {
+      await updateUserProfile(user.uid, updates);
+      // The onSnapshot listener will update the local userProfile state
+    }
+  };
+
 
   const value = {
     user,
@@ -96,6 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     signup,
     logout,
+    updateProfile,
   };
 
   return (

@@ -20,16 +20,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { ReceiptAnalyzer } from '@/components/receipt-analyzer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-
-function formatCurrency(amount: number) {
-  // Use the browser's locale to format the currency, making it more international.
-  // It defaults to 'USD' but will adapt if the user's locale is different.
-  return new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: 'USD', // A default currency is still required.
-    minimumFractionDigits: 2,
-  }).format(amount);
-}
+import { useCurrency } from '@/hooks/use-currency';
 
 function formatDate(date: Date) {
   return date.toLocaleDateString('en-US', {
@@ -50,6 +41,7 @@ export default function HistoryPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const workspaceId = userProfile?.workspaceId;
+  const { formatCurrency } = useCurrency();
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -215,7 +207,7 @@ export default function HistoryPage() {
       />
       
       {/* Receipt Analyzer Dialog, controlled by state */}
-      {selectedFile && (
+      {selectedFile && selectedPurchaseId && (
         <ReceiptAnalyzer
           receiptFile={selectedFile}
           purchaseId={selectedPurchaseId}

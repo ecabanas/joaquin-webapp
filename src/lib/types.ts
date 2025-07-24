@@ -30,4 +30,5 @@ export type UserProfile = {
   name: string;
   photoURL: string;
   workspaceId: string;
+  currency?: string;
 };

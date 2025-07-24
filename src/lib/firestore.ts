@@ -20,7 +20,7 @@ import { db } from './firebase';
 import type { ListItem, Purchase, PurchaseItem, UserProfile } from './types';
 
 // User Management
-export async function createUserProfile(userId: string, data: Omit<UserProfile, 'workspaceId'> & { email: string }) {
+export async function createUserProfile(userId: string, data: Omit<UserProfile, 'workspaceId' | 'currency'> & { email: string }) {
   const userRef = doc(db, 'users', userId);
   
   // Create a new workspace for the user
@@ -40,6 +40,7 @@ export async function createUserProfile(userId: string, data: Omit<UserProfile, 
     name: data.name,
     photoURL: data.photoURL || `https://placehold.co/100x100?text=${data.name[0]}`,
     workspaceId: workspaceRef.id,
+    currency: 'USD', // Default currency
   };
   batch.set(userRef, userProfile);
 
@@ -64,6 +65,11 @@ export function getUserProfile(
     }
   });
   return unsubscribe;
+}
+
+export async function updateUserProfile(userId: string, updates: Partial<UserProfile>) {
+  const userDocRef = doc(db, 'users', userId);
+  await updateDoc(userDocRef, updates);
 }
 
 
