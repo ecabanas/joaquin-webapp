@@ -11,6 +11,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogTrigger,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { analyzeReceipt, type AnalyzeReceiptOutput } from '@/ai/flows/analyze-receipt';
 import { updatePurchaseItems } from '@/lib/firestore';
 import { useAuth } from '@/contexts/auth-context';
-import { Loader2, ScanLine, Camera, Upload, RefreshCcw, ArrowLeft, Check, X } from 'lucide-react';
+import { Loader2, ScanLine, Camera, Upload, ArrowLeft, Check, X } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import {
   Table,
@@ -242,7 +243,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   const PreviewView = () => (
     <div className="absolute inset-0 bg-black flex flex-col items-center justify-center">
       <VisuallyHiddenTitle>Confirm Receipt Photo</VisuallyHiddenTitle>
-      {preview && <Image src={preview} alt="Receipt preview" fill={true} objectFit="contain" />}
+      {preview && <Image src={preview} alt="Receipt preview" fill={true} style={{objectFit:"contain"}} />}
       
       <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent z-10">
         <div className="flex items-center justify-around">
@@ -332,9 +333,9 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button>
+        { isMobile && <Button>
           <ScanLine className="mr-2 h-4 w-4" /> Analyze Receipt
-        </Button>
+        </Button>}
       </DialogTrigger>
       <DialogContent 
         className={cn(
@@ -345,7 +346,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
           stage === 'loading' && !isMobile && 'sm:max-w-sm',
           stage === 'result' && !isMobile && 'sm:max-w-md'
         )}
-        hideCloseButton={true}
+        hideCloseButton={isMobile}
       >
         {stage === 'camera' && <CameraView />}
         {stage === 'preview' && <PreviewView />}
@@ -356,3 +357,5 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
     </Dialog>
   );
 }
+
+    
