@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Fuse from 'fuse.js';
 import {
   Card,
@@ -16,6 +16,9 @@ import { GlobalSearchInput } from '@/components/global-search-input';
 import { ChevronDown, User, FileText } from 'lucide-react';
 import type { Purchase } from '@/lib/types';
 import { Button } from '@/components/ui/button';
+import { getPurchaseHistory } from '@/lib/firestore';
+
+const WORKSPACE_ID = 'workspace-1'; // Hardcoded for now
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-US', {
@@ -36,6 +39,16 @@ function formatDate(date: Date) {
 export default function HistoryPage() {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  useEffect(() => {
+    // Subscribe to real-time updates from Firestore
+    const unsubscribe = getPurchaseHistory(WORKSPACE_ID, (purchases) => {
+      setPurchases(purchases);
+    });
+
+    // Unsubscribe on component unmount
+    return () => unsubscribe();
+  }, []);
 
   const searchableData = useMemo(() => {
     return purchases.map(purchase => ({
@@ -130,7 +143,7 @@ export default function HistoryPage() {
              <FileText className="mx-auto h-12 w-12 text-primary/40" strokeWidth={1.5} />
             <h3 className="mt-4 text-xl font-semibold text-foreground">No Purchases Found</h3>
             <p className="mt-1 text-muted-foreground">
-              Your search for "{searchQuery}" did not match any past purchases.
+              Your past shopping trips will appear here.
             </p>
           </div>
         )}

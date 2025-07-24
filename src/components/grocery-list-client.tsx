@@ -9,7 +9,7 @@ import { Trash2, Plus, Minus, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Progress } from './ui/progress';
 import { FinishShoppingDialog } from './finish-shopping-dialog';
-import { deleteListItem, updateListItem } from '@/lib/firestore';
+import { deleteListItem } from '@/lib/firestore';
 
 type GroceryListClientProps = {
   list: GroceryList;

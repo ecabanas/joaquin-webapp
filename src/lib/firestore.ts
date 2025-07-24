@@ -12,6 +12,8 @@ import {
   query,
   where,
   getDoc,
+  orderBy,
+  Timestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import type { ListItem, Purchase } from './types';
@@ -28,11 +30,32 @@ export function getListItems(
   callback: (items: ListItem[]) => void
 ) {
   const itemsCollection = getListItemsCollection(workspaceId);
-  const unsubscribe = onSnapshot(itemsCollection, (snapshot) => {
+  const q = query(itemsCollection, orderBy('name'));
+  const unsubscribe = onSnapshot(q, (snapshot) => {
     const items = snapshot.docs.map(
       (doc) => ({ id: doc.id, ...doc.data() } as ListItem)
     );
     callback(items);
+  });
+  return unsubscribe;
+}
+
+// Get real-time updates for purchase history
+export function getPurchaseHistory(
+  workspaceId: string,
+  callback: (purchases: Purchase[]) => void
+) {
+  const historyCollection = getPurchaseHistoryCollection(workspaceId);
+  const q = query(historyCollection, orderBy('date', 'desc'));
+
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const purchases = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      // Convert Firestore Timestamp to JavaScript Date object
+      const purchaseDate = data.date instanceof Timestamp ? data.date.toDate() : new Date();
+      return { id: doc.id, ...data, date: purchaseDate } as Purchase;
+    });
+    callback(purchases);
   });
   return unsubscribe;
 }
@@ -82,8 +105,8 @@ export async function finishShopping(
   const batch = writeBatch(db);
 
   // 1. Create a new purchase history record
-  const newPurchase: Omit<Purchase, 'id'> = {
-    date: new Date(), // Will be converted to Firestore Timestamp
+  const newPurchase: Omit<Purchase, 'id' | 'date'> & { date: any } = {
+    date: serverTimestamp(), // Use server timestamp for consistency
     store: storeName,
     completedBy: completedBy,
     items: checkedItems.map((item) => ({
