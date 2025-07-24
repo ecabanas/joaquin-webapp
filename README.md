@@ -1,4 +1,4 @@
-# Joaquin - Shared List App
+# Aisle Together - Shared List App
 
 This is a Next.js application built with Firebase Studio that functions as a collaborative list manager. It allows users to manage a shared list, track purchase history, and analyze receipts using generative AI.
 

@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Joaquin',
+  title: 'Aisle Together',
   description: 'Your shared list, simplified.',
 };
 

@@ -52,7 +52,7 @@ export default function SignupPage() {
         <CardHeader className="text-center">
            <div className="flex items-center gap-3 justify-center mb-2">
             <Logo className="w-8 h-8 text-primary" />
-            <span className="font-bold text-2xl">Joaquin</span>
+            <span className="font-bold text-2xl">Aisle Together</span>
           </div>
           <CardTitle className="text-2xl">Create an Account</CardTitle>
           <CardDescription>

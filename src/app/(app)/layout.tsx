@@ -10,12 +10,21 @@ import {
   Users,
   LogOut,
   Loader2,
+  User,
 } from 'lucide-react';
 import { Logo } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/auth-context';
 import { useEffect } from 'react';
 
@@ -55,7 +64,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Link href="/list" className="flex items-center justify-center group-hover:justify-start gap-3 w-full px-4">
               <Logo className="w-7 h-7 text-primary flex-shrink-0" />
               <div className="overflow-hidden transition-all duration-300 w-0 group-hover:w-auto">
-                <h1 className="text-xl font-bold tracking-tight truncate">Joaquin</h1>
+                <h1 className="text-xl font-bold tracking-tight truncate">Aisle Together</h1>
               </div>
             </Link>
           </div>
@@ -89,26 +98,51 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
              <div className="px-2 pb-2">
                <div className="h-[1px] w-full" style={{ background: 'linear-gradient(to right, transparent, hsl(var(--border)), transparent)' }} />
              </div>
-             <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" className="w-full h-12 p-0" onClick={logout}>
-                     <div className="flex items-center justify-center group-hover:justify-start gap-3 w-full px-4 transition-all duration-300">
-                       <Avatar className="h-8 w-8 flex-shrink-0">
-                          {userProfile?.photoURL && <AvatarImage src={userProfile.photoURL} alt={userProfile.name} />}
-                         <AvatarFallback>{getInitials(userProfile?.name)}</AvatarFallback>
-                       </Avatar>
-                        <div className="overflow-hidden transition-all duration-300 w-0 group-hover:w-auto text-left">
-                           <p className="truncate font-semibold">{userProfile?.name || 'User'}</p>
-                           <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                       </div>
-                        <LogOut className="w-5 h-5 ml-auto text-muted-foreground transition-all duration-300 opacity-0 group-hover:opacity-100" />
+             <DropdownMenu>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="w-full h-auto p-0 justify-center group-hover:justify-start">
+                           <div className="flex items-center gap-3 w-full px-4 py-2">
+                             <Avatar className="h-9 w-9 flex-shrink-0">
+                                {userProfile?.photoURL && <AvatarImage src={userProfile.photoURL} alt={userProfile.name} />}
+                               <AvatarFallback>{getInitials(userProfile?.name)}</AvatarFallback>
+                             </Avatar>
+                              <div className="overflow-hidden transition-all duration-300 w-0 group-hover:w-auto text-left">
+                                 <p className="truncate font-semibold text-sm">{userProfile?.name || 'User'}</p>
+                                 <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                             </div>
+                          </div>
+                        </Button>
+                      </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" align="start" className="flex items-center gap-4">
+                      Account Options
+                   </TooltipContent>
+                 </Tooltip>
+                <DropdownMenuContent side="right" align="end" className="w-56" sideOffset={12}>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{userProfile?.name}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user.email}
+                      </p>
                     </div>
-                  </Button>
-                 </TooltipTrigger>
-                 <TooltipContent side="right" className="flex items-center gap-4">
-                   Log out
-                </TooltipContent>
-              </Tooltip>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={logout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
           </div>
         </div>
       </TooltipProvider>
@@ -128,7 +162,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <header className="md:hidden sticky top-0 z-40 flex items-center justify-between h-16 px-4 border-b bg-background/95 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <Logo className="w-6 h-6 text-primary" />
-            <span className="font-bold text-lg">Joaquin</span>
+            <span className="font-bold text-lg">Aisle Together</span>
           </div>
            <Button variant="ghost" size="icon" onClick={logout}>
             <LogOut className="w-5 h-5" />
