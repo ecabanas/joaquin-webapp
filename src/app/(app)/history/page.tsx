@@ -42,8 +42,6 @@ export default function HistoryPage() {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   
-  // State for the new Receipt Analyzer flow
-  const [isAnalyzerOpen, setIsAnalyzerOpen] = useState(false);
   const [selectedPurchaseId, setSelectedPurchaseId] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -89,14 +87,12 @@ export default function HistoryPage() {
     const file = e.target.files?.[0];
     if (file && selectedPurchaseId) {
       setSelectedFile(file);
-      setIsAnalyzerOpen(true);
     }
      // Reset file input to allow re-selection of the same file
     if(e.target) e.target.value = '';
   };
 
   const handleAnalyzerClose = () => {
-    setIsAnalyzerOpen(false);
     setSelectedFile(null);
     setSelectedPurchaseId(null);
   };
@@ -207,12 +203,13 @@ export default function HistoryPage() {
       />
       
       {/* Receipt Analyzer Dialog, controlled by state */}
-      <ReceiptAnalyzer
-        isOpen={isAnalyzerOpen}
-        onOpenChange={handleAnalyzerClose}
-        receiptFile={selectedFile}
-        purchaseId={selectedPurchaseId}
-      />
+      {selectedFile && (
+        <ReceiptAnalyzer
+          receiptFile={selectedFile}
+          purchaseId={selectedPurchaseId}
+          onDone={handleAnalyzerClose}
+        />
+      )}
     </div>
   );
 }
