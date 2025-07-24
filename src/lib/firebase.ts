@@ -1,6 +1,5 @@
-
 // src/lib/firebase.ts
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -13,7 +12,8 @@ const firebaseConfig = {
   "messagingSenderId": "371246421587"
 };
 
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase App only if it's not already initialized
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
 export { app, db };
