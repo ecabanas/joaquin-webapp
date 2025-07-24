@@ -11,7 +11,6 @@ import {
   DialogDescription,
   DialogFooter,
   DialogTrigger,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +29,7 @@ import {
   TableRow,
 } from './ui/table';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 
 type ReceiptAnalyzerProps = {
   purchaseId: string;
@@ -37,19 +37,19 @@ type ReceiptAnalyzerProps = {
 
 export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<AnalyzeReceiptOutput | null>(null);
   const { toast } = useToast();
   const { userProfile } = useAuth();
+  const isMobile = useIsMobile();
   
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetState = (keepDialogOpen = false) => {
-    setFile(null);
     setPreview(null);
     setIsLoading(false);
     setResult(null);
@@ -70,7 +70,6 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
     if (!open) {
       resetState();
     } else {
-      // Immediately request camera when opened
       requestCamera();
     }
   };
@@ -91,22 +90,24 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       setHasCameraPermission(false);
     }
   };
+  
+  const stopCamera = () => {
+    if (videoRef.current?.srcObject) {
+       const stream = videoRef.current.srcObject as MediaStream;
+       stream.getTracks().forEach(track => track.stop());
+       videoRef.current.srcObject = null;
+    }
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      setFile(selectedFile);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreview(reader.result as string);
+        stopCamera();
       };
       reader.readAsDataURL(selectedFile);
-      
-      // Stop camera stream if it's running
-      if (videoRef.current?.srcObject) {
-         const stream = videoRef.current.srcObject as MediaStream;
-         stream.getTracks().forEach(track => track.stop());
-      }
     }
   };
   
@@ -121,11 +122,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       
       const dataUri = canvas.toDataURL('image/jpeg');
       setPreview(dataUri);
-      
-      if (video.srcObject) {
-         const stream = video.srcObject as MediaStream;
-         stream.getTracks().forEach(track => track.stop());
-      }
+      stopCamera();
     }
   }
 
@@ -138,10 +135,8 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       });
       return;
     }
-
     setIsLoading(true);
     setResult(null);
-
     try {
       const analysisResult = await analyzeReceipt({ receiptDataUri: preview });
       setResult(analysisResult);
@@ -169,7 +164,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
         title: 'Success!',
         description: 'Purchase history has been updated with the receipt data.',
       });
-      handleOpenChange(false); // Close dialog on success
+      handleOpenChange(false);
     } catch (error) {
       console.error('Error updating purchase:', error);
       toast({
@@ -181,10 +176,15 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       setIsLoading(false);
     }
   };
+  
+  // A component for the visually hidden title
+  const VisuallyHiddenTitle = ({ children }: { children: React.ReactNode }) => (
+    <DialogTitle className="sr-only">{children}</DialogTitle>
+  );
 
   const CameraView = () => (
     <div className="absolute inset-0 bg-black flex flex-col items-center justify-center">
-      <DialogTitle className="sr-only">Take Receipt Photo</DialogTitle>
+      <VisuallyHiddenTitle>Take Receipt Photo</VisuallyHiddenTitle>
       <video ref={videoRef} className="h-full w-full object-cover" autoPlay muted playsInline />
       <canvas ref={canvasRef} className="hidden" />
 
@@ -201,24 +201,26 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
         </div>
       )}
 
-      {/* Camera Controls */}
+      <div className="absolute top-4 left-4">
+        <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50" onClick={() => handleOpenChange(false)}>
+          <X className="h-6 w-6 text-white" />
+        </Button>
+      </div>
+      
       <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent">
-        <div className="flex items-center justify-between">
-          <DialogClose asChild>
-            <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50">
-              <X className="h-6 w-6 text-white" />
-            </Button>
-          </DialogClose>
+        <div className="flex items-center justify-center">
           <button
             onClick={handleTakePicture}
             disabled={!hasCameraPermission}
             className="h-20 w-20 rounded-full border-4 border-white bg-transparent ring-4 ring-black/30 disabled:opacity-50"
             aria-label="Take Picture"
           />
-          <label htmlFor="receipt-upload-camera" className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white cursor-pointer hover:bg-black/50">
-            <Upload className="h-6 w-6" />
-            <Input id="receipt-upload-camera" type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
-          </label>
+        </div>
+         <div className="absolute bottom-6 right-6">
+           <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50" onClick={() => fileInputRef.current?.click()}>
+              <Upload className="h-6 w-6 text-white" />
+            </Button>
+            <Input id="receipt-upload-camera" type="file" accept="image/*" onChange={handleFileChange} className="hidden" ref={fileInputRef} />
         </div>
       </div>
     </div>
@@ -226,10 +228,9 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
 
   const PreviewView = () => (
     <div className="absolute inset-0 bg-black flex flex-col items-center justify-center">
-      <DialogTitle className="sr-only">Confirm Receipt Photo</DialogTitle>
+      <VisuallyHiddenTitle>Confirm Receipt Photo</VisuallyHiddenTitle>
       {preview && <Image src={preview} alt="Receipt preview" layout="fill" objectFit="contain" />}
       
-      {/* Preview Controls */}
       <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent">
         <div className="flex items-center justify-around">
           <Button
@@ -251,7 +252,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   );
 
   const ResultsView = () => (
-    <div className="p-0 sm:p-6">
+    <div className={cn(isMobile ? "p-4 pt-16" : "p-6")}>
        <DialogHeader>
           <DialogTitle>Analysis Complete</DialogTitle>
           <DialogDescription>Review the items below. When you're ready, add them to your history.</DialogDescription>
@@ -261,8 +262,8 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Item</TableHead>
-              <TableHead className="text-center">Qty</TableHead>
-              <TableHead className="text-right">Price</TableHead>
+              <TableHead className="text-center w-[60px]">Qty</TableHead>
+              <TableHead className="text-right w-[100px]">Price</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -276,20 +277,27 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
           </TableBody>
         </Table>
       </div>
-       <DialogFooter className="sm:justify-between gap-2">
+       <DialogFooter className="sm:justify-between gap-2 flex-col-reverse sm:flex-row">
+         <Button type="button" variant="ghost" onClick={() => { setPreview(null); setResult(null); requestCamera(); }} className="w-full sm:w-auto">
+            Analyze Another
+          </Button>
          <Button type="button" onClick={handleSaveToHistory} disabled={isLoading} className="w-full sm:w-auto">
             {isLoading ? 'Saving...' : 'Add to History'}
           </Button>
-          <Button type="button" variant="ghost" onClick={() => { setPreview(null); setResult(null); requestCamera(); }} className="w-full sm:w-auto">
-            Analyze Another
-          </Button>
       </DialogFooter>
+       {isMobile && (
+          <div className="absolute top-4 left-4">
+             <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full" onClick={() => { setPreview(null); setResult(null); requestCamera(); }}>
+              <ArrowLeft className="h-6 w-6" />
+            </Button>
+          </div>
+       )}
     </div>
   );
 
   const LoadingView = () => (
      <div className="absolute sm:relative inset-0 flex flex-col items-center justify-center gap-4 text-muted-foreground p-8 bg-background">
-      <DialogTitle className="sr-only">Analyzing Receipt</DialogTitle>
+      <VisuallyHiddenTitle>Analyzing Receipt</VisuallyHiddenTitle>
       <h3 className="text-xl font-medium text-foreground">Analyzing Receipt</h3>
       <div className="relative h-24 w-24">
          <Loader2 className="h-24 w-24 animate-spin text-primary/20" />
@@ -318,12 +326,13 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       <DialogContent 
         className={cn(
           "p-0 gap-0 border-0",
-          "sm:max-w-md sm:rounded-lg",
-          stage === 'camera' || stage === 'preview' ? 'w-screen h-screen max-w-full sm:h-[80vh] sm:w-[45vh] sm:max-w-[45vh] rounded-none' : '',
-          stage === 'loading' && 'sm:max-w-sm',
-          stage === 'result' && 'sm:max-w-md'
+          isMobile && 'w-screen h-screen max-w-full rounded-none',
+          !isMobile && 'sm:max-w-md sm:rounded-lg',
+          stage === 'camera' || stage === 'preview' ? 'sm:h-[80vh] sm:w-[45vh] sm:max-w-[45vh]' : '',
+          stage === 'loading' && !isMobile && 'sm:max-w-sm',
+          stage === 'result' && !isMobile && 'sm:max-w-md'
         )}
-        hideCloseButton={stage === 'camera' || stage === 'preview'}
+        hideCloseButton={true}
       >
         {stage === 'camera' && <CameraView />}
         {stage === 'preview' && <PreviewView />}
