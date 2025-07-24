@@ -53,13 +53,13 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const stage = useMemo((): Stage => {
+  const stage: Stage = useMemo(() => {
     if (isLoading) return 'loading';
     if (result) return 'result';
     if (preview) return 'preview';
-    if (isMobile) return 'camera';
+    if (cameraStatus === 'active' || cameraStatus === 'denied' || cameraStatus === 'starting') return 'camera';
     return 'initial';
-  }, [isLoading, result, preview, isMobile]);
+  }, [isLoading, result, preview, cameraStatus]);
 
   const stopCamera = useCallback(() => {
     if (videoRef.current && videoRef.current.srcObject) {
@@ -88,7 +88,10 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play(); // Important for iOS
+        videoRef.current.playsInline = true; // Essential for iOS
+        videoRef.current.muted = true;
+        videoRef.current.autoplay = true;
+        await videoRef.current.play();
         setCameraStatus('active');
       }
     } catch (error) {
@@ -98,39 +101,14 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   }, []);
 
   useEffect(() => {
-    let stream: MediaStream | null = null;
-  
-    const startAndAttachCamera = async () => {
-      setCameraStatus('starting');
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.onloadedmetadata = () => {
-             videoRef.current?.play();
-             setCameraStatus('active');
-          }
-        }
-      } catch (err) {
-        console.error("Failed to start camera:", err);
-        setCameraStatus('denied');
-      }
-    };
-  
-    if (stage === 'camera') {
-      startAndAttachCamera();
-    }
-  
+    // This effect is only for cleanup when the dialog is closed.
     return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+      if (cameraStatus === 'active') {
+        stopCamera();
       }
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
-      setCameraStatus('idle');
     };
-  }, [stage]);
+  }, [cameraStatus, stopCamera]);
+
 
   const handleTakePicture = () => {
     if (videoRef.current && canvasRef.current) {
@@ -203,7 +181,6 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       setPreview(null);
       setResult(null);
       setIsLoading(false);
-      setCameraStatus('idle');
   }, [stopCamera]);
 
   const handleOpenChange = (open: boolean) => {
@@ -221,10 +198,13 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
     <div className="p-6">
       <DialogHeader>
         <DialogTitle>Analyze Receipt</DialogTitle>
-        <DialogDescription>Upload a photo of your receipt to automatically extract items and prices.</DialogDescription>
+        <DialogDescription>Use your camera or upload a photo of your receipt to automatically extract items and prices.</DialogDescription>
       </DialogHeader>
-      <div className="flex justify-center my-6">
-        <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+      <div className="flex flex-col sm:flex-row gap-4 justify-center my-6">
+        <Button onClick={handleStartCamera} size="lg">
+          <Camera className="mr-2" /> Start Camera
+        </Button>
+        <Button variant="outline" size="lg" onClick={() => fileInputRef.current?.click()}>
           <Upload className="mr-2" /> Upload File
         </Button>
         <Input id="receipt-upload-initial" type="file" accept="image/*" onChange={handleFileChange} className="hidden" ref={fileInputRef} />
@@ -239,9 +219,6 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       <video
         ref={videoRef}
         className={cn("absolute inset-0 h-full w-full object-cover z-0", cameraStatus !== 'active' && 'hidden')}
-        autoPlay
-        muted
-        playsInline
       />
       <canvas ref={canvasRef} className="hidden" />
 
@@ -275,7 +252,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
             </Button>
           </div>
           {/* Bottom controls with safe-area padding */}
-          <div className="p-4 pb-[calc(env(safe-area-inset-bottom,0)+1rem)] bg-gradient-to-t from-black/50 to-transparent pointer-events-auto">
+          <div className="w-full p-4 pb-[calc(env(safe-area-inset-bottom,0)+1rem)] bg-gradient-to-t from-black/50 to-transparent pointer-events-auto">
             <div className="flex items-center justify-center">
               <button
                 onClick={handleTakePicture}
@@ -404,13 +381,12 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       <DialogContent 
         className={cn(
           "p-0 gap-0 border-0",
-          isMobile && 'w-screen h-screen max-w-full rounded-none',
-          !isMobile && 'sm:max-w-md sm:rounded-lg',
-          stage === 'camera' || stage === 'preview' ? 'sm:h-[80vh] sm:w-[45vh] sm:max-w-[45vh]' : '',
+          (stage === 'initial' && !isMobile) && 'sm:max-w-md sm:rounded-lg',
+          (stage !== 'initial' || isMobile) && 'w-screen h-screen max-w-full rounded-none',
           stage === 'loading' && !isMobile && 'sm:max-w-sm',
-          stage === 'result' && !isMobile && 'sm:max-w-md',
+          stage === 'result' && !isMobile && 'sm:max-w-lg',
         )}
-        hideCloseButton={isMobile || stage === 'loading'}
+        hideCloseButton={stage !== 'initial' || isMobile}
         onEscapeKeyDown={(e) => {
             if (stage === 'preview' || stage === 'result') {
                 e.preventDefault();
@@ -425,3 +401,5 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
     </Dialog>
   );
 }
+
+    
