@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import {
   Dialog,
@@ -9,13 +9,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { analyzeReceipt, type AnalyzeReceiptOutput } from '@/ai/flows/analyze-receipt';
 import { updatePurchaseItems } from '@/lib/firestore';
 import { useAuth } from '@/contexts/auth-context';
-import { Loader2, ScanLine, Check, Camera } from 'lucide-react';
+import { Loader2, ScanLine, Check, Camera, CheckCircle } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -34,6 +35,8 @@ type ReceiptAnalyzerProps = {
   onRetake: () => void;
 };
 
+type Stage = 'preview' | 'loading' | 'results';
+
 export function ReceiptAnalyzer({
   receiptFile,
   purchaseId,
@@ -41,28 +44,29 @@ export function ReceiptAnalyzer({
   onRetake,
 }: ReceiptAnalyzerProps) {
   const [preview, setPreview] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<AnalyzeReceiptOutput | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { userProfile } = useAuth();
+
+  const stage: Stage = useMemo(() => {
+    if (isProcessing) return 'loading';
+    if (result) return 'results';
+    return 'preview';
+  }, [isProcessing, result]);
   
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     // Guard against closing while loading
-    if (isLoading) return;
-    
-    setPreview(null);
-    setResult(null);
-    setIsLoading(false);
-    onDone(); // Notify parent component that we are done
-  };
+    if (isProcessing) return;
+    onDone();
+  }, [isProcessing, onDone]);
   
-  // When a new file is passed, create a preview URL
   useEffect(() => {
     if (receiptFile) {
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreview(reader.result as string);
-        setResult(null); // Clear previous results
+        setResult(null);
       };
       reader.readAsDataURL(receiptFile);
     } else {
@@ -79,7 +83,7 @@ export function ReceiptAnalyzer({
       });
       return;
     }
-    setIsLoading(true);
+    setIsProcessing(true);
     setResult(null);
     try {
       const analysisResult = await analyzeReceipt({ receiptDataUri: preview });
@@ -91,9 +95,10 @@ export function ReceiptAnalyzer({
         description: 'Could not analyze the receipt. Please try again.',
         variant: 'destructive',
       });
-      // Don't close on failure, let user decide to retry or cancel.
+      // On failure, go back to the preview stage
+      setResult(null);
     } finally {
-      setIsLoading(false);
+      setIsProcessing(false);
     }
   };
   
@@ -102,14 +107,14 @@ export function ReceiptAnalyzer({
       toast({ title: 'Error', description: 'No result to save.', variant: 'destructive'});
       return;
     }
-    setIsLoading(true);
+    setIsProcessing(true);
     try {
       await updatePurchaseItems(userProfile.workspaceId, purchaseId, result.items);
       toast({
         title: 'Success!',
-        description: 'Purchase history has been updated with the receipt data.',
+        description: 'Purchase history has been updated.',
       });
-      handleClose(); // Close the dialog on success
+      handleClose();
     } catch (error) {
       console.error('Error updating purchase:', error);
       toast({
@@ -118,96 +123,101 @@ export function ReceiptAnalyzer({
         variant: 'destructive',
       });
     } finally {
-      setIsLoading(false);
+      setIsProcessing(false);
     }
   };
 
-  const renderPreviewView = () => (
-     <>
-        <DialogHeader className="p-6 pb-0 text-center">
-            <DialogTitle>Confirm Photo</DialogTitle>
-            <DialogDescription>Is this photo clear enough to analyze?</DialogDescription>
-        </DialogHeader>
-        <div className="p-4">
-             <div className="relative aspect-[9/16] w-full max-h-[60vh] rounded-lg overflow-hidden border bg-muted">
-                 {preview && <Image src={preview} alt="Receipt preview" layout="fill" objectFit="contain" />}
-              </div>
-        </div>
-       <div className="flex items-center justify-end gap-3 p-4 border-t bg-background">
-         <Button type="button" variant="outline" onClick={onRetake}>
-            <Camera className="mr-2" />
-            Retake
-          </Button>
-         <Button type="button" onClick={handleAnalyzeSubmit}>
-            Use Photo <Check className="ml-2" />
-          </Button>
-      </div>
-    </>
-  );
-
-  const renderLoadingView = () => (
-    <>
-      <DialogHeader>
-        <DialogTitle>Analyzing Receipt</DialogTitle>
+  const renderContent = () => (
+    <div className="flex flex-col h-full">
+      <DialogHeader className="p-4 sm:p-6 text-center shrink-0">
+        <DialogTitle>{
+          stage === 'preview' ? 'Confirm Photo' :
+          stage === 'loading' ? 'Analyzing...' : 'Analysis Complete'
+        }</DialogTitle>
+        <DialogDescription>{
+          stage === 'preview' ? 'Is this photo clear enough to analyze?' :
+          stage === 'loading' ? 'Extracting items from your receipt.' : 'Review the items found on your receipt.'
+        }</DialogDescription>
       </DialogHeader>
-      <div className="flex flex-col items-center justify-center gap-4 text-muted-foreground p-8 h-64">
-        <div className="relative h-24 w-24">
-          <Loader2 className="h-24 w-24 animate-spin text-primary/20" />
-          <ScanLine className="absolute inset-0 h-24 w-24 text-primary animate-pulse" />
-        </div>
-         <p>Extracting items from your receipt...</p>
-      </div>
-    </>
-  );
 
-  const renderResultsView = () => (
-    <>
-       <DialogHeader className="p-6 pb-4">
-          <DialogTitle>Analysis Complete</DialogTitle>
-          <DialogDescription>Review the items below. When you're ready, add them to your history.</DialogDescription>
-        </DialogHeader>
-      <div className="px-6 max-h-80 overflow-y-auto rounded-md border-y">
-        <Table>
-          <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm">
-            <TableRow>
-              <TableHead>Item</TableHead>
-              <TableHead className="text-center w-[60px]">Qty</TableHead>
-              <TableHead className="text-right w-[100px]">Price</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {result?.items.map((item, index) => (
-              <TableRow key={index}>
-                <TableCell className="font-medium">{item.name}</TableCell>
-                <TableCell className="text-center">{item.quantity}</TableCell>
-                <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      <div className="flex-1 overflow-hidden px-4 sm:px-6">
+        {/* Preview & Loading Content */}
+        <div className={cn(
+          "relative aspect-[9/16] w-full max-w-sm mx-auto h-full rounded-lg overflow-hidden border bg-muted transition-all duration-300",
+          stage === 'results' && 'hidden'
+        )}>
+          {preview && <Image src={preview} alt="Receipt preview" layout="fill" objectFit="contain" />}
+          
+          {stage === 'loading' && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/60 backdrop-blur-sm text-white p-8">
+               <div className="relative h-16 w-16">
+                  <div className="absolute inset-0 bg-white/20 rounded-full animate-ping" />
+                  <Loader2 className="h-16 w-16 animate-spin text-white/80" style={{ animationDuration: '3s' }}/>
+               </div>
+               <p className="text-lg font-medium">Analyzing...</p>
+            </div>
+          )}
+        </div>
+
+        {/* Results Content */}
+        {stage === 'results' && result && (
+            <div className="h-full overflow-y-auto border rounded-lg">
+                <Table>
+                <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm z-10">
+                    <TableRow>
+                    <TableHead>Item</TableHead>
+                    <TableHead className="text-center w-[60px]">Qty</TableHead>
+                    <TableHead className="text-right w-[100px]">Price</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {result.items.map((item, index) => (
+                    <TableRow key={index}>
+                        <TableCell className="font-medium">{item.name}</TableCell>
+                        <TableCell className="text-center">{item.quantity}</TableCell>
+                        <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
+                    </TableRow>
+                    ))}
+                </TableBody>
+                </Table>
+            </div>
+        )}
       </div>
-       <div className="flex items-center justify-end gap-3 p-4 bg-background">
-         <Button type="button" variant="ghost" onClick={handleClose}>
-            Cancel
-          </Button>
-         <Button type="button" onClick={handleSaveToHistory} disabled={isLoading}>
-            {isLoading ? <Loader2 className="mr-2 animate-spin"/> : <Check className="mr-2"/>}
-            Save to History
-          </Button>
-      </div>
-    </>
+
+      <DialogFooter className="flex-row items-center justify-end gap-3 p-4 border-t bg-background shrink-0 sm:p-6">
+        {stage === 'preview' && (
+            <>
+                <Button type="button" variant="outline" onClick={onRetake}>
+                    <Camera className="mr-2" />
+                    Retake
+                </Button>
+                <Button type="button" onClick={handleAnalyzeSubmit}>
+                    Use Photo <Check className="ml-2" />
+                </Button>
+            </>
+        )}
+        {stage === 'results' && (
+             <>
+                <Button type="button" variant="ghost" onClick={handleClose}>
+                    Cancel
+                </Button>
+                <Button type="button" onClick={handleSaveToHistory} disabled={isProcessing}>
+                    {isProcessing ? <Loader2 className="mr-2 animate-spin"/> : <CheckCircle className="mr-2"/>}
+                    Save to History
+                </Button>
+            </>
+        )}
+      </DialogFooter>
+    </div>
   );
   
   return (
     <Dialog open={!!receiptFile} onOpenChange={(isOpen) => !isOpen && handleClose()}>
       <DialogContent 
          hideCloseButton={true} 
-         className={cn(
-            "p-0 gap-0 w-[calc(100%-2rem)] sm:max-w-md rounded-xl overflow-hidden",
-            isLoading && "sm:max-w-sm" // Shrink for loading view
-         )}
+         className="p-0 gap-0 w-full h-full sm:w-[calc(100%-2rem)] sm:h-auto sm:max-w-md sm:max-h-[90vh] sm:rounded-xl"
       >
-        {isLoading ? renderLoadingView() : result ? renderResultsView() : renderPreviewView()}
+        {renderContent()}
       </DialogContent>
     </Dialog>
   );
