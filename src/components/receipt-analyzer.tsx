@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import {
   Dialog,
@@ -44,67 +44,58 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   const { userProfile } = useAuth();
   const isMobile = useIsMobile();
   
-  const [cameraStatus, setCameraStatus] = useState<'idle' | 'requesting' | 'active' | 'denied'>('idle');
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [cameraStatus, setCameraStatus] = useState<'idle' | 'active' | 'denied'>('idle');
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const resetState = (keepDialogOpen = false) => {
-    setPreview(null);
-    setIsLoading(false);
-    setResult(null);
-    stopCamera();
-    setCameraStatus('idle');
-    
-    if (!keepDialogOpen) {
-      setIsOpen(false);
+  const stopCamera = useCallback(() => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+      setCameraStatus('idle');
     }
-  };
+  }, []);
 
-  const requestCamera = async () => {
-    if (cameraStatus === 'active' || cameraStatus === 'requesting') return;
+  const requestCamera = useCallback(async () => {
+    if (!videoRef.current) return;
     
-    setCameraStatus('requesting');
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    setCameraStatus('idle');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        // The play() call is essential for mobile browsers, especially Safari.
+        videoRef.current.play().catch(e => console.error("Video play failed:", e));
         setCameraStatus('active');
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      } catch (error) {
-        console.error('Error accessing camera:', error);
-        setCameraStatus('denied');
       }
-    } else {
+    } catch (error) {
+      console.error('Error accessing camera:', error);
       setCameraStatus('denied');
     }
-  };
-  
-  const stopCamera = () => {
-    if (videoRef.current?.srcObject) {
-       const stream = videoRef.current.srcObject as MediaStream;
-       stream.getTracks().forEach(track => track.stop());
-       videoRef.current.srcObject = null;
-    }
-  }
+  }, []);
 
-  // Effect to handle camera logic when dialog opens/closes
   useEffect(() => {
-    if (isOpen) {
-      // On mobile, immediately request camera. Desktop waits for user action.
-      if (isMobile) {
-        requestCamera();
-      }
+    if (isOpen && isMobile && !preview) {
+      requestCamera();
     } else {
-      resetState();
-    }
-    
-    return () => {
-      // Ensure camera is always stopped on cleanup
       stopCamera();
     }
-  }, [isOpen, isMobile]);
+
+    return () => {
+      stopCamera();
+    }
+  }, [isOpen, isMobile, preview, requestCamera, stopCamera]);
+  
+  // A callback ref ensures that the `requestCamera` function
+  // is only called when the video element is actually mounted in the DOM.
+  const videoCallbackRef = useCallback((node: HTMLVideoElement | null) => {
+    videoRef.current = node;
+    if (node && isOpen && isMobile && !preview) {
+      requestCamera();
+    }
+  }, [isOpen, isMobile, preview, requestCamera]);
 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -195,7 +186,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       
       {/* Video Feed Layer (Bottom) */}
       <video 
-        ref={videoRef} 
+        ref={videoCallbackRef} 
         className="absolute inset-0 h-full w-full object-cover z-0" 
         autoPlay 
         muted 
@@ -246,7 +237,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
                 <Button onClick={requestCamera} variant="secondary">Try Again</Button>
               </>
             )}
-            {cameraStatus === 'requesting' && (
+            {cameraStatus === 'idle' && (
               <>
                 <Loader2 className="w-12 h-12 animate-spin" />
                 <p>Starting camera...</p>
@@ -265,7 +256,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent z-10">
         <div className="flex items-center justify-around">
           <Button
-            onClick={() => { setPreview(null); requestCamera(); }}
+            onClick={() => { setPreview(null); }}
             variant="ghost"
             className="h-16 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 text-white font-bold text-lg px-8"
           >
@@ -285,6 +276,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   const ResultsView = () => (
     <div className={cn(isMobile ? "p-4 pt-16" : "p-6")}>
        <DialogHeader>
+          <VisuallyHiddenTitle>Analysis Complete</VisuallyHiddenTitle>
           <DialogTitle>Analysis Complete</DialogTitle>
           <DialogDescription>Review the items below. When you're ready, add them to your history.</DialogDescription>
         </DialogHeader>
@@ -309,7 +301,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
         </Table>
       </div>
        <DialogFooter className="sm:justify-between gap-2 flex-col-reverse sm:flex-row">
-         <Button type="button" variant="ghost" onClick={() => { setPreview(null); setResult(null); if (isMobile) requestCamera(); }} className="w-full sm:w-auto">
+         <Button type="button" variant="ghost" onClick={() => { setPreview(null); setResult(null); }} className="w-full sm:w-auto">
             Analyze Another
           </Button>
          <Button type="button" onClick={handleSaveToHistory} disabled={isLoading} className="w-full sm:w-auto">
@@ -318,7 +310,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       </DialogFooter>
        {isMobile && (
           <div className="absolute top-4 left-4 z-10">
-             <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full" onClick={() => { setPreview(null); setResult(null); requestCamera(); }}>
+             <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full" onClick={() => { setPreview(null); setResult(null); }}>
               <ArrowLeft className="h-6 w-6" />
             </Button>
           </div>
@@ -356,6 +348,19 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
     </div>
   );
   
+  const resetAllState = () => {
+      setPreview(null);
+      setResult(null);
+      setIsLoading(false);
+  }
+
+  const handleOpenChange = (open: boolean) => {
+      if (!open) {
+          resetAllState();
+      }
+      setIsOpen(open);
+  }
+
   const getStage = () => {
     if (isLoading) return 'loading';
     if (result) return 'result';
@@ -367,7 +372,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   const stage = getStage();
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         { isMobile && 
           <Button>
@@ -385,7 +390,14 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
           stage === 'result' && !isMobile && 'sm:max-w-md',
           stage === 'desktop_upload' && 'p-6'
         )}
-        hideCloseButton={isMobile}
+        hideCloseButton={isMobile || stage === 'loading'}
+        onEscapeKeyDown={() => {
+            if (stage === 'preview' || stage === 'result') {
+                resetAllState();
+            } else {
+                setIsOpen(false);
+            }
+        }}
       >
         {stage === 'camera' && <CameraView />}
         {stage === 'preview' && <PreviewView />}
@@ -396,3 +408,5 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
     </Dialog>
   );
 }
+
+    
