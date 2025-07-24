@@ -31,7 +31,6 @@ import { useEffect } from 'react';
 const navItems = [
   { href: '/list', icon: List, label: 'List' },
   { href: '/history', icon: History, label: 'History' },
-  { href: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -132,8 +131,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link href="/settings">
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Profile</span>
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -177,7 +176,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       
       {/* --- Mobile Bottom Tab Bar --- */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-background border-t shadow-lg z-50">
-        <div className="h-full grid grid-cols-3">
+        <div className="h-full grid grid-cols-2">
           {navItems.map((item) => {
             const isActive = pathname.startsWith(item.href);
             return (

@@ -112,7 +112,7 @@ The project follows the standard Next.js App Router structure.
 │   │   ├── history/page.tsx    # Purchase history page
 │   │   ├── layout.tsx          # Layout for the main app (sidebar/nav)
 │   │   ├── list/page.tsx       # "Active" grocery list page
-│   │   └── settings/page.tsx   # Settings page (for profile & catalog mgmt)
+│   │   └── settings/page.tsx   # Settings page (for profile & acct mgmt)
 │   ├── globals.css             # Global styles and CSS variables for theming
 │   ├── layout.tsx              # Root layout
 │   └── page.tsx                # Root page (redirects to /list)
