@@ -78,12 +78,13 @@ const getItemCatalogCollection = (workspaceId: string) =>
   collection(db, 'workspaces', workspaceId, 'itemCatalog');
 
 const defaultCatalogData = [
-  'Milk', 'Bread', 'Eggs', 'Butter', 'Cheese', 'Yogurt', 'Cereal', 'Oatmeal', 'Coffee', 'Tea',
-  'Sugar', 'Flour', 'Rice', 'Pasta', 'Apples', 'Bananas', 'Oranges', 'Grapes', 'Strawberries',
-  'Lettuce', 'Tomatoes', 'Cucumbers', 'Onions', 'Garlic', 'Potatoes', 'Carrots', 'Broccoli',
-  'Chicken Breast', 'Ground Beef', 'Bacon', 'Sausage', 'Salmon', 'Tuna', 'Olive Oil', 'Ketchup',
-  'Mustard', 'Mayonnaise', 'Salt', 'Pepper', 'Soap', 'Shampoo', 'Toothpaste', 'Toilet Paper',
-  'Paper Towels', 'Laundry Detergent', 'Dish Soap'
+  'Leche', 'Pan', 'Atún', 'Salmón', 'Yoghurt', 'Plátanos', 'Café', 'Bien dormir', 'Pasta', 'Miel', 
+  'Crema de cacahuetes', 'Manzanas', 'Espinacas', 'Mostaza', 'Pasta de dientes', 'Champú', 
+  'Mermelada', 'Queso feta', 'Mozzarella', 'Olivas', 'Lentejas bote', 'Garbanzos bote', 
+  'Queso rallado', 'Huevos', 'Mantequilla', 'Arroz', 'Tomates', 'Pepino', 'Cebollas', 
+  'Patatas', 'Boniato', 'Aceite de oliva', 'Vinagre', 'Sal', 'Bacon', 'Queso requesón', 
+  'Papel de cocina', 'Papel de baño', 'Frankfurts', 'Carne picada', 'Pollo', 'Chocolate negro', 
+  'Tofu', 'Tomate frito', 'Leche de coco', 'Pimiento verde', 'Brócoli'
 ];
 
 export async function seedInitialCatalog(workspaceId: string) {
