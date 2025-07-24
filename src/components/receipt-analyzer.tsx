@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { analyzeReceipt, type AnalyzeReceiptOutput } from '@/ai/flows/analyze-receipt';
 import { updatePurchaseItems } from '@/lib/firestore';
 import { useAuth } from '@/contexts/auth-context';
-import { Loader2, ScanLine, ArrowLeft, Check } from 'lucide-react';
+import { Loader2, ScanLine, Check } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -27,17 +27,15 @@ import {
 } from './ui/table';
 
 type ReceiptAnalyzerProps = {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
   receiptFile: File | null;
   purchaseId: string | null;
+  onDone: () => void;
 };
 
 export function ReceiptAnalyzer({
-  isOpen,
-  onOpenChange,
   receiptFile,
   purchaseId,
+  onDone,
 }: ReceiptAnalyzerProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -45,18 +43,12 @@ export function ReceiptAnalyzer({
   const { toast } = useToast();
   const { userProfile } = useAuth();
   
-  const resetAllState = () => {
+  const handleClose = () => {
     setPreview(null);
     setResult(null);
     setIsLoading(false);
+    onDone(); // Notify parent component that we are done
   };
-  
-  // When the dialog is closed, reset the state
-  useEffect(() => {
-    if (!isOpen) {
-      resetAllState();
-    }
-  }, [isOpen]);
   
   // When a new file is passed, create a preview URL
   useEffect(() => {
@@ -110,7 +102,7 @@ export function ReceiptAnalyzer({
         title: 'Success!',
         description: 'Purchase history has been updated with the receipt data.',
       });
-      onOpenChange(false);
+      handleClose(); // Close the dialog on success
     } catch (error) {
       console.error('Error updating purchase:', error);
       toast({
@@ -127,7 +119,7 @@ export function ReceiptAnalyzer({
      <>
       <DialogHeader>
           <DialogTitle>Confirm Photo</DialogTitle>
-          <DialogDescription>Use this photo to analyze the receipt, or close this and try again.</DialogDescription>
+          <DialogDescription>Use this photo to analyze the receipt, or take another one.</DialogDescription>
       </DialogHeader>
       <div className="my-4 relative aspect-video w-full rounded-md overflow-hidden border">
          {preview && <Image src={preview} alt="Receipt preview" fill={true} style={{objectFit:"contain"}} />}
@@ -141,14 +133,18 @@ export function ReceiptAnalyzer({
   );
 
   const renderLoadingView = () => (
-     <div className="flex flex-col items-center justify-center gap-4 text-muted-foreground p-8 h-64">
-      <h3 className="text-xl font-medium text-foreground">Analyzing Receipt</h3>
-      <div className="relative h-24 w-24">
-         <Loader2 className="h-24 w-24 animate-spin text-primary/20" />
-         <ScanLine className="absolute inset-0 h-24 w-24 text-primary animate-pulse" />
+    <>
+      <DialogHeader>
+        <DialogTitle>Analyzing Receipt</DialogTitle>
+        <DialogDescription>This may take a moment...</DialogDescription>
+      </DialogHeader>
+      <div className="flex flex-col items-center justify-center gap-4 text-muted-foreground p-8 h-64">
+        <div className="relative h-24 w-24">
+          <Loader2 className="h-24 w-24 animate-spin text-primary/20" />
+          <ScanLine className="absolute inset-0 h-24 w-24 text-primary animate-pulse" />
+        </div>
       </div>
-      <p>This may take a moment...</p>
-    </div>
+    </>
   );
 
   const renderResultsView = () => (
@@ -178,8 +174,8 @@ export function ReceiptAnalyzer({
         </Table>
       </div>
        <DialogFooter className="sm:justify-between gap-2 flex-col-reverse sm:flex-row">
-         <Button type="button" variant="ghost" onClick={resetAllState}>
-            Analyze Another
+         <Button type="button" variant="ghost" onClick={handleClose}>
+            Cancel
           </Button>
          <Button type="button" onClick={handleSaveToHistory} disabled={isLoading}>
             {isLoading ? 'Saving...' : 'Add to History'}
@@ -188,17 +184,10 @@ export function ReceiptAnalyzer({
     </>
   );
   
-  const renderContent = () => {
-    if (isLoading) return renderLoadingView();
-    if (result) return renderResultsView();
-    if (preview) return renderPreviewView();
-    return null;
-  }
-  
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        {renderContent()}
+    <Dialog open={!!preview} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+      <DialogContent>
+        {isLoading ? renderLoadingView() : result ? renderResultsView() : renderPreviewView()}
       </DialogContent>
     </Dialog>
   );
