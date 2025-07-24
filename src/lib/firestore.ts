@@ -24,6 +24,47 @@ const getListItemsCollection = (workspaceId: string) =>
 const getPurchaseHistoryCollection = (workspaceId: string) =>
   collection(db, 'workspaces', workspaceId, 'purchaseHistory');
 
+const getItemCatalogCollection = (workspaceId: string) =>
+  collection(db, 'workspaces', workspaceId, 'itemCatalog');
+
+const defaultCatalogData = [
+  'Milk', 'Bread', 'Eggs', 'Butter', 'Cheese', 'Yogurt', 'Cereal', 'Oatmeal', 'Coffee', 'Tea',
+  'Sugar', 'Flour', 'Rice', 'Pasta', 'Apples', 'Bananas', 'Oranges', 'Grapes', 'Strawberries',
+  'Lettuce', 'Tomatoes', 'Cucumbers', 'Onions', 'Garlic', 'Potatoes', 'Carrots', 'Broccoli',
+  'Chicken Breast', 'Ground Beef', 'Bacon', 'Sausage', 'Salmon', 'Tuna', 'Olive Oil', 'Ketchup',
+  'Mustard', 'Mayonnaise', 'Salt', 'Pepper', 'Soap', 'Shampoo', 'Toothpaste', 'Toilet Paper',
+  'Paper Towels', 'Laundry Detergent', 'Dish Soap'
+];
+
+export async function seedInitialCatalog(workspaceId: string) {
+  const catalogCollection = getItemCatalogCollection(workspaceId);
+  const snapshot = await getDocs(catalogCollection);
+  if (snapshot.empty) {
+    console.log(`Seeding initial item catalog for workspace ${workspaceId}...`);
+    const batch = writeBatch(db);
+    defaultCatalogData.forEach(name => {
+      const docRef = doc(catalogCollection);
+      batch.set(docRef, { name });
+    });
+    await batch.commit();
+    console.log('Catalog seeded.');
+  }
+}
+
+// Get real-time updates for the item catalog
+export function getItemCatalog(
+  workspaceId: string,
+  callback: (items: string[]) => void
+) {
+  const itemsCollection = getItemCatalogCollection(workspaceId);
+  const q = query(itemsCollection, orderBy('name'));
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const items = snapshot.docs.map((doc) => doc.data().name as string);
+    callback(items);
+  });
+  return unsubscribe;
+}
+
 // Get real-time updates for the active grocery list
 export function getListItems(
   workspaceId: string,
@@ -60,13 +101,24 @@ export function getPurchaseHistory(
   return unsubscribe;
 }
 
-// Add a new item to the active list
+// Add a new item to the active list and potentially the catalog
 export async function addListItem(
   workspaceId: string,
-  item: Omit<ListItem, 'id'>
+  item: Omit<ListItem, 'id'>,
+  currentCatalog: string[]
 ) {
   const itemsCollection = getListItemsCollection(workspaceId);
   await addDoc(itemsCollection, item);
+
+  // Add to catalog if it's a new item
+  const catalogCollection = getItemCatalogCollection(workspaceId);
+  const normalizedItemName = item.name.toLowerCase();
+  const isInCatalog = currentCatalog.some(catalogItem => catalogItem.toLowerCase() === normalizedItemName);
+  
+  if (!isInCatalog) {
+    console.log(`Adding new item to catalog: ${item.name}`);
+    await addDoc(catalogCollection, { name: item.name });
+  }
 }
 
 // Update an existing item on the list

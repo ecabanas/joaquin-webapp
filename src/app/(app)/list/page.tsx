@@ -2,37 +2,39 @@
 'use client';
 
 import { GroceryListClient } from '@/components/grocery-list-client';
-import type { GroceryList, ListItem, Purchase } from '@/lib/types';
+import type { GroceryList, ListItem } from '@/lib/types';
 import { useEffect, useMemo, useState } from 'react';
 import { GlobalSearchInput } from '@/components/global-search-input';
 import Fuse from 'fuse.js';
-import { addListItem, finishShopping, getListItems, updateListItem } from '@/lib/firestore';
+import { addListItem, finishShopping, getListItems, updateListItem, getItemCatalog, seedInitialCatalog } from '@/lib/firestore';
 
 const WORKSPACE_ID = 'workspace-1'; // Hardcoded for now
-
-const defaultCatalogData = [
-    'Milk', 'Bread', 'Eggs', 'Butter', 'Cheese', 'Yogurt', 'Cereal', 'Oatmeal', 'Coffee', 'Tea',
-    'Sugar', 'Flour', 'Rice', 'Pasta', 'Apples', 'Bananas', 'Oranges', 'Grapes', 'Strawberries',
-    'Lettuce', 'Tomatoes', 'Cucumbers', 'Onions', 'Garlic', 'Potatoes', 'Carrots', 'Broccoli',
-    'Chicken Breast', 'Ground Beef', 'Bacon', 'Sausage', 'Salmon', 'Tuna', 'Olive Oil', 'Ketchup',
-    'Mustard', 'Mayonnaise', 'Salt', 'Pepper', 'Soap', 'Shampoo', 'Toothpaste', 'Toilet Paper',
-    'Paper Towels', 'Laundry Detergent', 'Dish Soap'
-];
-
 
 export default function GroceryListPage() {
   const [activeList, setActiveList] = useState<GroceryList>({ id: WORKSPACE_ID, items: []});
   const [searchQuery, setSearchQuery] = useState('');
-  const [defaultCatalog, setDefaultCatalog] = useState<string[]>(defaultCatalogData);
+  const [itemCatalog, setItemCatalog] = useState<string[]>([]);
 
   useEffect(() => {
-    // Subscribe to real-time updates from Firestore
-    const unsubscribe = getListItems(WORKSPACE_ID, (items) => {
+    // Subscribe to real-time updates for the grocery list
+    const unsubscribeList = getListItems(WORKSPACE_ID, (items) => {
       setActiveList({ id: WORKSPACE_ID, items });
     });
 
+    // Subscribe to real-time updates for the item catalog
+    const unsubscribeCatalog = getItemCatalog(WORKSPACE_ID, (catalog) => {
+      // Seed initial data if catalog is empty
+      if (catalog.length === 0) {
+        seedInitialCatalog(WORKSPACE_ID);
+      }
+      setItemCatalog(catalog);
+    });
+
     // Unsubscribe on component unmount
-    return () => unsubscribe();
+    return () => {
+      unsubscribeList();
+      unsubscribeCatalog();
+    };
   }, []);
 
 
@@ -74,7 +76,7 @@ export default function GroceryListPage() {
         quantity: 1,
         checked: false,
       };
-      await addListItem(WORKSPACE_ID, newItem);
+      await addListItem(WORKSPACE_ID, newItem, itemCatalog);
     }
   };
 
@@ -84,9 +86,9 @@ export default function GroceryListPage() {
   };
 
   const searchPool = useMemo(() => {
-    const combined = new Set([...defaultCatalog, ...activeList.items.map(i => i.name)]);
+    const combined = new Set([...itemCatalog, ...activeList.items.map(i => i.name)]);
     return Array.from(combined);
-  }, [activeList.items, defaultCatalog]);
+  }, [activeList.items, itemCatalog]);
 
   const fuse = useMemo(() => {
     return new Fuse(searchPool, {
