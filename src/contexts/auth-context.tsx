@@ -33,13 +33,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       if (user) {
         // If user is logged in, listen for profile changes
-        const unsubProfile = getUserProfile(user.uid, (profile) => {
-          setUserProfile(profile);
-          setLoading(false);
+        const unsubProfile = getUserProfile(user.uid, async (profile) => {
+          if (profile) {
+            setUserProfile(profile);
+            setLoading(false);
+          } else {
+            // If profile doesn't exist, this is likely a first-time login
+            // after data was cleared or a new auth provider was used.
+            // We'll create a profile for them.
+            try {
+              console.log('No profile found for existing user. Creating one...');
+              const newProfile = await createUserProfile(user.uid, {
+                name: user.displayName || 'New User',
+                email: user.email!,
+                photoURL: user.photoURL
+              });
+              setUserProfile(newProfile);
+            } catch (error) {
+               console.error("Error creating user profile:", error);
+            } finally {
+              setLoading(false);
+            }
+          }
         });
         return () => unsubProfile(); // Cleanup profile listener
       } else {
