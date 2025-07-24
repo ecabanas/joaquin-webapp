@@ -11,6 +11,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogTrigger,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { analyzeReceipt, type AnalyzeReceiptOutput } from '@/ai/flows/analyze-receipt';
 import { updatePurchaseItems } from '@/lib/firestore';
 import { useAuth } from '@/contexts/auth-context';
-import { Loader2, ScanLine, Camera, Upload, RefreshCcw } from 'lucide-react';
+import { Loader2, ScanLine, Camera, Upload, RefreshCcw, ArrowLeft, Check } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import {
   Table,
@@ -28,6 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from './ui/table';
+import { cn } from '@/lib/utils';
 
 type ReceiptAnalyzerProps = {
   purchaseId: string;
@@ -42,33 +44,16 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   const { toast } = useToast();
   const { userProfile } = useAuth();
   
-  // Camera-related state
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(selectedFile);
-    }
-  };
-  
   const resetState = (keepDialogOpen = false) => {
     setFile(null);
     setPreview(null);
     setIsLoading(false);
     setResult(null);
-    setIsCameraOpen(false);
     
-    // Stop camera stream
     if (videoRef.current?.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach(track => track.stop());
@@ -84,19 +69,13 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
     setIsOpen(open);
     if (!open) {
       resetState();
+    } else {
+      // Immediately request camera when opened
+      requestCamera();
     }
   };
 
-  const handleUseCamera = async () => {
-    if (isCameraOpen) {
-       setIsCameraOpen(false);
-       return;
-    }
-    
-    setIsCameraOpen(true);
-    setPreview(null);
-    setFile(null);
-    
+  const requestCamera = async () => {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
@@ -107,19 +86,27 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       } catch (error) {
         console.error('Error accessing camera:', error);
         setHasCameraPermission(false);
-        toast({
-          variant: 'destructive',
-          title: 'Camera Access Denied',
-          description: 'Please enable camera permissions in your browser settings.',
-        });
       }
     } else {
-       setHasCameraPermission(false);
-       toast({
-          variant: 'destructive',
-          title: 'Camera Not Supported',
-          description: 'Your browser does not support camera access.',
-        });
+      setHasCameraPermission(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result as string);
+      };
+      reader.readAsDataURL(selectedFile);
+      
+      // Stop camera stream if it's running
+      if (videoRef.current?.srcObject) {
+         const stream = videoRef.current.srcObject as MediaStream;
+         stream.getTracks().forEach(track => track.stop());
+      }
     }
   };
   
@@ -135,8 +122,6 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       const dataUri = canvas.toDataURL('image/jpeg');
       setPreview(dataUri);
       
-      // Stop the camera and switch back to preview mode
-      setIsCameraOpen(false);
       if (video.srcObject) {
          const stream = video.srcObject as MediaStream;
          stream.getTracks().forEach(track => track.stop());
@@ -197,108 +182,128 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
     }
   };
 
+  const CameraView = () => (
+    <div className="absolute inset-0 bg-black flex flex-col items-center justify-center">
+      <video ref={videoRef} className="h-full w-full object-cover" autoPlay muted playsInline />
+      <canvas ref={canvasRef} className="hidden" />
 
-  const MainContent = () => {
-    if (result) {
-      return (
-         <div>
-            <h3 className="font-semibold mb-2">Analysis Complete!</h3>
-            <p className="text-sm text-muted-foreground mb-4">Review the items below. When you're ready, add them to your history.</p>
-            <div className="max-h-64 overflow-y-auto rounded-md border">
-               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Item</TableHead>
-                    <TableHead className="text-center">Qty</TableHead>
-                    <TableHead className="text-right">Price</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {result.items.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{item.name}</TableCell>
-                      <TableCell className="text-center">{item.quantity}</TableCell>
-                      <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-      )
-    }
-    
-    if (isLoading) {
-      return (
-        <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground p-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <p>Analyzing receipt... this may take a moment.</p>
+      {hasCameraPermission === false && (
+        <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center p-8 text-center gap-4">
+          <Camera className="h-16 w-16 text-primary/50" />
+          <Alert variant="destructive" className="sm:w-auto">
+              <AlertTitle>Camera Access Required</AlertTitle>
+              <AlertDescription>
+                Please allow camera access in your browser settings to use this feature.
+              </AlertDescription>
+          </Alert>
+          <Button onClick={requestCamera} variant="secondary">Try Again</Button>
         </div>
-      )
-    }
+      )}
 
-    if (isCameraOpen) {
-      return (
-        <div className="space-y-4">
-          <div className="relative mt-4 h-64 w-full rounded-md border bg-black flex items-center justify-center overflow-hidden">
-            <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
-            {hasCameraPermission === false && (
-               <Alert variant="destructive" className="w-auto m-4">
-                  <AlertTitle>Camera Access Denied</AlertTitle>
-                  <AlertDescription>
-                    Please enable camera permissions.
-                  </AlertDescription>
-              </Alert>
-            )}
-            <canvas ref={canvasRef} className="hidden" />
-          </div>
-          <Button onClick={handleTakePicture} className="w-full" disabled={!hasCameraPermission}>
-            <Camera className="mr-2 h-4 w-4" /> Take Picture
-          </Button>
-        </div>
-      )
-    }
-
-    if (preview) {
-      return (
-        <div className="space-y-4">
-          <div className="relative mt-4 h-64 w-full rounded-md border border-dashed flex items-center justify-center overflow-hidden">
-             <Image
-              src={preview}
-              alt="Receipt preview"
-              layout="fill"
-              objectFit="contain"
-            />
-          </div>
-          <Button onClick={() => { setPreview(null); setFile(null); }} variant="outline" className="w-full">
-            <RefreshCcw className="mr-2 h-4 w-4" /> Choose a different image
-          </Button>
-        </div>
-      )
-    }
-
-    return (
-      <div className="space-y-4">
-        <label htmlFor="receipt-upload" className="block text-sm font-medium text-foreground">
-          Upload or take a picture of your receipt.
-        </label>
-        <div className="flex items-center gap-2">
-          <Button onClick={handleUseCamera} variant="outline" className="w-full">
-            <Camera className="mr-2 h-4 w-4" /> Use Camera
-          </Button>
-          <div className="w-full">
-            <Input id="receipt-upload" type="file" accept="image/*" onChange={handleFileChange} disabled={isLoading} className="hidden" />
-            <label htmlFor="receipt-upload" className="w-full inline-block">
-               <Button asChild className="w-full cursor-pointer">
-                <span><Upload className="mr-2 h-4 w-4" /> Upload File</span>
-              </Button>
-            </label>
-          </div>
+      {/* Camera Controls */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent">
+        <div className="flex items-center justify-between">
+          <DialogClose asChild>
+            <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50">
+              <X className="h-6 w-6 text-white" />
+            </Button>
+          </DialogClose>
+          <button
+            onClick={handleTakePicture}
+            disabled={!hasCameraPermission}
+            className="h-20 w-20 rounded-full border-4 border-white bg-transparent ring-4 ring-black/30 disabled:opacity-50"
+            aria-label="Take Picture"
+          />
+          <label htmlFor="receipt-upload-camera" className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white cursor-pointer hover:bg-black/50">
+            <Upload className="h-6 w-6" />
+            <Input id="receipt-upload-camera" type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+          </label>
         </div>
       </div>
-    );
+    </div>
+  );
+
+  const PreviewView = () => (
+    <div className="absolute inset-0 bg-black flex flex-col items-center justify-center">
+      {preview && <Image src={preview} alt="Receipt preview" layout="fill" objectFit="contain" />}
+      
+      {/* Preview Controls */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent">
+        <div className="flex items-center justify-around">
+          <Button
+            onClick={() => { setPreview(null); requestCamera(); }}
+            variant="ghost"
+            className="h-16 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 text-white font-bold text-lg px-8"
+          >
+            <ArrowLeft className="mr-2" /> Retake
+          </Button>
+          <Button
+            onClick={handleAnalyzeSubmit}
+            className="h-16 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg px-8"
+          >
+            Use Photo <Check className="ml-2" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const ResultsView = () => (
+    <div className="p-0 sm:p-6">
+       <DialogHeader>
+          <DialogTitle>Analysis Complete</DialogTitle>
+          <DialogDescription>Review the items below. When you're ready, add them to your history.</DialogDescription>
+        </DialogHeader>
+      <div className="my-4 max-h-64 sm:max-h-80 overflow-y-auto rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Item</TableHead>
+              <TableHead className="text-center">Qty</TableHead>
+              <TableHead className="text-right">Price</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {result?.items.map((item, index) => (
+              <TableRow key={index}>
+                <TableCell className="font-medium">{item.name}</TableCell>
+                <TableCell className="text-center">{item.quantity}</TableCell>
+                <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+       <DialogFooter className="sm:justify-between gap-2">
+         <Button type="button" onClick={handleSaveToHistory} disabled={isLoading} className="w-full sm:w-auto">
+            {isLoading ? 'Saving...' : 'Add to History'}
+          </Button>
+          <Button type="button" variant="ghost" onClick={() => { setPreview(null); setResult(null); requestCamera(); }} className="w-full sm:w-auto">
+            Analyze Another
+          </Button>
+      </DialogFooter>
+    </div>
+  );
+
+  const LoadingView = () => (
+     <div className="absolute sm:relative inset-0 flex flex-col items-center justify-center gap-4 text-muted-foreground p-8 bg-background">
+      <h3 className="text-xl font-medium text-foreground">Analyzing Receipt</h3>
+      <div className="relative h-24 w-24">
+         <Loader2 className="h-24 w-24 animate-spin text-primary/20" />
+         <ScanLine className="absolute inset-0 h-24 w-24 text-primary animate-pulse" />
+      </div>
+      <p>This may take a moment...</p>
+    </div>
+  );
+  
+  const getStage = () => {
+    if (isLoading) return 'loading';
+    if (result) return 'result';
+    if (preview) return 'preview';
+    return 'camera';
   }
 
+  const stage = getStage();
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -307,36 +312,21 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
           <ScanLine className="mr-2 h-4 w-4" /> Analyze Receipt
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Analyze a New Receipt</DialogTitle>
-          <DialogDescription>
-            Use your camera or upload a file to automatically add items to your
-            purchase history.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="pt-4">
-           <MainContent />
-        </div>
+      <DialogContent 
+        className={cn(
+          "p-0 gap-0 border-0",
+          "sm:max-w-md sm:rounded-lg",
+          stage === 'camera' || stage === 'preview' ? 'w-screen h-screen max-w-full sm:h-[80vh] sm:w-[45vh] sm:max-w-[45vh] rounded-none' : '',
+          stage === 'loading' && 'sm:max-w-sm',
+          stage === 'result' && 'sm:max-w-md'
+        )}
+        hideCloseButton={stage === 'camera' || stage === 'preview'}
+      >
+        {stage === 'camera' && <CameraView />}
+        {stage === 'preview' && <PreviewView />}
+        {stage ==='loading' && <LoadingView />}
+        {stage ==='result' && <ResultsView />}
 
-        <DialogFooter className="sm:justify-between gap-2 mt-4">
-          {result ? (
-             <Button type="button" onClick={handleSaveToHistory} disabled={isLoading}>
-              {isLoading ? 'Saving...' : 'Add to History'}
-            </Button>
-          ) : (
-            !isCameraOpen &&
-            <Button type="button" onClick={handleAnalyzeSubmit} disabled={!preview || isLoading}>
-              {isLoading ? 'Analyzing...' : 'Analyze'}
-            </Button>
-          )}
-           {!result && (
-              <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>
-                Cancel
-              </Button>
-            )}
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
