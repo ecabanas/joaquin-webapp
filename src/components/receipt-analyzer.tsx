@@ -63,32 +63,36 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   }, []);
   
   const handleStartCamera = useCallback(async () => {
+    if (cameraStatus !== 'idle') return;
+
     setCameraStatus('starting');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-        setCameraStatus('active');
+        // The `oncanplay` event is a better trigger than `play()` directly
+        videoRef.current.oncanplay = () => {
+          videoRef.current?.play();
+          setCameraStatus('active');
+        }
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
       setCameraStatus('denied');
     }
-  }, []);
+  }, [cameraStatus]);
 
   useEffect(() => {
-    if (isOpen && isMobile && cameraStatus === 'idle' && !preview) {
+    if (isOpen && isMobile && !preview) {
       handleStartCamera();
     }
     
-    // Cleanup function to stop camera when dialog closes
     return () => {
       if (cameraStatus === 'active') {
         stopCamera();
       }
     };
-  }, [isOpen, isMobile, cameraStatus, preview, handleStartCamera, stopCamera]);
+  }, [isOpen, isMobile, preview, handleStartCamera, stopCamera, cameraStatus]);
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -199,14 +203,12 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
 
   const InitialView = () => (
     <div className="p-6">
+      <VisuallyHiddenTitle>Analyze Receipt</VisuallyHiddenTitle>
       <DialogHeader>
         <DialogTitle>Analyze Receipt</DialogTitle>
-        <DialogDescription>Upload or take a photo of your receipt to automatically extract items and prices.</DialogDescription>
+        <DialogDescription>Upload a photo of your receipt to automatically extract items and prices.</DialogDescription>
       </DialogHeader>
-      <div className="grid grid-cols-2 gap-4 my-6">
-        <Button onClick={handleStartCamera}>
-          <Camera className="mr-2" /> Use Camera
-        </Button>
+      <div className="flex justify-center my-6">
         <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
           <Upload className="mr-2" /> Upload File
         </Button>
@@ -224,7 +226,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
         className={cn("absolute inset-0 h-full w-full object-cover z-0", cameraStatus !== 'active' && 'hidden')}
         autoPlay
         muted
-        playsInline
+        playsInline // CRITICAL for iOS
       />
       <canvas ref={canvasRef} className="hidden" />
 
@@ -250,13 +252,15 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       </div>
 
       {cameraStatus === 'active' && (
-        <div className="absolute inset-0 z-10 flex flex-col justify-between">
-          <div className="flex justify-start p-4 pt-[calc(env(safe-area-inset-top,0)+1rem)]">
+        <div className="absolute inset-0 z-10 flex flex-col justify-between pointer-events-none">
+          {/* Top controls with safe-area padding */}
+          <div className="flex justify-start p-4 pt-[calc(env(safe-area-inset-top,0)+1rem)] pointer-events-auto">
              <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50" onClick={() => setIsOpen(false)}>
               <X className="h-6 w-6 text-white" />
             </Button>
           </div>
-          <div className="p-4 pb-[calc(env(safe-area-inset-bottom,0)+1rem)] bg-gradient-to-t from-black/50 to-transparent">
+          {/* Bottom controls with safe-area padding */}
+          <div className="p-4 pb-[calc(env(safe-area-inset-bottom,0)+1rem)] bg-gradient-to-t from-black/50 to-transparent pointer-events-auto">
             <div className="flex items-center justify-center">
               <button
                 onClick={handleTakePicture}
@@ -264,7 +268,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
                 aria-label="Take Picture"
               />
             </div>
-            <div className="absolute bottom-[calc(env(safe-area-inset-bottom,0)+1rem)] right-6">
+            <div className="absolute bottom-[calc(env(safe-area-inset-bottom,0)+1.5rem)] right-6">
               <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50" onClick={() => fileInputRef.current?.click()}>
                   <Upload className="h-6 w-6 text-white" />
                 </Button>
@@ -303,8 +307,8 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
 
   const ResultsView = () => (
     <div className={cn(isMobile ? "p-4 pt-[calc(env(safe-area-inset-top,0)+1rem)]" : "p-6")}>
+       <VisuallyHiddenTitle>Analysis Complete</VisuallyHiddenTitle>
        <DialogHeader>
-          <VisuallyHiddenTitle>Analysis Complete</VisuallyHiddenTitle>
           <DialogTitle>Analysis Complete</DialogTitle>
           <DialogDescription>Review the items below. When you're ready, add them to your history.</DialogDescription>
         </DialogHeader>
@@ -377,11 +381,11 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        { (isMobile || !isMobile) && 
+        {isMobile && (
           <Button>
             <ScanLine className="mr-2 h-4 w-4" /> Analyze Receipt
           </Button>
-        }
+        )}
       </DialogTrigger>
       <DialogContent 
         className={cn(
@@ -394,8 +398,9 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
           stage === 'initial' && 'p-6'
         )}
         hideCloseButton={isMobile || stage === 'loading'}
-        onEscapeKeyDown={() => {
+        onEscapeKeyDown={(e) => {
             if (stage === 'preview' || stage === 'result') {
+                e.preventDefault();
                 resetAllState();
             } else {
                 setIsOpen(false);
