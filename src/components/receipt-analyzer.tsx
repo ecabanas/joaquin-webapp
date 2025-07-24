@@ -14,8 +14,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { analyzeReceipt, type AnalyzeReceiptOutput } from '@/ai/flows/analyze-receipt';
-import { deletePurchase, updatePurchase } from '@/lib/firestore';
-import { Loader2, CheckCircle, Trash2, PlusCircle, RefreshCw, Camera } from 'lucide-react';
+import { updatePurchase } from '@/lib/firestore';
+import { Loader2, CheckCircle, Trash2, PlusCircle, RefreshCw } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -53,12 +53,6 @@ export function ReceiptAnalyzer({
   const [isSaving, setIsSaving] = useState(false);
 
   const { toast } = useToast();
-
-  const handleCloseAndDelete = useCallback(async () => {
-    if (isSaving) return;
-    await deletePurchase(workspaceId, purchaseId);
-    onClose();
-  }, [isSaving, onClose, purchaseId, workspaceId]);
   
   useEffect(() => {
     if (receiptFile) {
@@ -113,6 +107,7 @@ export function ReceiptAnalyzer({
   const handleSaveToHistory = async () => {
     setIsSaving(true);
     try {
+      await updatePurchase(purchaseId, { store: storeName, items });
       onSave(purchaseId, storeName, items);
       toast({
         title: 'Success!',
@@ -132,14 +127,17 @@ export function ReceiptAnalyzer({
 
   const renderPreview = () => (
     <>
-      <div className="flex-1 overflow-hidden relative">
+      <DialogHeader className="p-4 sm:p-6 border-b text-center">
+        <DialogTitle>Confirm Your Photo</DialogTitle>
+        <DialogDescription>Is the receipt image clear enough to read?</DialogDescription>
+      </DialogHeader>
+      <div className="flex-1 overflow-hidden relative p-4">
         {preview && (
           <Image
             src={preview}
             alt="Receipt preview"
             layout="fill"
             objectFit="contain"
-            className="p-4"
           />
         )}
       </div>
@@ -249,7 +247,7 @@ export function ReceiptAnalyzer({
   }
 
   return (
-    <Dialog open={!!receiptFile} onOpenChange={(isOpen) => !isOpen && handleCloseAndDelete()}>
+    <Dialog open={!!receiptFile} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent 
          hideCloseButton={isSaving} 
          className="p-0 gap-0 w-full h-full flex flex-col sm:max-w-2xl sm:h-[90vh] sm:rounded-xl"
@@ -259,3 +257,5 @@ export function ReceiptAnalyzer({
     </Dialog>
   );
 }
+
+    
