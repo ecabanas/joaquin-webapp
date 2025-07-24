@@ -69,7 +69,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       setCameraStatus('idle');
     }
   }, []);
-
+  
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
@@ -98,17 +98,39 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   }, []);
 
   useEffect(() => {
-    if (isOpen && stage === 'camera' && cameraStatus === 'idle') {
-      handleStartCamera();
-    }
-
-    // Cleanup when component unmounts or dialog closes
-    return () => {
-      if (cameraStatus === 'active') {
-         stopCamera();
+    let stream: MediaStream | null = null;
+  
+    const startAndAttachCamera = async () => {
+      setCameraStatus('starting');
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.onloadedmetadata = () => {
+             videoRef.current?.play();
+             setCameraStatus('active');
+          }
+        }
+      } catch (err) {
+        console.error("Failed to start camera:", err);
+        setCameraStatus('denied');
       }
+    };
+  
+    if (stage === 'camera') {
+      startAndAttachCamera();
     }
-  }, [isOpen, stage, cameraStatus, handleStartCamera, stopCamera]);
+  
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+      setCameraStatus('idle');
+    };
+  }, [stage]);
 
   const handleTakePicture = () => {
     if (videoRef.current && canvasRef.current) {
