@@ -63,7 +63,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Link href="/list" className="flex items-center justify-center group-hover:justify-start gap-3 w-full px-4">
               <Logo className="w-7 h-7 text-primary flex-shrink-0" />
               <div className="overflow-hidden transition-all duration-300 w-0 group-hover:w-auto">
-                <h1 className="text-xl font-bold tracking-tight truncate">Aisle Together</h1>
+                <h1 className="text-xl font-bold tracking-tight truncate">Joaquin</h1>
               </div>
             </Link>
           </div>
@@ -166,7 +166,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <header className="md:hidden sticky top-0 z-40 flex items-center justify-between h-16 px-4 border-b bg-background/95 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <Logo className="w-6 h-6 text-primary" />
-            <span className="font-bold text-lg">Aisle Together</span>
+            <span className="font-bold text-lg">Joaquin</span>
           </div>
            <Button variant="ghost" size="icon" onClick={logout}>
             <LogOut className="w-5 h-5" />
