@@ -11,7 +11,6 @@ import {
   DialogDescription,
   DialogFooter,
   DialogTrigger,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -93,11 +92,19 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   // Effect to handle camera logic when dialog opens/closes
   useEffect(() => {
     if (isOpen) {
-      requestCamera();
+      // On mobile, immediately request camera. Desktop waits for user action.
+      if (isMobile) {
+        requestCamera();
+      }
     } else {
       resetState();
     }
-  }, [isOpen]);
+    
+    return () => {
+      // Ensure camera is always stopped on cleanup
+      stopCamera();
+    }
+  }, [isOpen, isMobile]);
 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -178,7 +185,6 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
     }
   };
   
-  // A component for the visually hidden title
   const VisuallyHiddenTitle = ({ children }: { children: React.ReactNode }) => (
     <DialogTitle className="sr-only">{children}</DialogTitle>
   );
@@ -187,45 +193,32 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
     <div className="absolute inset-0 bg-black flex flex-col items-center justify-center">
       <VisuallyHiddenTitle>Take Receipt Photo</VisuallyHiddenTitle>
       
-      {/* Video Feed */}
-      <video ref={videoRef} className="h-full w-full object-cover" autoPlay muted playsInline />
+      {/* Video Feed Layer (Bottom) */}
+      <video 
+        ref={videoRef} 
+        className="absolute inset-0 h-full w-full object-cover z-0" 
+        autoPlay 
+        muted 
+        playsInline // Crucial for iOS
+      />
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* Overlays for different states */}
-      {cameraStatus === 'denied' && (
-        <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center p-8 text-center gap-4">
-          <Camera className="h-16 w-16 text-primary/50" />
-          <Alert variant="destructive" className="sm:w-auto">
-              <AlertTitle>Camera Access Required</AlertTitle>
-              <AlertDescription>
-                Please allow camera access in your browser settings to use this feature.
-              </AlertDescription>
-          </Alert>
-          <Button onClick={requestCamera} variant="secondary">Try Again</Button>
-        </div>
-      )}
-      
-       {cameraStatus === 'requesting' && (
-         <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center p-8 text-center gap-4 text-white">
-           <Loader2 className="w-12 h-12 animate-spin" />
-           <p>Starting camera...</p>
-         </div>
-       )}
-
-      {/* UI Controls - always rendered on top */}
+      {/* UI Controls Layer (Top) */}
       <div className="absolute inset-0 z-10 flex flex-col justify-between">
+         {/* Top Controls */}
         <div className="flex justify-start p-4">
            <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50" onClick={() => setIsOpen(false)}>
             <X className="h-6 w-6 text-white" />
           </Button>
         </div>
 
+        {/* Bottom Controls */}
         <div className="p-4 bg-gradient-to-t from-black/50 to-transparent">
           <div className="flex items-center justify-center">
             <button
               onClick={handleTakePicture}
               disabled={cameraStatus !== 'active'}
-              className="h-20 w-20 rounded-full border-4 border-white bg-transparent ring-4 ring-black/30 disabled:opacity-50"
+              className="h-20 w-20 rounded-full border-4 border-white bg-transparent ring-4 ring-black/30 disabled:opacity-50 transition-opacity"
               aria-label="Take Picture"
             />
           </div>
@@ -237,6 +230,30 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
           </div>
         </div>
       </div>
+
+       {/* Status Overlay Layer (Topmost) */}
+      {cameraStatus !== 'active' && (
+         <div className="absolute inset-0 z-20 bg-black/80 flex flex-col items-center justify-center p-8 text-center gap-4 text-white">
+            {cameraStatus === 'denied' && (
+              <>
+                <Camera className="h-16 w-16 text-primary/50" />
+                <Alert variant="destructive" className="sm:w-auto text-left">
+                    <AlertTitle>Camera Access Required</AlertTitle>
+                    <AlertDescription>
+                      Please allow camera access in your browser settings to use this feature.
+                    </AlertDescription>
+                </Alert>
+                <Button onClick={requestCamera} variant="secondary">Try Again</Button>
+              </>
+            )}
+            {cameraStatus === 'requesting' && (
+              <>
+                <Loader2 className="w-12 h-12 animate-spin" />
+                <p>Starting camera...</p>
+              </>
+            )}
+        </div>
+      )}
     </div>
   );
 
@@ -292,7 +309,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
         </Table>
       </div>
        <DialogFooter className="sm:justify-between gap-2 flex-col-reverse sm:flex-row">
-         <Button type="button" variant="ghost" onClick={() => { setPreview(null); setResult(null); requestCamera(); }} className="w-full sm:w-auto">
+         <Button type="button" variant="ghost" onClick={() => { setPreview(null); setResult(null); if (isMobile) requestCamera(); }} className="w-full sm:w-auto">
             Analyze Another
           </Button>
          <Button type="button" onClick={handleSaveToHistory} disabled={isLoading} className="w-full sm:w-auto">
@@ -320,12 +337,31 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       <p>This may take a moment...</p>
     </div>
   );
+
+  const DesktopUploadView = () => (
+    <div>
+      <DialogHeader>
+        <DialogTitle>Analyze Receipt</DialogTitle>
+        <DialogDescription>Upload a photo of your receipt to automatically extract items and prices.</DialogDescription>
+      </DialogHeader>
+      <div className="my-6">
+        <label htmlFor="receipt-upload-desktop" className="block text-sm font-medium text-gray-700 mb-2">Receipt Image</label>
+        <Input id="receipt-upload-desktop" type="file" accept="image/*" onChange={handleFileChange} />
+      </div>
+      <DialogFooter>
+        <Button onClick={handleAnalyzeSubmit} disabled={!preview || isLoading}>
+          {isLoading ? 'Analyzing...' : 'Analyze'}
+        </Button>
+      </DialogFooter>
+    </div>
+  );
   
   const getStage = () => {
     if (isLoading) return 'loading';
     if (result) return 'result';
     if (preview) return 'preview';
-    return 'camera';
+    if (isMobile) return 'camera';
+    return 'desktop_upload';
   }
 
   const stage = getStage();
@@ -333,9 +369,11 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        { isMobile && <Button>
-          <ScanLine className="mr-2 h-4 w-4" /> Analyze Receipt
-        </Button>}
+        { isMobile && 
+          <Button>
+            <ScanLine className="mr-2 h-4 w-4" /> Analyze Receipt
+          </Button>
+        }
       </DialogTrigger>
       <DialogContent 
         className={cn(
@@ -344,18 +382,17 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
           !isMobile && 'sm:max-w-md sm:rounded-lg',
           stage === 'camera' || stage === 'preview' ? 'sm:h-[80vh] sm:w-[45vh] sm:max-w-[45vh]' : '',
           stage === 'loading' && !isMobile && 'sm:max-w-sm',
-          stage === 'result' && !isMobile && 'sm:max-w-md'
+          stage === 'result' && !isMobile && 'sm:max-w-md',
+          stage === 'desktop_upload' && 'p-6'
         )}
         hideCloseButton={isMobile}
       >
         {stage === 'camera' && <CameraView />}
         {stage === 'preview' && <PreviewView />}
-        {stage ==='loading' && <LoadingView />}
-        {stage ==='result' && <ResultsView />}
-
+        {stage === 'loading' && <LoadingView />}
+        {stage === 'result' && <ResultsView />}
+        {stage === 'desktop_upload' && <DesktopUploadView />}
       </DialogContent>
     </Dialog>
   );
 }
-
-    
