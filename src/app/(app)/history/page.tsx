@@ -18,6 +18,7 @@ import type { Purchase } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { getPurchaseHistory } from '@/lib/firestore';
 import { useAuth } from '@/contexts/auth-context';
+import { ReceiptAnalyzer } from '@/components/receipt-analyzer';
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-US', {
@@ -82,6 +83,7 @@ export default function HistoryPage() {
 
   const PurchaseCard = ({ purchase }: { purchase: Purchase }) => {
     const total = purchase.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+    const hasPrices = purchase.items.some(item => item.price > 0);
 
     return (
       <Collapsible defaultOpen={false}>
@@ -98,7 +100,7 @@ export default function HistoryPage() {
               </div>
                <div className="text-right flex flex-col items-end">
                   <p className="text-2xl font-bold">
-                    {formatCurrency(total)}
+                    {hasPrices ? formatCurrency(total) : '---'}
                   </p>
                   <p className="text-sm text-muted-foreground">{purchase.items.length} items</p>
                   <ChevronDown className="h-5 w-5 mt-2 transition-transform duration-300 group-data-[state=open]:rotate-180" />
@@ -112,11 +114,14 @@ export default function HistoryPage() {
                 {purchase.items.map((item, itemIndex) => (
                   <li key={itemIndex} className="flex justify-between items-center text-base">
                     <span className="text-foreground">{item.name} <span className="text-sm text-muted-foreground">(x{item.quantity})</span></span>
-                    <span className="font-medium">{formatCurrency(item.price * item.quantity)}</span>
+                    <span className="font-medium">{hasPrices ? formatCurrency(item.price * item.quantity) : '---'}</span>
                   </li>
                 ))}
               </ul>
             </CardContent>
+            <CardFooter className="px-4 pb-4 md:px-6 md:pb-6">
+              {!hasPrices && <ReceiptAnalyzer />}
+            </CardFooter>
           </CollapsibleContent>
         </Card>
       </Collapsible>
