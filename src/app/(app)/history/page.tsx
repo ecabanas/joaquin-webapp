@@ -14,7 +14,7 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { GlobalSearchInput } from '@/components/global-search-input';
 import { ChevronDown, User, FileText, Loader2, ScanLine } from 'lucide-react';
-import type { Purchase } from '@/lib/types';
+import type { Purchase, PurchaseItem } from '@/lib/types';
 import { getPurchaseHistory, createNewPurchase, updatePurchase } from '@/lib/firestore';
 import { useAuth } from '@/contexts/auth-context';
 import { ReceiptAnalyzer } from '@/components/receipt-analyzer';
@@ -92,7 +92,7 @@ export default function HistoryPage() {
     setActivePurchaseId(null);
   };
   
-  const handleAnalyzerSave = async (purchaseId: string, store: string, items: any[]) => {
+  const handleAnalyzerSave = async (purchaseId: string, store: string, items: PurchaseItem[]) => {
     if (!workspaceId) return;
     await updatePurchase(workspaceId, purchaseId, { store, items });
     handleAnalyzerClose();
