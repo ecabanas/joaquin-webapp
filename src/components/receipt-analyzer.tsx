@@ -36,7 +36,7 @@ type ReceiptAnalyzerProps = {
 };
 
 type CameraStatus = 'idle' | 'starting' | 'active' | 'denied';
-type Stage = 'initial' | 'camera' | 'preview' | 'loading' | 'result' | 'desktop_upload';
+type Stage = 'initial' | 'camera' | 'preview' | 'loading' | 'result';
 
 
 export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
@@ -58,10 +58,11 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       const stream = videoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach(track => track.stop());
       videoRef.current.srcObject = null;
+      setCameraStatus('idle');
     }
   }, []);
   
-  const handleStartCamera = async () => {
+  const handleStartCamera = useCallback(async () => {
     setCameraStatus('starting');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
@@ -74,14 +75,20 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       console.error('Error accessing camera:', error);
       setCameraStatus('denied');
     }
-  };
+  }, []);
 
   useEffect(() => {
-    // Cleanup function to stop camera when component unmounts or dialog closes
+    if (isOpen && isMobile && cameraStatus === 'idle' && !preview) {
+      handleStartCamera();
+    }
+    
+    // Cleanup function to stop camera when dialog closes
     return () => {
-      stopCamera();
+      if (cameraStatus === 'active') {
+        stopCamera();
+      }
     };
-  }, [stopCamera]);
+  }, [isOpen, isMobile, cameraStatus, preview, handleStartCamera, stopCamera]);
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -160,16 +167,58 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       setIsLoading(false);
     }
   };
+  
+  const resetAllState = () => {
+      stopCamera();
+      setPreview(null);
+      setResult(null);
+      setIsLoading(false);
+      setCameraStatus('idle');
+  }
+
+  const handleOpenChange = (open: boolean) => {
+      if (!open) {
+          resetAllState();
+      }
+      setIsOpen(open);
+  }
+
+  const getStage = (): Stage => {
+    if (isLoading) return 'loading';
+    if (result) return 'result';
+    if (preview) return 'preview';
+    if (isMobile) return 'camera';
+    return 'initial';
+  }
+
+  const stage = getStage();
 
   const VisuallyHiddenTitle = ({ children }: { children: React.ReactNode }) => (
     <DialogTitle className="sr-only">{children}</DialogTitle>
+  );
+
+  const InitialView = () => (
+    <div className="p-6">
+      <DialogHeader>
+        <DialogTitle>Analyze Receipt</DialogTitle>
+        <DialogDescription>Upload or take a photo of your receipt to automatically extract items and prices.</DialogDescription>
+      </DialogHeader>
+      <div className="grid grid-cols-2 gap-4 my-6">
+        <Button onClick={handleStartCamera}>
+          <Camera className="mr-2" /> Use Camera
+        </Button>
+        <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+          <Upload className="mr-2" /> Upload File
+        </Button>
+        <Input id="receipt-upload-initial" type="file" accept="image/*" onChange={handleFileChange} className="hidden" ref={fileInputRef} />
+      </div>
+    </div>
   );
 
   const CameraView = () => (
     <div className="absolute inset-0 bg-black flex flex-col items-center justify-center">
       <VisuallyHiddenTitle>Take Receipt Photo</VisuallyHiddenTitle>
       
-      {/* Layer 1: Video Feed */}
       <video
         ref={videoRef}
         className={cn("absolute inset-0 h-full w-full object-cover z-0", cameraStatus !== 'active' && 'hidden')}
@@ -179,7 +228,6 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       />
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* Layer 2: Statuses (starting, denied) */}
       <div className={cn("absolute inset-0 z-20 bg-black/80 flex flex-col items-center justify-center p-8 text-center gap-4 text-white", cameraStatus === 'active' && 'hidden')}>
         {cameraStatus === 'denied' && (
           <>
@@ -199,27 +247,16 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
             <p>Starting camera...</p>
           </>
         )}
-         {cameraStatus === 'idle' && (
-          <>
-            <Camera className="h-16 w-16 text-primary/50" />
-             <h3 className="text-2xl font-bold">Analyze Receipt</h3>
-             <p className="text-lg text-muted-foreground">Position your receipt within the frame</p>
-             <Button onClick={handleStartCamera} size="lg" className="mt-4">
-                Start Camera
-             </Button>
-          </>
-        )}
       </div>
 
-      {/* Layer 3: UI Controls (only when camera is active) */}
       {cameraStatus === 'active' && (
         <div className="absolute inset-0 z-10 flex flex-col justify-between">
-          <div className="flex justify-start p-4">
-            <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50" onClick={() => setIsOpen(false)}>
+          <div className="flex justify-start p-4 pt-[calc(env(safe-area-inset-top,0)+1rem)]">
+             <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50" onClick={() => setIsOpen(false)}>
               <X className="h-6 w-6 text-white" />
             </Button>
           </div>
-          <div className="p-4 bg-gradient-to-t from-black/50 to-transparent">
+          <div className="p-4 pb-[calc(env(safe-area-inset-bottom,0)+1rem)] bg-gradient-to-t from-black/50 to-transparent">
             <div className="flex items-center justify-center">
               <button
                 onClick={handleTakePicture}
@@ -227,7 +264,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
                 aria-label="Take Picture"
               />
             </div>
-            <div className="absolute bottom-6 right-6">
+            <div className="absolute bottom-[calc(env(safe-area-inset-bottom,0)+1rem)] right-6">
               <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50" onClick={() => fileInputRef.current?.click()}>
                   <Upload className="h-6 w-6 text-white" />
                 </Button>
@@ -244,7 +281,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       <VisuallyHiddenTitle>Confirm Receipt Photo</VisuallyHiddenTitle>
       {preview && <Image src={preview} alt="Receipt preview" fill={true} style={{objectFit:"contain"}} />}
       
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent z-10">
+      <div className="absolute bottom-0 left-0 right-0 p-4 pb-[calc(env(safe-area-inset-bottom,0)+1rem)] bg-gradient-to-t from-black/50 to-transparent z-10">
         <div className="flex items-center justify-around">
           <Button
             onClick={() => { setPreview(null); setCameraStatus('idle'); }}
@@ -265,7 +302,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   );
 
   const ResultsView = () => (
-    <div className={cn(isMobile ? "p-4 pt-16" : "p-6")}>
+    <div className={cn(isMobile ? "p-4 pt-[calc(env(safe-area-inset-top,0)+1rem)]" : "p-6")}>
        <DialogHeader>
           <VisuallyHiddenTitle>Analysis Complete</VisuallyHiddenTitle>
           <DialogTitle>Analysis Complete</DialogTitle>
@@ -291,7 +328,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
           </TableBody>
         </Table>
       </div>
-       <DialogFooter className="sm:justify-between gap-2 flex-col-reverse sm:flex-row">
+       <DialogFooter className="sm:justify-between gap-2 flex-col-reverse sm:flex-row pb-[calc(env(safe-area-inset-bottom,0))]">
          <Button type="button" variant="ghost" onClick={() => { setPreview(null); setResult(null); setCameraStatus('idle'); }} className="w-full sm:w-auto">
             Analyze Another
           </Button>
@@ -300,7 +337,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
           </Button>
       </DialogFooter>
        {isMobile && (
-          <div className="absolute top-4 left-4 z-10">
+          <div className="absolute top-4 left-4 z-10 pt-[calc(env(safe-area-inset-top,0))]">
              <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full" onClick={() => { setPreview(null); setResult(null); setCameraStatus('idle'); }}>
               <ArrowLeft className="h-6 w-6" />
             </Button>
@@ -320,50 +357,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       <p>This may take a moment...</p>
     </div>
   );
-
-  const DesktopUploadView = () => (
-    <div>
-      <DialogHeader>
-        <DialogTitle>Analyze Receipt</DialogTitle>
-        <DialogDescription>Upload a photo of your receipt to automatically extract items and prices.</DialogDescription>
-      </DialogHeader>
-      <div className="my-6">
-        <label htmlFor="receipt-upload-desktop" className="block text-sm font-medium text-gray-700 mb-2">Receipt Image</label>
-        <Input id="receipt-upload-desktop" type="file" accept="image/*" onChange={handleFileChange} />
-      </div>
-      <DialogFooter>
-        <Button onClick={handleAnalyzeSubmit} disabled={!preview || isLoading}>
-          {isLoading ? 'Analyzing...' : 'Analyze'}
-        </Button>
-      </DialogFooter>
-    </div>
-  );
   
-  const resetAllState = () => {
-      stopCamera();
-      setPreview(null);
-      setResult(null);
-      setIsLoading(false);
-      setCameraStatus('idle');
-  }
-
-  const handleOpenChange = (open: boolean) => {
-      if (!open) {
-          resetAllState();
-      }
-      setIsOpen(open);
-  }
-
-  const getStage = (): Stage => {
-    if (isLoading) return 'loading';
-    if (result) return 'result';
-    if (preview) return 'preview';
-    if (isMobile) return 'camera';
-    return 'desktop_upload';
-  }
-
-  const stage = getStage();
-
   const renderContentForStage = () => {
     switch (stage) {
       case 'camera':
@@ -374,17 +368,16 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
         return <LoadingView />;
       case 'result':
         return <ResultsView />;
-      case 'desktop_upload':
-        return <DesktopUploadView />;
+      case 'initial':
       default:
-        return null;
+        return <InitialView />;
     }
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        { isMobile && 
+        { (isMobile || !isMobile) && 
           <Button>
             <ScanLine className="mr-2 h-4 w-4" /> Analyze Receipt
           </Button>
@@ -398,7 +391,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
           stage === 'camera' || stage === 'preview' ? 'sm:h-[80vh] sm:w-[45vh] sm:max-w-[45vh]' : '',
           stage === 'loading' && !isMobile && 'sm:max-w-sm',
           stage === 'result' && !isMobile && 'sm:max-w-md',
-          stage === 'desktop_upload' && 'p-6'
+          stage === 'initial' && 'p-6'
         )}
         hideCloseButton={isMobile || stage === 'loading'}
         onEscapeKeyDown={() => {
@@ -414,3 +407,5 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
     </Dialog>
   );
 }
+
+    
