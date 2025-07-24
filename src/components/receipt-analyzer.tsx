@@ -14,7 +14,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { analyzeReceipt, type AnalyzeReceiptOutput } from '@/ai/flows/analyze-receipt';
-import { updatePurchase } from '@/lib/firestore';
 import { Loader2, CheckCircle, Trash2, PlusCircle, RefreshCw } from 'lucide-react';
 import {
   Table,
@@ -107,7 +106,6 @@ export function ReceiptAnalyzer({
   const handleSaveToHistory = async () => {
     setIsSaving(true);
     try {
-      await updatePurchase(purchaseId, { store: storeName, items });
       onSave(purchaseId, storeName, items);
       toast({
         title: 'Success!',
@@ -257,5 +255,3 @@ export function ReceiptAnalyzer({
     </Dialog>
   );
 }
-
-    
