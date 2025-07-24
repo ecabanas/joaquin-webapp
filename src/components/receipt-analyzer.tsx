@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import {
   Dialog,
@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { analyzeReceipt, type AnalyzeReceiptOutput } from '@/ai/flows/analyze-receipt';
 import { updatePurchaseItems } from '@/lib/firestore';
 import { useAuth } from '@/contexts/auth-context';
-import { Loader2, ScanLine, Check, Camera, CheckCircle } from 'lucide-react';
+import { Loader2, Check, Camera, CheckCircle } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -26,7 +26,6 @@ import {
   TableRow,
 } from './ui/table';
 import { cn } from '@/lib/utils';
-
 
 type ReceiptAnalyzerProps = {
   receiptFile: File | null;
@@ -54,13 +53,12 @@ export function ReceiptAnalyzer({
     if (result) return 'results';
     return 'preview';
   }, [isProcessing, result]);
-  
+
   const handleClose = useCallback(() => {
-    // Guard against closing while loading
     if (isProcessing) return;
     onDone();
   }, [isProcessing, onDone]);
-  
+
   useEffect(() => {
     if (receiptFile) {
       const reader = new FileReader();
@@ -95,13 +93,12 @@ export function ReceiptAnalyzer({
         description: 'Could not analyze the receipt. Please try again.',
         variant: 'destructive',
       });
-      // On failure, go back to the preview stage
       setResult(null);
     } finally {
       setIsProcessing(false);
     }
   };
-  
+
   const handleSaveToHistory = async () => {
     if (!result || !userProfile?.workspaceId || !purchaseId) {
       toast({ title: 'Error', description: 'No result to save.', variant: 'destructive'});
@@ -140,26 +137,26 @@ export function ReceiptAnalyzer({
         }</DialogDescription>
       </DialogHeader>
 
-      <div className="flex-1 overflow-hidden px-4 sm:px-6">
-        {/* Preview & Loading Content */}
-        <div className={cn(
-          "relative aspect-[9/16] w-full max-w-sm mx-auto h-full rounded-lg overflow-hidden border bg-muted transition-all duration-300",
-          stage === 'results' && 'hidden'
-        )}>
-          {preview && <Image src={preview} alt="Receipt preview" layout="fill" objectFit="contain" />}
-          
-          {stage === 'loading' && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/60 backdrop-blur-sm text-white p-8">
-               <div className="relative h-16 w-16">
-                  <div className="absolute inset-0 bg-white/20 rounded-full animate-ping" />
-                  <Loader2 className="h-16 w-16 animate-spin text-white/80" style={{ animationDuration: '3s' }}/>
-               </div>
-               <p className="text-lg font-medium">Analyzing...</p>
-            </div>
-          )}
-        </div>
+      <div className="flex-1 overflow-hidden p-0 sm:p-6 sm:pb-0">
+        {stage === 'preview' && preview && (
+           <div className="relative aspect-[9/16] w-full max-w-sm mx-auto h-full rounded-lg overflow-hidden border">
+              <Image src={preview} alt="Receipt preview" layout="fill" objectFit="contain" />
+           </div>
+        )}
 
-        {/* Results Content */}
+        {stage === 'loading' && preview && (
+            <div className="relative w-full h-full rounded-lg overflow-hidden border bg-muted/40 flex items-center justify-center">
+              <Image src={preview} alt="Receipt preview" layout="fill" objectFit="contain" className="opacity-40" />
+               <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/20 text-white p-8 z-10">
+                   <div className="relative h-16 w-16">
+                      <div className="absolute inset-0 bg-white/20 rounded-full animate-ping" />
+                      <Loader2 className="h-16 w-16 animate-spin text-white/80" style={{ animationDuration: '3s' }}/>
+                   </div>
+                   <p className="text-lg font-medium">Analyzing...</p>
+               </div>
+            </div>
+        )}
+
         {stage === 'results' && result && (
             <div className="h-full overflow-y-auto border rounded-lg">
                 <Table>
@@ -196,6 +193,11 @@ export function ReceiptAnalyzer({
                 </Button>
             </>
         )}
+         {stage === 'loading' && (
+            <Button type="button" variant="ghost" onClick={handleClose} disabled>
+                Cancel
+            </Button>
+        )}
         {stage === 'results' && (
              <>
                 <Button type="button" variant="ghost" onClick={handleClose}>
@@ -210,12 +212,12 @@ export function ReceiptAnalyzer({
       </DialogFooter>
     </div>
   );
-  
+
   return (
     <Dialog open={!!receiptFile} onOpenChange={(isOpen) => !isOpen && handleClose()}>
       <DialogContent 
          hideCloseButton={true} 
-         className="p-0 gap-0 w-full h-full sm:w-[calc(100%-2rem)] sm:h-auto sm:max-w-md sm:max-h-[90vh] sm:rounded-xl"
+         className="p-0 gap-0 w-full h-full sm:w-auto sm:max-w-md sm:h-[90vh] sm:rounded-xl"
       >
         {renderContent()}
       </DialogContent>
