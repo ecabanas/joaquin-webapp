@@ -7,25 +7,30 @@ import { useEffect, useMemo, useState } from 'react';
 import { GlobalSearchInput } from '@/components/global-search-input';
 import Fuse from 'fuse.js';
 import { addListItem, finishShopping, getListItems, updateListItem, getItemCatalog, seedInitialCatalog } from '@/lib/firestore';
-
-const WORKSPACE_ID = 'workspace-1'; // Hardcoded for now
+import { useAuth } from '@/contexts/auth-context';
+import { Loader2 } from 'lucide-react';
 
 export default function GroceryListPage() {
-  const [activeList, setActiveList] = useState<GroceryList>({ id: WORKSPACE_ID, items: []});
+  const { user, userProfile, loading } = useAuth();
+  const [activeList, setActiveList] = useState<GroceryList>({ id: '', items: []});
   const [searchQuery, setSearchQuery] = useState('');
   const [itemCatalog, setItemCatalog] = useState<string[]>([]);
 
+  const workspaceId = userProfile?.workspaceId;
+
   useEffect(() => {
+    if (!workspaceId) return;
+
     // Subscribe to real-time updates for the grocery list
-    const unsubscribeList = getListItems(WORKSPACE_ID, (items) => {
-      setActiveList({ id: WORKSPACE_ID, items });
+    const unsubscribeList = getListItems(workspaceId, (items) => {
+      setActiveList({ id: workspaceId, items });
     });
 
     // Subscribe to real-time updates for the item catalog
-    const unsubscribeCatalog = getItemCatalog(WORKSPACE_ID, (catalog) => {
+    const unsubscribeCatalog = getItemCatalog(workspaceId, (catalog) => {
       // Seed initial data if catalog is empty
       if (catalog.length === 0) {
-        seedInitialCatalog(WORKSPACE_ID);
+        seedInitialCatalog(workspaceId);
       }
       setItemCatalog(catalog);
     });
@@ -35,7 +40,7 @@ export default function GroceryListPage() {
       unsubscribeList();
       unsubscribeCatalog();
     };
-  }, []);
+  }, [workspaceId]);
 
 
   const { totalItems, checkedItems } = useMemo(() => {
@@ -56,16 +61,18 @@ export default function GroceryListPage() {
   };
   
   const handleItemUpdate = (itemId: string, updates: Partial<ListItem>) => {
-    updateListItem(WORKSPACE_ID, itemId, updates);
+    if (!workspaceId) return;
+    updateListItem(workspaceId, itemId, updates);
   };
 
   const handleAddItem = async (itemName: string) => {
+    if (!workspaceId) return;
     const itemNameLower = itemName.toLowerCase();
     const existingItem = activeList.items.find(item => item.name.toLowerCase() === itemNameLower);
 
     if (existingItem) {
         // If item is already on list, uncheck it and increment quantity
-       await updateListItem(WORKSPACE_ID, existingItem.id, {
+       await updateListItem(workspaceId, existingItem.id, {
          quantity: existingItem.quantity + 1,
          checked: false,
        });
@@ -76,12 +83,13 @@ export default function GroceryListPage() {
         quantity: 1,
         checked: false,
       };
-      await addListItem(WORKSPACE_ID, newItem, itemCatalog);
+      await addListItem(workspaceId, newItem, itemCatalog);
     }
   };
 
   const handleFinishShopping = async (storeName: string) => {
-    await finishShopping(WORKSPACE_ID, storeName, 'Jane Doe');
+    if (!workspaceId || !userProfile) return;
+    await finishShopping(workspaceId, storeName, userProfile.name);
     console.log(`New purchase at ${storeName} added to history.`);
   };
 
@@ -110,6 +118,13 @@ export default function GroceryListPage() {
     return finalResults;
   }, [searchQuery, fuse, activeList.items]);
 
+  if (loading || !workspaceId) {
+     return (
+      <div className="flex justify-center items-center h-48">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto">

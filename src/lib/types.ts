@@ -23,3 +23,9 @@ export type Purchase = {
     price: number;
   }[];
 };
+
+export type UserProfile = {
+  name: string;
+  photoURL: string;
+  workspaceId: string;
+};

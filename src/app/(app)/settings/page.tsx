@@ -1,4 +1,6 @@
-import Image from 'next/image';
+
+'use client';
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,9 +14,24 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { User, Bell, Users, Mail } from 'lucide-react';
+import { useAuth } from '@/contexts/auth-context';
+import { User, Bell, Users, Loader2 } from 'lucide-react';
 
 export default function SettingsPage() {
+  const { user, userProfile, loading } = useAuth();
+  
+  if (loading || !user || !userProfile) {
+    return (
+      <div className="flex justify-center items-center h-48">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const getInitials = (name = '') => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase() || <User className="w-5 h-5" />;
+  }
+
   return (
     <div className="space-y-8">
       <header className="space-y-1.5">
@@ -38,19 +55,19 @@ export default function SettingsPage() {
           <CardContent className="space-y-6">
             <div className="flex items-center gap-6">
               <Avatar className="h-24 w-24">
-                <AvatarImage src="https://placehold.co/100x100" />
-                <AvatarFallback>JD</AvatarFallback>
+                <AvatarImage src={userProfile.photoURL} alt={userProfile.name} />
+                <AvatarFallback>{getInitials(userProfile.name)}</AvatarFallback>
               </Avatar>
               <Button variant="outline">Change Photo</Button>
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
-                <Input id="name" defaultValue="Jane Doe" />
+                <Input id="name" defaultValue={userProfile.name} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" defaultValue="jane.doe@example.com" readOnly disabled/>
+                <Input id="email" type="email" defaultValue={user.email || ''} readOnly disabled/>
               </div>
             </div>
           </CardContent>
@@ -107,28 +124,15 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                    <Avatar>
-                    <AvatarImage src="https://placehold.co/40x40" />
-                    <AvatarFallback>JD</AvatarFallback>
+                    <AvatarImage src={userProfile.photoURL} alt={userProfile.name} />
+                    <AvatarFallback>{getInitials(userProfile.name)}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">Jane Doe</p>
+                    <p className="font-medium">{userProfile.name}</p>
                     <p className="text-sm text-muted-foreground">you</p>
                   </div>
                 </div>
                 <span className="text-sm text-muted-foreground">Owner</span>
-              </div>
-               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                   <Avatar>
-                    <AvatarImage src="https://placehold.co/40x40" />
-                    <AvatarFallback>JD</AvatarFallback>
-                  </Avatar>
-                   <div>
-                    <p className="font-medium">John Doe</p>
-                    <p className="text-sm text-muted-foreground">john.doe@example.com</p>
-                  </div>
-                </div>
-                <Button variant="ghost" size="sm">Remove</Button>
               </div>
             </div>
           </CardContent>

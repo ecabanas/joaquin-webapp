@@ -13,12 +13,11 @@ import {
 } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { GlobalSearchInput } from '@/components/global-search-input';
-import { ChevronDown, User, FileText } from 'lucide-react';
+import { ChevronDown, User, FileText, Loader2 } from 'lucide-react';
 import type { Purchase } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { getPurchaseHistory } from '@/lib/firestore';
-
-const WORKSPACE_ID = 'workspace-1'; // Hardcoded for now
+import { useAuth } from '@/contexts/auth-context';
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-US', {
@@ -37,18 +36,21 @@ function formatDate(date: Date) {
 }
 
 export default function HistoryPage() {
+  const { userProfile, loading } = useAuth();
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   
+  const workspaceId = userProfile?.workspaceId;
+
   useEffect(() => {
-    // Subscribe to real-time updates from Firestore
-    const unsubscribe = getPurchaseHistory(WORKSPACE_ID, (purchases) => {
+    if (!workspaceId) return;
+    
+    const unsubscribe = getPurchaseHistory(workspaceId, (purchases) => {
       setPurchases(purchases);
     });
 
-    // Unsubscribe on component unmount
     return () => unsubscribe();
-  }, []);
+  }, [workspaceId]);
 
   const searchableData = useMemo(() => {
     return purchases.map(purchase => ({
@@ -70,6 +72,13 @@ export default function HistoryPage() {
     return fuse.search(searchQuery).map(result => result.item);
   }, [searchQuery, purchases, fuse]);
 
+  if (loading || !workspaceId) {
+     return (
+      <div className="flex justify-center items-center h-48">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const PurchaseCard = ({ purchase }: { purchase: Purchase }) => {
     const total = purchase.items.reduce((acc, item) => acc + item.price * item.quantity, 0);

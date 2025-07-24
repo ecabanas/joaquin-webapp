@@ -14,10 +14,60 @@ import {
   getDoc,
   orderBy,
   Timestamp,
+  setDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import type { ListItem, Purchase } from './types';
+import type { ListItem, Purchase, UserProfile } from './types';
 
+// User Management
+export async function createUserProfile(userId: string, data: Omit<UserProfile, 'workspaceId'> & { email: string }) {
+  const userRef = doc(db, 'users', userId);
+  
+  // Create a new workspace for the user
+  const workspaceRef = doc(collection(db, 'workspaces'));
+  const batch = writeBatch(db);
+
+  // Set workspace initial data (e.g., owner)
+  const membersCollection = collection(db, 'workspaces', workspaceRef.id, 'members');
+  const userMemberRef = doc(membersCollection, userId);
+  batch.set(userMemberRef, {
+    name: data.name,
+    role: 'owner',
+  });
+  
+  // Set the user profile document
+  const userProfile: UserProfile = {
+    name: data.name,
+    photoURL: data.photoURL || `https://placehold.co/100x100?text=${data.name[0]}`,
+    workspaceId: workspaceRef.id,
+  };
+  batch.set(userRef, userProfile);
+
+  await batch.commit();
+  
+  // Seed the new workspace's item catalog
+  await seedInitialCatalog(workspaceRef.id);
+  
+  return userProfile;
+}
+
+export function getUserProfile(
+  userId: string,
+  callback: (profile: UserProfile | null) => void
+) {
+  const userDocRef = doc(db, 'users', userId);
+  const unsubscribe = onSnapshot(userDocRef, (doc) => {
+    if (doc.exists()) {
+      callback(doc.data() as UserProfile);
+    } else {
+      callback(null);
+    }
+  });
+  return unsubscribe;
+}
+
+
+// Workspace-specific getters
 const getListItemsCollection = (workspaceId: string) =>
   collection(db, 'workspaces', workspaceId, 'listItems');
 

@@ -2,18 +2,22 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   History,
   List,
   Settings,
   Users,
+  LogOut,
+  Loader2,
 } from 'lucide-react';
 import { Logo } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuth } from '@/contexts/auth-context';
+import { useEffect } from 'react';
 
 const navItems = [
   { href: '/list', icon: List, label: 'List' },
@@ -23,6 +27,26 @@ const navItems = [
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { user, loading, logout, userProfile } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+  
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-muted/40">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  const getInitials = (name = '') => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase() || <Users className="w-5 h-5" />;
+  }
 
   const SidebarContent = () => (
      <TooltipProvider delayDuration={0}>
@@ -67,19 +91,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
              </div>
              <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" className="w-full h-12 p-0" asChild>
-                     <Link href="#" className="flex items-center justify-center group-hover:justify-start gap-3 w-full px-4 transition-all duration-300">
+                  <Button variant="ghost" className="w-full h-12 p-0" onClick={logout}>
+                     <div className="flex items-center justify-center group-hover:justify-start gap-3 w-full px-4 transition-all duration-300">
                        <Avatar className="h-8 w-8 flex-shrink-0">
-                         <AvatarFallback><Users className="w-5 h-5" /></AvatarFallback>
+                          {userProfile?.photoURL && <AvatarImage src={userProfile.photoURL} alt={userProfile.name} />}
+                         <AvatarFallback>{getInitials(userProfile?.name)}</AvatarFallback>
                        </Avatar>
-                        <div className="overflow-hidden transition-all duration-300 w-0 group-hover:w-auto">
-                         <span className="truncate">Share List</span>
+                        <div className="overflow-hidden transition-all duration-300 w-0 group-hover:w-auto text-left">
+                           <p className="truncate font-semibold">{userProfile?.name || 'User'}</p>
+                           <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                        </div>
-                    </Link>
+                        <LogOut className="w-5 h-5 ml-auto text-muted-foreground transition-all duration-300 opacity-0 group-hover:opacity-100" />
+                    </div>
                   </Button>
                  </TooltipTrigger>
                  <TooltipContent side="right" className="flex items-center gap-4">
-                   Share List
+                   Log out
                 </TooltipContent>
               </Tooltip>
           </div>
@@ -103,8 +130,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Logo className="w-6 h-6 text-primary" />
             <span className="font-bold text-lg">Joaquin</span>
           </div>
-           <Button variant="ghost" size="icon">
-            <Users className="w-5 h-5" />
+           <Button variant="ghost" size="icon" onClick={logout}>
+            <LogOut className="w-5 h-5" />
           </Button>
         </header>
 
