@@ -9,16 +9,18 @@ import { Trash2, Plus, Minus, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Progress } from './ui/progress';
 import { FinishShoppingDialog } from './finish-shopping-dialog';
+import { deleteListItem, updateListItem } from '@/lib/firestore';
 
 type GroceryListClientProps = {
   list: GroceryList;
   onItemsChange: (items: ListItem[]) => void;
+  onItemUpdate: (itemId: string, updates: Partial<ListItem>) => void;
   onFinishShopping: (storeName: string) => void;
   progress: number;
   onAddItem: (itemName: string) => void;
 };
 
-export function GroceryListClient({ list, onItemsChange, onFinishShopping, progress, onAddItem }: GroceryListClientProps) {
+export function GroceryListClient({ list, onItemsChange, onItemUpdate, onFinishShopping, progress, onAddItem }: GroceryListClientProps) {
 
   const { checkedItems, uncheckedItems } = useMemo(() => {
     const sorted = [...list.items].sort((a, b) => a.name.localeCompare(b.name));
@@ -33,25 +35,18 @@ export function GroceryListClient({ list, onItemsChange, onFinishShopping, progr
     itemId: string,
     checked: boolean
   ) => {
-    const newItems = list.items.map((item) =>
-      item.id === itemId ? { ...item, checked } : item
-    );
-    onItemsChange(newItems);
+    onItemUpdate(itemId, { checked });
   };
 
   const handleDeleteItem = (itemId: string) => {
-     const newItems = list.items.filter((item) => item.id !== itemId);
-     onItemsChange(newItems);
+     deleteListItem(list.id, itemId);
   };
 
   const handleQuantityChange = (itemId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
       handleDeleteItem(itemId);
     } else {
-      const newItems = list.items.map((item) =>
-        item.id === itemId ? { ...item, quantity: newQuantity } : item
-      );
-      onItemsChange(newItems);
+      onItemUpdate(itemId, { quantity: newQuantity });
     }
   };
   
