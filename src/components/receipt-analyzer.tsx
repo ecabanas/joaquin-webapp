@@ -16,6 +16,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { analyzeReceipt, type AnalyzeReceiptOutput } from '@/ai/flows/analyze-receipt';
+import { updatePurchaseItems } from '@/lib/firestore';
+import { useAuth } from '@/contexts/auth-context';
 import { Loader2, ScanLine, Camera, Upload, RefreshCcw } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import {
@@ -27,13 +29,18 @@ import {
   TableRow,
 } from './ui/table';
 
-export function ReceiptAnalyzer() {
+type ReceiptAnalyzerProps = {
+  purchaseId: string;
+};
+
+export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<AnalyzeReceiptOutput | null>(null);
   const { toast } = useToast();
+  const { userProfile } = useAuth();
   
   // Camera-related state
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -137,7 +144,7 @@ export function ReceiptAnalyzer() {
     }
   }
 
-  const handleSubmit = async () => {
+  const handleAnalyzeSubmit = async () => {
     if (!preview) {
       toast({
         title: 'No image selected',
@@ -164,13 +171,39 @@ export function ReceiptAnalyzer() {
       setIsLoading(false);
     }
   };
+  
+  const handleSaveToHistory = async () => {
+    if (!result || !userProfile?.workspaceId) {
+      toast({ title: 'Error', description: 'No result to save.', variant: 'destructive'});
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await updatePurchaseItems(userProfile.workspaceId, purchaseId, result.items);
+      toast({
+        title: 'Success!',
+        description: 'Purchase history has been updated with the receipt data.',
+      });
+      handleOpenChange(false); // Close dialog on success
+    } catch (error) {
+      console.error('Error updating purchase:', error);
+      toast({
+        title: 'Save Failed',
+        description: 'Could not save the updated item prices.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
   const MainContent = () => {
     if (result) {
       return (
          <div>
             <h3 className="font-semibold mb-2">Analysis Complete!</h3>
-            <p className="text-sm text-muted-foreground mb-4">We found the following items. You can add them to your history.</p>
+            <p className="text-sm text-muted-foreground mb-4">Review the items below. When you're ready, add them to your history.</p>
             <div className="max-h-64 overflow-y-auto rounded-md border">
                <Table>
                 <TableHeader>
@@ -237,7 +270,7 @@ export function ReceiptAnalyzer() {
               objectFit="contain"
             />
           </div>
-          <Button onClick={() => setPreview(null)} variant="outline" className="w-full">
+          <Button onClick={() => { setPreview(null); setFile(null); }} variant="outline" className="w-full">
             <RefreshCcw className="mr-2 h-4 w-4" /> Choose a different image
           </Button>
         </div>
@@ -289,19 +322,22 @@ export function ReceiptAnalyzer() {
 
         <DialogFooter className="sm:justify-between gap-2 mt-4">
           {result ? (
-             <Button type="button" onClick={() => handleOpenChange(false)}>
-              Add to History
+             <Button type="button" onClick={handleSaveToHistory} disabled={isLoading}>
+              {isLoading ? 'Saving...' : 'Add to History'}
             </Button>
           ) : (
             !isCameraOpen &&
-            <Button type="button" onClick={handleSubmit} disabled={!preview || isLoading}>
+            <Button type="button" onClick={handleAnalyzeSubmit} disabled={!preview || isLoading}>
               {isLoading ? 'Analyzing...' : 'Analyze'}
             </Button>
           )}
+           {!result && (
+              <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>
+                Cancel
+              </Button>
+            )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-
-    

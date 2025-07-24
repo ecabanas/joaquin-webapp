@@ -12,16 +12,18 @@ export type GroceryList = {
   items: ListItem[];
 };
 
+export type PurchaseItem = {
+  name: string;
+  quantity: number;
+  price: number;
+};
+
 export type Purchase = {
   id: string;
   date: Date;
   store: string;
   completedBy: string;
-  items: {
-    name: string;
-    quantity: number;
-    price: number;
-  }[];
+  items: PurchaseItem[];
 };
 
 export type UserProfile = {

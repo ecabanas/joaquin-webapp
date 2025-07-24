@@ -82,8 +82,8 @@ export default function HistoryPage() {
   }
 
   const PurchaseCard = ({ purchase }: { purchase: Purchase }) => {
-    const total = purchase.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-    const hasPrices = purchase.items.some(item => item.price > 0);
+    const total = purchase.items.reduce((acc, item) => acc + (item.price || 0) * item.quantity, 0);
+    const hasPrices = purchase.items.some(item => (item.price || 0) > 0);
 
     return (
       <Collapsible defaultOpen={false}>
@@ -114,13 +114,13 @@ export default function HistoryPage() {
                 {purchase.items.map((item, itemIndex) => (
                   <li key={itemIndex} className="flex justify-between items-center text-base">
                     <span className="text-foreground">{item.name} <span className="text-sm text-muted-foreground">(x{item.quantity})</span></span>
-                    <span className="font-medium">{hasPrices ? formatCurrency(item.price * item.quantity) : '---'}</span>
+                    <span className="font-medium">{hasPrices && item.price ? formatCurrency(item.price * item.quantity) : '---'}</span>
                   </li>
                 ))}
               </ul>
             </CardContent>
             <CardFooter className="px-4 pb-4 md:px-6 md:pb-6">
-              {!hasPrices && <ReceiptAnalyzer />}
+              {!hasPrices && <ReceiptAnalyzer purchaseId={purchase.id} />}
             </CardFooter>
           </CollapsibleContent>
         </Card>

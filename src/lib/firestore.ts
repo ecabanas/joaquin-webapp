@@ -17,7 +17,7 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import type { ListItem, Purchase, UserProfile } from './types';
+import type { ListItem, Purchase, PurchaseItem, UserProfile } from './types';
 
 // User Management
 export async function createUserProfile(userId: string, data: Omit<UserProfile, 'workspaceId'> & { email: string }) {
@@ -232,4 +232,17 @@ export async function finishShopping(
 
   // 3. Commit all the operations atomically
   await batch.commit();
+}
+
+
+// Update the items array in a specific purchase history document
+export async function updatePurchaseItems(
+  workspaceId: string,
+  purchaseId: string,
+  newItems: PurchaseItem[]
+) {
+  const purchaseDocRef = doc(getPurchaseHistoryCollection(workspaceId), purchaseId);
+  await updateDoc(purchaseDocRef, {
+    items: newItems,
+  });
 }
