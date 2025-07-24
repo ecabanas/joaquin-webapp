@@ -63,37 +63,33 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   }, []);
   
   const handleStartCamera = useCallback(async () => {
-    if (cameraStatus !== 'idle') return;
-
     setCameraStatus('starting');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        // The `oncanplay` event is a better trigger than `play()` directly
-        videoRef.current.oncanplay = () => {
-          videoRef.current?.play();
-          setCameraStatus('active');
-        }
+        videoRef.current.play();
+        setCameraStatus('active');
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
       setCameraStatus('denied');
     }
-  }, [cameraStatus]);
+  }, []);
 
   useEffect(() => {
-    if (isOpen && isMobile && !preview) {
+    if (isMobile && isOpen && stage === 'camera' && cameraStatus === 'idle') {
       handleStartCamera();
     }
-    
+
+    // Cleanup when component unmounts or dialog closes
     return () => {
       if (cameraStatus === 'active') {
-        stopCamera();
+         stopCamera();
       }
-    };
-  }, [isOpen, isMobile, preview, handleStartCamera, stopCamera, cameraStatus]);
-  
+    }
+  }, [isMobile, isOpen, stage, cameraStatus, handleStartCamera, stopCamera]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
@@ -203,7 +199,6 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
 
   const InitialView = () => (
     <div className="p-6">
-      <VisuallyHiddenTitle>Analyze Receipt</VisuallyHiddenTitle>
       <DialogHeader>
         <DialogTitle>Analyze Receipt</DialogTitle>
         <DialogDescription>Upload a photo of your receipt to automatically extract items and prices.</DialogDescription>
@@ -226,7 +221,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
         className={cn("absolute inset-0 h-full w-full object-cover z-0", cameraStatus !== 'active' && 'hidden')}
         autoPlay
         muted
-        playsInline // CRITICAL for iOS
+        playsInline
       />
       <canvas ref={canvasRef} className="hidden" />
 
@@ -244,10 +239,10 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
           </>
         )}
         {cameraStatus === 'starting' && (
-          <>
-            <Loader2 className="w-12 h-12 animate-spin" />
-            <p>Starting camera...</p>
-          </>
+           <div className="flex flex-col items-center justify-center gap-4">
+               <Loader2 className="w-12 h-12 animate-spin" />
+               <p>Starting camera...</p>
+           </div>
         )}
       </div>
 
@@ -307,7 +302,6 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
 
   const ResultsView = () => (
     <div className={cn(isMobile ? "p-4 pt-[calc(env(safe-area-inset-top,0)+1rem)]" : "p-6")}>
-       <VisuallyHiddenTitle>Analysis Complete</VisuallyHiddenTitle>
        <DialogHeader>
           <DialogTitle>Analysis Complete</DialogTitle>
           <DialogDescription>Review the items below. When you're ready, add them to your history.</DialogDescription>
@@ -395,7 +389,6 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
           stage === 'camera' || stage === 'preview' ? 'sm:h-[80vh] sm:w-[45vh] sm:max-w-[45vh]' : '',
           stage === 'loading' && !isMobile && 'sm:max-w-sm',
           stage === 'result' && !isMobile && 'sm:max-w-md',
-          stage === 'initial' && 'p-6'
         )}
         hideCloseButton={isMobile || stage === 'loading'}
         onEscapeKeyDown={(e) => {
