@@ -215,7 +215,7 @@ export async function finishShopping(
     items: checkedItems.map((item) => ({
       name: item.name,
       quantity: item.quantity,
-      price: Number((Math.random() * 10 + 1).toFixed(2)), // Mock price for now
+      price: 0, // Initialize price at 0. User will add it via receipt scanner.
     })),
   };
   
