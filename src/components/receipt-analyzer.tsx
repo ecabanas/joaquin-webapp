@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import {
   Dialog,
@@ -51,7 +51,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   const [cameraStatus, setCameraStatus] = useState<CameraStatus>('idle');
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const stage = useMemo((): Stage => {
     if (isLoading) return 'loading';
@@ -403,4 +403,3 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
     </Dialog>
   );
 }
-
