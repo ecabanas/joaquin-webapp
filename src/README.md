@@ -55,6 +55,48 @@ To ensure data consistency (e.g., avoiding duplicates like "Milk" and "milk"), e
 *   **Custom Catalog:** When a user adds an item that doesn't exist in the catalog (e.g., "Kombucha"), they are prompted to add it. If they agree, the new item is saved to the workspace's shared catalog, making it easily searchable for all members in the future.
 *   **User Management:** Users can manage their workspace's custom catalog (e.g., edit typos, delete old items) through the settings page.
 
+## Data & Persistence (Firestore Schema)
+
+The application uses **Cloud Firestore** for data persistence and real-time synchronization. The schema is designed to be scalable, secure, and efficient. It revolves around two primary top-level collections: `users` and `workspaces`.
+
+```
+/users/{userId}/
+    └── { a single user's document }
+        ├── name: "Jane Doe"
+        ├── email: "jane.doe@example.com"
+        └── workspaceId: "workspace-abc"  <-- Links the user to their space
+
+/workspaces/{workspaceId}/
+    |
+    ├── members/
+    |   └── {userId}: { name: "Jane Doe", role: "owner" }
+    |   └── {userId}: { name: "John Doe", role: "member" }
+    |
+    ├── listItems/
+    |   └── {listItemId}: { name: "Milk", quantity: 1, checked: false }
+    |
+    ├── purchaseHistory/
+    |   └── {purchaseId}: { date: "July 24, 2024", store: "Mercadona", items: [...] }
+    |
+    └── itemCatalog/
+        └── {catalogEntryId}: { name: "Milk" }
+```
+
+### Collection Breakdown:
+
+*   **/users/{userId}**:
+    *   This collection stores individual user profiles.
+    *   The document ID (`userId`) corresponds to the user's Firebase Authentication UID.
+    *   The `workspaceId` field is a critical link that associates a user with their shared workspace. When a user logs in, the app first fetches their user document to find this ID, and then retrieves the corresponding workspace data.
+
+*   **/workspaces/{workspaceId}**:
+    *   This is the central container for all shared data for a specific group (e.g., a family). All data is scoped under a workspace to ensure privacy and efficient querying.
+    *   It contains several important sub-collections:
+        *   **`members`**: Stores a record for each user who has access to the workspace. This is useful for listing members and for writing security rules (e.g., "only members can read list data").
+        *   **`listItems`**: Holds the documents for the **current, active grocery list**. Storing each item as a separate document is crucial for real-time collaboration and avoids hitting document size limits.
+        *   **`purchaseHistory`**: Contains records of all completed shopping trips. Each document represents one archived list.
+        *   **`itemCatalog`**: Stores all unique item names for that workspace, which powers the search suggestions. Each item is its own document to ensure the catalog can scale indefinitely and to make adding/deleting items efficient.
+
 ## Project Structure
 
 The project follows the standard Next.js App Router structure.
