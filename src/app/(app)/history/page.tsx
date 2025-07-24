@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { GlobalSearchInput } from '@/components/global-search-input';
-import { mockHistory } from "@/lib/mock-data";
 import { ChevronDown, User, FileText } from 'lucide-react';
 import type { Purchase } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -35,7 +34,7 @@ function formatDate(date: Date) {
 }
 
 export default function HistoryPage() {
-  const [purchases] = useState<Purchase[]>(() => mockHistory.sort((a, b) => b.date.getTime() - a.date.getTime()));
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
   const searchableData = useMemo(() => {

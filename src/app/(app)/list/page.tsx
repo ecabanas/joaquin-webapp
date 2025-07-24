@@ -2,16 +2,17 @@
 'use client';
 
 import { GroceryListClient } from '@/components/grocery-list-client';
-import { mockActiveList, mockHistory, defaultCatalog } from '@/lib/mock-data';
 import type { GroceryList, ListItem, Purchase } from '@/lib/types';
 import { useMemo, useState } from 'react';
 import { GlobalSearchInput } from '@/components/global-search-input';
 import Fuse from 'fuse.js';
 
 export default function GroceryListPage() {
-  const [activeList, setActiveList] = useState<GroceryList>(mockActiveList);
-  const [history, setHistory] = useState<Purchase[]>(mockHistory);
+  const [activeList, setActiveList] = useState<GroceryList>({ id: 'list-1', items: []});
+  const [history, setHistory] = useState<Purchase[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [defaultCatalog, setDefaultCatalog] = useState<string[]>([]);
+
 
   const { totalItems, checkedItems } = useMemo(() => {
     return {
@@ -82,7 +83,7 @@ export default function GroceryListPage() {
   const searchPool = useMemo(() => {
     const combined = new Set([...defaultCatalog, ...activeList.items.map(i => i.name)]);
     return Array.from(combined);
-  }, [activeList.items]);
+  }, [activeList.items, defaultCatalog]);
 
   const fuse = useMemo(() => {
     return new Fuse(searchPool, {
