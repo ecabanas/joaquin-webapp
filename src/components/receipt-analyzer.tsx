@@ -53,6 +53,14 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const stage = useMemo((): Stage => {
+    if (isLoading) return 'loading';
+    if (result) return 'result';
+    if (preview) return 'preview';
+    if (isMobile) return 'camera';
+    return 'initial';
+  }, [isLoading, result, preview, isMobile]);
+
   const stopCamera = useCallback(() => {
     if (videoRef.current && videoRef.current.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
@@ -90,7 +98,6 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   }, []);
 
   useEffect(() => {
-    // Only attempt to start the camera if the dialog is open and we're on the camera stage.
     if (isOpen && stage === 'camera' && cameraStatus === 'idle') {
       handleStartCamera();
     }
@@ -169,13 +176,13 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
     }
   };
   
-  const resetAllState = () => {
+  const resetAllState = useCallback(() => {
       stopCamera();
       setPreview(null);
       setResult(null);
       setIsLoading(false);
       setCameraStatus('idle');
-  }
+  }, [stopCamera]);
 
   const handleOpenChange = (open: boolean) => {
       if (!open) {
@@ -183,16 +190,6 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       }
       setIsOpen(open);
   }
-
-  const getStage = (): Stage => {
-    if (isLoading) return 'loading';
-    if (result) return 'result';
-    if (preview) return 'preview';
-    if (isMobile) return 'camera';
-    return 'initial';
-  }
-
-  const stage = getStage();
 
   const VisuallyHiddenTitle = ({ children }: { children: React.ReactNode }) => (
     <DialogTitle className="sr-only">{children}</DialogTitle>
@@ -328,7 +325,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
         </Table>
       </div>
        <DialogFooter className="sm:justify-between gap-2 flex-col-reverse sm:flex-row pb-[calc(env(safe-area-inset-bottom,0))]">
-         <Button type="button" variant="ghost" onClick={() => { setPreview(null); setResult(null); setCameraStatus('idle'); }} className="w-full sm:w-auto">
+         <Button type="button" variant="ghost" onClick={resetAllState} className="w-full sm:w-auto">
             Analyze Another
           </Button>
          <Button type="button" onClick={handleSaveToHistory} disabled={isLoading} className="w-full sm:w-auto">
@@ -337,7 +334,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       </DialogFooter>
        {isMobile && (
           <div className="absolute top-4 left-4 z-10 pt-[calc(env(safe-area-inset-top,0))]">
-             <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full" onClick={() => { setPreview(null); setResult(null); setCameraStatus('idle'); }}>
+             <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full" onClick={resetAllState}>
               <ArrowLeft className="h-6 w-6" />
             </Button>
           </div>
@@ -406,3 +403,4 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
     </Dialog>
   );
 }
+
