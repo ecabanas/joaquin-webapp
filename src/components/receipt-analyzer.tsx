@@ -61,34 +61,6 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       setCameraStatus('idle');
     }
   }, []);
-  
-  const handleStartCamera = useCallback(async () => {
-    setCameraStatus('starting');
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-        setCameraStatus('active');
-      }
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      setCameraStatus('denied');
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isMobile && isOpen && stage === 'camera' && cameraStatus === 'idle') {
-      handleStartCamera();
-    }
-
-    // Cleanup when component unmounts or dialog closes
-    return () => {
-      if (cameraStatus === 'active') {
-         stopCamera();
-      }
-    }
-  }, [isMobile, isOpen, stage, cameraStatus, handleStartCamera, stopCamera]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -102,6 +74,35 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
     }
   };
   
+  const handleStartCamera = useCallback(async () => {
+    setCameraStatus('starting');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play(); // Important for iOS
+        setCameraStatus('active');
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      setCameraStatus('denied');
+    }
+  }, []);
+
+  useEffect(() => {
+    // Only attempt to start the camera if the dialog is open and we're on the camera stage.
+    if (isOpen && stage === 'camera' && cameraStatus === 'idle') {
+      handleStartCamera();
+    }
+
+    // Cleanup when component unmounts or dialog closes
+    return () => {
+      if (cameraStatus === 'active') {
+         stopCamera();
+      }
+    }
+  }, [isOpen, stage, cameraStatus, handleStartCamera, stopCamera]);
+
   const handleTakePicture = () => {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
@@ -405,5 +406,3 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
     </Dialog>
   );
 }
-
-    
