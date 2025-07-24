@@ -15,7 +15,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { GlobalSearchInput } from '@/components/global-search-input';
 import { ChevronDown, User, FileText, Loader2, ScanLine } from 'lucide-react';
 import type { Purchase, PurchaseItem } from '@/lib/types';
-import { getPurchaseHistory, createNewPurchase, updatePurchase } from '@/lib/firestore';
+import { getPurchaseHistory, updatePurchase } from '@/lib/firestore';
 import { useAuth } from '@/contexts/auth-context';
 import { ReceiptAnalyzer } from '@/components/receipt-analyzer';
 import { Button } from '@/components/ui/button';
