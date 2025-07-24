@@ -147,8 +147,8 @@ export default function HistoryPage() {
             </CardContent>
             {!hasPrices && (
               <CardFooter>
-                  <Button variant="secondary" onClick={() => handleInitiateAnalysis(purchase.id)}>
-                      <ScanLine className="mr-2 h-4 w-4" /> Analyze Receipt to Add Prices
+                  <Button onClick={() => handleInitiateAnalysis(purchase.id)}>
+                      <ScanLine className="mr-2 h-4 w-4" /> Analyze Receipt
                   </Button>
               </CardFooter>
             )}
