@@ -18,7 +18,6 @@ import type { Purchase } from '@/lib/types';
 import { getPurchaseHistory } from '@/lib/firestore';
 import { useAuth } from '@/contexts/auth-context';
 import { ReceiptAnalyzer } from '@/components/receipt-analyzer';
-import { useIsMobile } from '@/hooks/use-is-mobile';
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-US', {
@@ -40,7 +39,6 @@ export default function HistoryPage() {
   const { userProfile, loading } = useAuth();
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const isMobile = useIsMobile();
   
   const workspaceId = userProfile?.workspaceId;
 
@@ -120,7 +118,7 @@ export default function HistoryPage() {
                 ))}
               </ul>
             </CardContent>
-            {isMobile && !hasPrices && (
+            {!hasPrices && (
               <CardFooter className="px-4 pb-4 md:px-6 md:pb-6">
                 <ReceiptAnalyzer purchaseId={purchase.id} />
               </CardFooter>

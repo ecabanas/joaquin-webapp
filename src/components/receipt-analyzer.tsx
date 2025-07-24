@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef } from 'react';
 import Image from 'next/image';
 import {
   Dialog,
@@ -18,8 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { analyzeReceipt, type AnalyzeReceiptOutput } from '@/ai/flows/analyze-receipt';
 import { updatePurchaseItems } from '@/lib/firestore';
 import { useAuth } from '@/contexts/auth-context';
-import { Loader2, ScanLine, Camera, Upload, ArrowLeft, Check, X } from 'lucide-react';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Loader2, ScanLine, Camera, Upload, ArrowLeft, Check } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -28,16 +27,10 @@ import {
   TableHeader,
   TableRow,
 } from './ui/table';
-import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-is-mobile';
 
 type ReceiptAnalyzerProps = {
   purchaseId: string;
 };
-
-type CameraStatus = 'idle' | 'starting' | 'active' | 'denied';
-type Stage = 'initial' | 'camera' | 'preview' | 'loading' | 'result';
-
 
 export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -46,84 +39,34 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   const [result, setResult] = useState<AnalyzeReceiptOutput | null>(null);
   const { toast } = useToast();
   const { userProfile } = useAuth();
-  const isMobile = useIsMobile();
   
-  const [cameraStatus, setCameraStatus] = useState<CameraStatus>('idle');
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const captureInputRef = useRef<HTMLInputElement | null>(null);
 
-  const stage: Stage = useMemo(() => {
-    if (isLoading) return 'loading';
-    if (result) return 'result';
-    if (preview) return 'preview';
-    if (cameraStatus === 'active' || cameraStatus === 'denied' || cameraStatus === 'starting') return 'camera';
-    return 'initial';
-  }, [isLoading, result, preview, cameraStatus]);
+  const resetAllState = () => {
+      setPreview(null);
+      setResult(null);
+      setIsLoading(false);
+  };
 
-  const stopCamera = useCallback(() => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
-      videoRef.current.srcObject = null;
-      setCameraStatus('idle');
-    }
-  }, []);
+  const handleOpenChange = (open: boolean) => {
+      if (!open) {
+          resetAllState();
+      }
+      setIsOpen(open);
+  }
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      stopCamera();
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreview(reader.result as string);
+        setResult(null); // Clear previous results
       };
       reader.readAsDataURL(selectedFile);
     }
   };
-  
-  const handleStartCamera = useCallback(async () => {
-    setCameraStatus('starting');
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.playsInline = true; // Essential for iOS
-        videoRef.current.muted = true;
-        videoRef.current.autoplay = true;
-        await videoRef.current.play();
-        setCameraStatus('active');
-      }
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      setCameraStatus('denied');
-    }
-  }, []);
-
-  useEffect(() => {
-    // This effect is only for cleanup when the dialog is closed.
-    return () => {
-      if (cameraStatus === 'active') {
-        stopCamera();
-      }
-    };
-  }, [cameraStatus, stopCamera]);
-
-
-  const handleTakePicture = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const context = canvas.getContext('2d');
-      context?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-      
-      const dataUri = canvas.toDataURL('image/jpeg');
-      setPreview(dataUri);
-      stopCamera();
-    }
-  }
 
   const handleAnalyzeSubmit = async () => {
     if (!preview) {
@@ -163,7 +106,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
         title: 'Success!',
         description: 'Purchase history has been updated with the receipt data.',
       });
-      setIsOpen(false);
+      handleOpenChange(false);
     } catch (error) {
       console.error('Error updating purchase:', error);
       toast({
@@ -175,135 +118,65 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
       setIsLoading(false);
     }
   };
-  
-  const resetAllState = useCallback(() => {
-      stopCamera();
-      setPreview(null);
-      setResult(null);
-      setIsLoading(false);
-  }, [stopCamera]);
 
-  const handleOpenChange = (open: boolean) => {
-      if (!open) {
-          resetAllState();
-      }
-      setIsOpen(open);
-  }
-
-  const VisuallyHiddenTitle = ({ children }: { children: React.ReactNode }) => (
-    <DialogTitle className="sr-only">{children}</DialogTitle>
-  );
-
-  const InitialView = () => (
-    <div className="p-6">
+  const renderInitialView = () => (
+    <>
       <DialogHeader>
         <DialogTitle>Analyze Receipt</DialogTitle>
         <DialogDescription>Use your camera or upload a photo of your receipt to automatically extract items and prices.</DialogDescription>
       </DialogHeader>
       <div className="flex flex-col sm:flex-row gap-4 justify-center my-6">
-        <Button onClick={handleStartCamera} size="lg">
-          <Camera className="mr-2" /> Start Camera
+        <Button size="lg" onClick={() => captureInputRef.current?.click()}>
+          <Camera className="mr-2" /> Take Photo
         </Button>
         <Button variant="outline" size="lg" onClick={() => fileInputRef.current?.click()}>
           <Upload className="mr-2" /> Upload File
         </Button>
-        <Input id="receipt-upload-initial" type="file" accept="image/*" onChange={handleFileChange} className="hidden" ref={fileInputRef} />
+        {/* Hidden inputs to trigger camera or file picker */}
+        <Input type="file" accept="image/*" capture onChange={handleFileChange} className="hidden" ref={captureInputRef} />
+        <Input type="file" accept="image/*" onChange={handleFileChange} className="hidden" ref={fileInputRef} />
       </div>
-    </div>
+    </>
   );
 
-  const CameraView = () => (
-    <div className="absolute inset-0 bg-black flex flex-col items-center justify-center">
-      <VisuallyHiddenTitle>Take Receipt Photo</VisuallyHiddenTitle>
-      
-      <video
-        ref={videoRef}
-        className={cn("absolute inset-0 h-full w-full object-cover z-0", cameraStatus !== 'active' && 'hidden')}
-      />
-      <canvas ref={canvasRef} className="hidden" />
-
-      <div className={cn("absolute inset-0 z-20 bg-black/80 flex flex-col items-center justify-center p-8 text-center gap-4 text-white", cameraStatus === 'active' && 'hidden')}>
-        {cameraStatus === 'denied' && (
-          <>
-            <Camera className="h-16 w-16 text-primary/50" />
-            <Alert variant="destructive" className="sm:w-auto text-left">
-                <AlertTitle>Camera Access Denied</AlertTitle>
-                <AlertDescription>
-                  Please allow camera access in your browser settings to use this feature.
-                </AlertDescription>
-            </Alert>
-            <Button onClick={handleStartCamera} variant="secondary">Try Again</Button>
-          </>
-        )}
-        {cameraStatus === 'starting' && (
-           <div className="flex flex-col items-center justify-center gap-4">
-               <Loader2 className="w-12 h-12 animate-spin" />
-               <p>Starting camera...</p>
-           </div>
-        )}
+  const renderPreviewView = () => (
+     <>
+      <DialogHeader>
+          <DialogTitle>Confirm Photo</DialogTitle>
+          <DialogDescription>Use this photo to analyze the receipt, or go back to take a new one.</DialogDescription>
+      </DialogHeader>
+      <div className="my-4 relative aspect-video w-full rounded-md overflow-hidden border">
+         {preview && <Image src={preview} alt="Receipt preview" fill={true} style={{objectFit:"contain"}} />}
       </div>
-
-      {cameraStatus === 'active' && (
-        <div className="absolute inset-0 z-10 flex flex-col justify-between pointer-events-none">
-          {/* Top controls with safe-area padding */}
-          <div className="flex justify-start p-4 pt-[calc(env(safe-area-inset-top,0)+1rem)] pointer-events-auto">
-             <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50" onClick={() => setIsOpen(false)}>
-              <X className="h-6 w-6 text-white" />
-            </Button>
-          </div>
-          {/* Bottom controls with safe-area padding */}
-          <div className="w-full p-4 pb-[calc(env(safe-area-inset-bottom,0)+1rem)] bg-gradient-to-t from-black/50 to-transparent pointer-events-auto">
-            <div className="flex items-center justify-center">
-              <button
-                onClick={handleTakePicture}
-                className="h-20 w-20 rounded-full border-4 border-white bg-transparent ring-4 ring-black/30 disabled:opacity-50 transition-opacity"
-                aria-label="Take Picture"
-              />
-            </div>
-            <div className="absolute bottom-[calc(env(safe-area-inset-bottom,0)+1.5rem)] right-6">
-              <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50" onClick={() => fileInputRef.current?.click()}>
-                  <Upload className="h-6 w-6 text-white" />
-                </Button>
-                <Input id="receipt-upload-camera" type="file" accept="image/*" onChange={handleFileChange} className="hidden" ref={fileInputRef} />
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  const PreviewView = () => (
-    <div className="absolute inset-0 bg-black flex flex-col items-center justify-center">
-      <VisuallyHiddenTitle>Confirm Receipt Photo</VisuallyHiddenTitle>
-      {preview && <Image src={preview} alt="Receipt preview" fill={true} style={{objectFit:"contain"}} />}
-      
-      <div className="absolute bottom-0 left-0 right-0 p-4 pb-[calc(env(safe-area-inset-bottom,0)+1rem)] bg-gradient-to-t from-black/50 to-transparent z-10">
-        <div className="flex items-center justify-around">
-          <Button
-            onClick={() => { setPreview(null); setCameraStatus('idle'); }}
-            variant="ghost"
-            className="h-16 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 text-white font-bold text-lg px-8"
-          >
+       <DialogFooter className="sm:justify-between gap-2 flex-col-reverse sm:flex-row">
+         <Button type="button" variant="ghost" onClick={() => setPreview(null)}>
             <ArrowLeft className="mr-2" /> Retake
           </Button>
-          <Button
-            onClick={handleAnalyzeSubmit}
-            className="h-16 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg px-8"
-          >
+         <Button type="button" onClick={handleAnalyzeSubmit}>
             Use Photo <Check className="ml-2" />
           </Button>
-        </div>
+      </DialogFooter>
+    </>
+  );
+
+  const renderLoadingView = () => (
+     <div className="flex flex-col items-center justify-center gap-4 text-muted-foreground p-8 h-64">
+      <h3 className="text-xl font-medium text-foreground">Analyzing Receipt</h3>
+      <div className="relative h-24 w-24">
+         <Loader2 className="h-24 w-24 animate-spin text-primary/20" />
+         <ScanLine className="absolute inset-0 h-24 w-24 text-primary animate-pulse" />
       </div>
+      <p>This may take a moment...</p>
     </div>
   );
 
-  const ResultsView = () => (
-    <div className={cn(isMobile ? "p-4 pt-[calc(env(safe-area-inset-top,0)+1rem)]" : "p-6")}>
+  const renderResultsView = () => (
+    <>
        <DialogHeader>
           <DialogTitle>Analysis Complete</DialogTitle>
           <DialogDescription>Review the items below. When you're ready, add them to your history.</DialogDescription>
         </DialogHeader>
-      <div className="my-4 max-h-64 sm:max-h-80 overflow-y-auto rounded-md border">
+      <div className="my-4 max-h-80 overflow-y-auto rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -323,83 +196,33 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
           </TableBody>
         </Table>
       </div>
-       <DialogFooter className="sm:justify-between gap-2 flex-col-reverse sm:flex-row pb-[calc(env(safe-area-inset-bottom,0))]">
-         <Button type="button" variant="ghost" onClick={resetAllState} className="w-full sm:w-auto">
+       <DialogFooter className="sm:justify-between gap-2 flex-col-reverse sm:flex-row">
+         <Button type="button" variant="ghost" onClick={resetAllState}>
             Analyze Another
           </Button>
-         <Button type="button" onClick={handleSaveToHistory} disabled={isLoading} className="w-full sm:w-auto">
+         <Button type="button" onClick={handleSaveToHistory} disabled={isLoading}>
             {isLoading ? 'Saving...' : 'Add to History'}
           </Button>
       </DialogFooter>
-       {isMobile && (
-          <div className="absolute top-4 left-4 z-10 pt-[calc(env(safe-area-inset-top,0))]">
-             <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full" onClick={resetAllState}>
-              <ArrowLeft className="h-6 w-6" />
-            </Button>
-          </div>
-       )}
-    </div>
-  );
-
-  const LoadingView = () => (
-     <div className="absolute sm:relative inset-0 flex flex-col items-center justify-center gap-4 text-muted-foreground p-8 bg-background">
-      <VisuallyHiddenTitle>Analyzing Receipt</VisuallyHiddenTitle>
-      <h3 className="text-xl font-medium text-foreground">Analyzing Receipt</h3>
-      <div className="relative h-24 w-24">
-         <Loader2 className="h-24 w-24 animate-spin text-primary/20" />
-         <ScanLine className="absolute inset-0 h-24 w-24 text-primary animate-pulse" />
-      </div>
-      <p>This may take a moment...</p>
-    </div>
+    </>
   );
   
-  const renderContentForStage = () => {
-    switch (stage) {
-      case 'camera':
-        return <CameraView />;
-      case 'preview':
-        return <PreviewView />;
-      case 'loading':
-        return <LoadingView />;
-      case 'result':
-        return <ResultsView />;
-      case 'initial':
-      default:
-        return <InitialView />;
-    }
-  }
-
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        {isMobile && (
           <Button>
             <ScanLine className="mr-2 h-4 w-4" /> Analyze Receipt
           </Button>
-        )}
       </DialogTrigger>
-      <DialogContent 
-        className={cn(
-          "p-0 gap-0 border-0",
-          (stage === 'initial' && !isMobile) && 'sm:max-w-md sm:rounded-lg',
-          (stage !== 'initial' || isMobile) && 'w-screen h-screen max-w-full rounded-none',
-          stage === 'loading' && !isMobile && 'sm:max-w-sm',
-          stage === 'result' && !isMobile && 'sm:max-w-lg',
-        )}
-        hideCloseButton={stage !== 'initial' || isMobile}
-        onEscapeKeyDown={(e) => {
-            if (stage === 'preview' || stage === 'result') {
-                e.preventDefault();
-                resetAllState();
-            } else {
-                setIsOpen(false);
-            }
-        }}
-      >
-        {renderContentForStage()}
+      <DialogContent className="sm:max-w-lg">
+        {isLoading
+          ? renderLoadingView()
+          : result
+          ? renderResultsView()
+          : preview
+          ? renderPreviewView()
+          : renderInitialView()}
       </DialogContent>
     </Dialog>
   );
 }
-
-    
