@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import Fuse from 'fuse.js';
 import {
   Card,
@@ -13,11 +13,13 @@ import {
 } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { GlobalSearchInput } from '@/components/global-search-input';
-import { ChevronDown, User, FileText, Loader2 } from 'lucide-react';
+import { ChevronDown, User, FileText, Loader2, ScanLine } from 'lucide-react';
 import type { Purchase } from '@/lib/types';
 import { getPurchaseHistory } from '@/lib/firestore';
 import { useAuth } from '@/contexts/auth-context';
 import { ReceiptAnalyzer } from '@/components/receipt-analyzer';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-US', {
@@ -40,6 +42,12 @@ export default function HistoryPage() {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   
+  // State for the new Receipt Analyzer flow
+  const [isAnalyzerOpen, setIsAnalyzerOpen] = useState(false);
+  const [selectedPurchaseId, setSelectedPurchaseId] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const workspaceId = userProfile?.workspaceId;
 
   useEffect(() => {
@@ -71,6 +79,28 @@ export default function HistoryPage() {
     if (!searchQuery) return purchases;
     return fuse.search(searchQuery).map(result => result.item);
   }, [searchQuery, purchases, fuse]);
+
+  const handleAnalyzeClick = (purchaseId: string) => {
+    setSelectedPurchaseId(purchaseId);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && selectedPurchaseId) {
+      setSelectedFile(file);
+      setIsAnalyzerOpen(true);
+    }
+     // Reset file input to allow re-selection of the same file
+    if(e.target) e.target.value = '';
+  };
+
+  const handleAnalyzerClose = () => {
+    setIsAnalyzerOpen(false);
+    setSelectedFile(null);
+    setSelectedPurchaseId(null);
+  };
+
 
   if (loading || !workspaceId) {
      return (
@@ -120,7 +150,9 @@ export default function HistoryPage() {
             </CardContent>
             {!hasPrices && (
               <CardFooter className="px-4 pb-4 md:px-6 md:pb-6">
-                <ReceiptAnalyzer purchaseId={purchase.id} />
+                <Button onClick={() => handleAnalyzeClick(purchase.id)}>
+                   <ScanLine className="mr-2 h-4 w-4" /> Analyze Receipt
+                </Button>
               </CardFooter>
             )}
           </CollapsibleContent>
@@ -163,6 +195,24 @@ export default function HistoryPage() {
           </div>
         )}
       </div>
+
+       {/* Hidden file input, controlled by ref */}
+      <Input
+        type="file"
+        accept="image/*"
+        capture="environment" // Prioritize back camera
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+      />
+      
+      {/* Receipt Analyzer Dialog, controlled by state */}
+      <ReceiptAnalyzer
+        isOpen={isAnalyzerOpen}
+        onOpenChange={handleAnalyzerClose}
+        receiptFile={selectedFile}
+        purchaseId={selectedPurchaseId}
+      />
     </div>
   );
 }

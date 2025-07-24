@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import {
   Dialog,
@@ -10,15 +10,13 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { analyzeReceipt, type AnalyzeReceiptOutput } from '@/ai/flows/analyze-receipt';
 import { updatePurchaseItems } from '@/lib/firestore';
 import { useAuth } from '@/contexts/auth-context';
-import { Loader2, ScanLine, Camera, Upload, ArrowLeft, Check } from 'lucide-react';
+import { Loader2, ScanLine, ArrowLeft, Check } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -29,50 +27,56 @@ import {
 } from './ui/table';
 
 type ReceiptAnalyzerProps = {
-  purchaseId: string;
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  receiptFile: File | null;
+  purchaseId: string | null;
 };
 
-export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export function ReceiptAnalyzer({
+  isOpen,
+  onOpenChange,
+  receiptFile,
+  purchaseId,
+}: ReceiptAnalyzerProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<AnalyzeReceiptOutput | null>(null);
   const { toast } = useToast();
   const { userProfile } = useAuth();
   
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const captureInputRef = useRef<HTMLInputElement | null>(null);
-
   const resetAllState = () => {
-      setPreview(null);
-      setResult(null);
-      setIsLoading(false);
+    setPreview(null);
+    setResult(null);
+    setIsLoading(false);
   };
-
-  const handleOpenChange = (open: boolean) => {
-      if (!open) {
-          resetAllState();
-      }
-      setIsOpen(open);
-  }
   
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
+  // When the dialog is closed, reset the state
+  useEffect(() => {
+    if (!isOpen) {
+      resetAllState();
+    }
+  }, [isOpen]);
+  
+  // When a new file is passed, create a preview URL
+  useEffect(() => {
+    if (receiptFile) {
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreview(reader.result as string);
         setResult(null); // Clear previous results
       };
-      reader.readAsDataURL(selectedFile);
+      reader.readAsDataURL(receiptFile);
+    } else {
+      setPreview(null);
     }
-  };
+  }, [receiptFile]);
 
   const handleAnalyzeSubmit = async () => {
     if (!preview) {
       toast({
         title: 'No image selected',
-        description: 'Please upload or take a picture of a receipt to analyze.',
+        description: 'Please upload a photo of a receipt to analyze.',
         variant: 'destructive',
       });
       return;
@@ -95,7 +99,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
   };
   
   const handleSaveToHistory = async () => {
-    if (!result || !userProfile?.workspaceId) {
+    if (!result || !userProfile?.workspaceId || !purchaseId) {
       toast({ title: 'Error', description: 'No result to save.', variant: 'destructive'});
       return;
     }
@@ -106,7 +110,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
         title: 'Success!',
         description: 'Purchase history has been updated with the receipt data.',
       });
-      handleOpenChange(false);
+      onOpenChange(false);
     } catch (error) {
       console.error('Error updating purchase:', error);
       toast({
@@ -119,39 +123,16 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
     }
   };
 
-  const renderInitialView = () => (
-    <>
-      <DialogHeader>
-        <DialogTitle>Analyze Receipt</DialogTitle>
-        <DialogDescription>Use your camera or upload a photo of your receipt to automatically extract items and prices.</DialogDescription>
-      </DialogHeader>
-      <div className="flex flex-col sm:flex-row gap-4 justify-center my-6">
-        <Button size="lg" onClick={() => captureInputRef.current?.click()}>
-          <Camera className="mr-2" /> Take Photo
-        </Button>
-        <Button variant="outline" size="lg" onClick={() => fileInputRef.current?.click()}>
-          <Upload className="mr-2" /> Upload File
-        </Button>
-        {/* Hidden inputs to trigger camera or file picker */}
-        <Input type="file" accept="image/*" capture onChange={handleFileChange} className="hidden" ref={captureInputRef} />
-        <Input type="file" accept="image/*" onChange={handleFileChange} className="hidden" ref={fileInputRef} />
-      </div>
-    </>
-  );
-
   const renderPreviewView = () => (
      <>
       <DialogHeader>
           <DialogTitle>Confirm Photo</DialogTitle>
-          <DialogDescription>Use this photo to analyze the receipt, or go back to take a new one.</DialogDescription>
+          <DialogDescription>Use this photo to analyze the receipt, or close this and try again.</DialogDescription>
       </DialogHeader>
       <div className="my-4 relative aspect-video w-full rounded-md overflow-hidden border">
          {preview && <Image src={preview} alt="Receipt preview" fill={true} style={{objectFit:"contain"}} />}
       </div>
-       <DialogFooter className="sm:justify-between gap-2 flex-col-reverse sm:flex-row">
-         <Button type="button" variant="ghost" onClick={() => setPreview(null)}>
-            <ArrowLeft className="mr-2" /> Retake
-          </Button>
+       <DialogFooter>
          <Button type="button" onClick={handleAnalyzeSubmit}>
             Use Photo <Check className="ml-2" />
           </Button>
@@ -207,21 +188,17 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
     </>
   );
   
+  const renderContent = () => {
+    if (isLoading) return renderLoadingView();
+    if (result) return renderResultsView();
+    if (preview) return renderPreviewView();
+    return null;
+  }
+  
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-          <Button>
-            <ScanLine className="mr-2 h-4 w-4" /> Analyze Receipt
-          </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
-        {isLoading
-          ? renderLoadingView()
-          : result
-          ? renderResultsView()
-          : preview
-          ? renderPreviewView()
-          : renderInitialView()}
+        {renderContent()}
       </DialogContent>
     </Dialog>
   );
