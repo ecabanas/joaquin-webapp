@@ -10,10 +10,20 @@ import { addListItem, finishShopping, getListItems, updateListItem } from '@/lib
 
 const WORKSPACE_ID = 'workspace-1'; // Hardcoded for now
 
+const defaultCatalogData = [
+    'Milk', 'Bread', 'Eggs', 'Butter', 'Cheese', 'Yogurt', 'Cereal', 'Oatmeal', 'Coffee', 'Tea',
+    'Sugar', 'Flour', 'Rice', 'Pasta', 'Apples', 'Bananas', 'Oranges', 'Grapes', 'Strawberries',
+    'Lettuce', 'Tomatoes', 'Cucumbers', 'Onions', 'Garlic', 'Potatoes', 'Carrots', 'Broccoli',
+    'Chicken Breast', 'Ground Beef', 'Bacon', 'Sausage', 'Salmon', 'Tuna', 'Olive Oil', 'Ketchup',
+    'Mustard', 'Mayonnaise', 'Salt', 'Pepper', 'Soap', 'Shampoo', 'Toothpaste', 'Toilet Paper',
+    'Paper Towels', 'Laundry Detergent', 'Dish Soap'
+];
+
+
 export default function GroceryListPage() {
   const [activeList, setActiveList] = useState<GroceryList>({ id: WORKSPACE_ID, items: []});
   const [searchQuery, setSearchQuery] = useState('');
-  const [defaultCatalog, setDefaultCatalog] = useState<string[]>([]);
+  const [defaultCatalog, setDefaultCatalog] = useState<string[]>(defaultCatalogData);
 
   useEffect(() => {
     // Subscribe to real-time updates from Firestore
