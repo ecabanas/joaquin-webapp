@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import {
   Dialog,
@@ -14,9 +14,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { analyzeReceipt, type AnalyzeReceiptOutput } from '@/ai/flows/analyze-receipt';
-import { updatePurchase, deletePurchase } from '@/lib/firestore';
-import { useAuth } from '@/contexts/auth-context';
-import { Loader2, Check, Camera, CheckCircle, Trash2, PlusCircle } from 'lucide-react';
+import { deletePurchase, updatePurchase } from '@/lib/firestore';
+import { Loader2, CheckCircle, Trash2, PlusCircle, RefreshCw, Camera } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -25,46 +24,48 @@ import {
   TableHeader,
   TableRow,
 } from './ui/table';
-import { useCurrency } from '@/hooks/use-currency';
 import type { PurchaseItem } from '@/lib/types';
 import { Input } from './ui/input';
 
 type ReceiptAnalyzerProps = {
   receiptFile: File | null;
-  purchaseId: string | null;
-  onDone: () => void;
+  purchaseId: string;
+  workspaceId: string;
+  onSave: (purchaseId: string, storeName: string, items: PurchaseItem[]) => void;
+  onClose: () => void;
+  onRetake: () => void;
 };
 
-type Stage = 'loading' | 'results';
+type Stage = 'preview' | 'loading' | 'results';
 
 export function ReceiptAnalyzer({
   receiptFile,
   purchaseId,
-  onDone,
+  workspaceId,
+  onSave,
+  onClose,
+  onRetake,
 }: ReceiptAnalyzerProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [storeName, setStoreName] = useState('');
   const [items, setItems] = useState<PurchaseItem[]>([]);
-  const [stage, setStage] = useState<Stage>('loading');
+  const [stage, setStage] = useState<Stage>('preview');
   const [isSaving, setIsSaving] = useState(false);
 
   const { toast } = useToast();
-  const { userProfile } = useAuth();
-  const { formatCurrency } = useCurrency();
 
-  const handleClose = useCallback(async (shouldDelete: boolean = false) => {
+  const handleCloseAndDelete = useCallback(async () => {
     if (isSaving) return;
-    if (shouldDelete && purchaseId && userProfile?.workspaceId) {
-       await deletePurchase(userProfile.workspaceId, purchaseId);
-    }
-    onDone();
-  }, [isSaving, onDone, purchaseId, userProfile?.workspaceId]);
-
+    await deletePurchase(workspaceId, purchaseId);
+    onClose();
+  }, [isSaving, onClose, purchaseId, workspaceId]);
+  
   useEffect(() => {
     if (receiptFile) {
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreview(reader.result as string);
+        setStage('preview');
       };
       reader.readAsDataURL(receiptFile);
     } else {
@@ -72,31 +73,26 @@ export function ReceiptAnalyzer({
     }
   }, [receiptFile]);
 
-  useEffect(() => {
+  const handleAnalyze = useCallback(async () => {
     if (!preview) return;
 
-    const doAnalysis = async () => {
-        setStage('loading');
-        try {
-            const analysisResult = await analyzeReceipt({ receiptDataUri: preview });
-            setStoreName(analysisResult.storeName);
-            setItems(analysisResult.items);
-            setStage('results');
-        } catch (error) {
-            console.error('Error analyzing receipt:', error);
-            toast({
-                title: 'Analysis Failed',
-                description: 'Could not analyze the receipt. Please enter details manually.',
-                variant: 'destructive',
-            });
-            setItems([]);
-            setStoreName('');
-            setStage('results');
-        }
-    };
-
-    doAnalysis();
-
+    setStage('loading');
+    try {
+        const analysisResult = await analyzeReceipt({ receiptDataUri: preview });
+        setStoreName(analysisResult.storeName);
+        setItems(analysisResult.items);
+        setStage('results');
+    } catch (error) {
+        console.error('Error analyzing receipt:', error);
+        toast({
+            title: 'Analysis Failed',
+            description: 'Could not analyze the receipt. Please enter details manually.',
+            variant: 'destructive',
+        });
+        setItems([]);
+        setStoreName('');
+        setStage('results');
+    }
   }, [preview, toast]);
 
   const handleItemChange = (index: number, field: keyof PurchaseItem, value: string | number) => {
@@ -114,26 +110,17 @@ export function ReceiptAnalyzer({
     setItems(items.filter((_, i) => i !== index));
   };
 
-
   const handleSaveToHistory = async () => {
-    if (!userProfile?.workspaceId || !purchaseId) {
-      toast({ title: 'Error', description: 'Could not save purchase.', variant: 'destructive'});
-      return;
-    }
     setIsSaving(true);
     try {
-      await updatePurchase(userProfile.workspaceId, purchaseId, {
-        store: storeName,
-        items,
-      });
+      onSave(purchaseId, storeName, items);
       toast({
         title: 'Success!',
         description: 'Purchase history has been updated.',
       });
-      handleClose(false);
     } catch (error) {
-      console.error('Error updating purchase:', error);
-      toast({
+       console.error('Error saving purchase:', error);
+       toast({
         title: 'Save Failed',
         description: 'Could not save the updated item prices.',
         variant: 'destructive',
@@ -143,39 +130,56 @@ export function ReceiptAnalyzer({
     }
   };
 
-  const renderLoading = () => (
+  const renderPreview = () => (
     <>
-       <DialogHeader className="p-4 sm:p-6 text-center">
-        <DialogTitle>Analyzing Receipt</DialogTitle>
-      </DialogHeader>
-      <div className="flex-1 overflow-hidden p-4 pt-0 sm:p-6 sm:pt-0 flex flex-col items-center justify-center">
-        <div className="relative w-full max-w-[200px] aspect-[9/16] rounded-lg overflow-hidden border bg-muted/40 flex items-center justify-center">
-          {preview && (
-            <Image
-              src={preview}
-              alt="Receipt preview"
-              layout="fill"
-              objectFit="cover"
-              className="opacity-20"
-            />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/30 animate-pulse" />
-
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/20 text-white p-8 z-10">
-            <div className="relative h-16 w-16">
-              <div className="absolute inset-0 bg-white/20 rounded-full animate-ping" />
-              <Loader2 className="h-16 w-16 animate-spin text-white/80" style={{ animationDuration: '3s' }}/>
-            </div>
-            <p className="text-lg font-medium">Analyzing...</p>
-          </div>
-        </div>
+      <div className="flex-1 overflow-hidden relative">
+        {preview && (
+          <Image
+            src={preview}
+            alt="Receipt preview"
+            layout="fill"
+            objectFit="contain"
+            className="p-4"
+          />
+        )}
       </div>
-       <DialogFooter className="p-4 sm:p-6 border-t bg-background shrink-0">
-        <Button type="button" variant="ghost" onClick={() => handleClose(true)} disabled>
-          Cancel
+      <DialogFooter className="flex-row items-center justify-end gap-2 p-4 sm:p-6 border-t bg-background shrink-0">
+        <Button type="button" variant="outline" onClick={onRetake} disabled={isSaving}>
+          <RefreshCw className="mr-2" /> Retake
+        </Button>
+        <Button type="button" onClick={handleAnalyze} disabled={isSaving}>
+          <CheckCircle className="mr-2"/> Use Photo
         </Button>
       </DialogFooter>
     </>
+  );
+
+  const renderLoading = () => (
+    <div className="flex flex-col items-center justify-center text-center h-full w-full">
+      <DialogHeader>
+        <DialogTitle>Analyzing Receipt</DialogTitle>
+      </DialogHeader>
+      <div className="relative w-full max-w-[200px] aspect-[9/16] rounded-lg overflow-hidden border bg-muted/40 flex items-center justify-center my-auto">
+        {preview && (
+          <Image
+            src={preview}
+            alt="Receipt preview"
+            layout="fill"
+            objectFit="cover"
+            className="opacity-20"
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/30 animate-pulse" />
+
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/20 text-white p-8 z-10">
+          <div className="relative h-16 w-16">
+            <div className="absolute inset-0 bg-white/20 rounded-full animate-ping" />
+            <Loader2 className="h-16 w-16 animate-spin text-white/80" style={{ animationDuration: '3s' }}/>
+          </div>
+          <p className="text-lg font-medium">Analyzing...</p>
+        </div>
+      </div>
+    </div>
   );
 
   const renderResults = () => (
@@ -224,7 +228,7 @@ export function ReceiptAnalyzer({
         </Button>
       </div>
       <DialogFooter className="flex-row items-center justify-end gap-3 p-4 sm:p-6 bg-background shrink-0">
-        <Button type="button" variant="ghost" onClick={() => handleClose(true)} disabled={isSaving}>
+        <Button type="button" variant="ghost" onClick={onClose} disabled={isSaving}>
           Cancel
         </Button>
         <Button type="button" onClick={handleSaveToHistory} disabled={isSaving}>
@@ -237,6 +241,7 @@ export function ReceiptAnalyzer({
 
   const renderContent = () => {
     switch(stage) {
+      case 'preview': return renderPreview();
       case 'loading': return renderLoading();
       case 'results': return renderResults();
       default: return null;
@@ -244,10 +249,10 @@ export function ReceiptAnalyzer({
   }
 
   return (
-    <Dialog open={!!receiptFile} onOpenChange={(isOpen) => !isOpen && handleClose(true)}>
+    <Dialog open={!!receiptFile} onOpenChange={(isOpen) => !isOpen && handleCloseAndDelete()}>
       <DialogContent 
          hideCloseButton={isSaving} 
-         className="p-0 gap-0 w-full h-full flex flex-col sm:w-auto sm:max-w-2xl sm:h-[90vh] sm:rounded-xl"
+         className="p-0 gap-0 w-full h-full flex flex-col sm:max-w-2xl sm:h-[90vh] sm:rounded-xl"
       >
         {renderContent()}
       </DialogContent>

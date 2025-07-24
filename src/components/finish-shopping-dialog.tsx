@@ -31,7 +31,7 @@ export function FinishShoppingDialog({ onConfirm, disabled }: FinishShoppingDial
         <DialogHeader>
           <DialogTitle>Complete Shopping Trip</DialogTitle>
           <DialogDescription>
-            This will archive all checked items and clear them from your active list. You can add prices and details later by analyzing a receipt from your history.
+            This will archive all checked items to your purchase history. You can add prices and details later by analyzing a receipt from the history page.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

@@ -194,44 +194,53 @@ export async function deleteListItem(workspaceId: string, itemId: string) {
   await deleteDoc(itemDoc);
 }
 
-// Finish shopping: just archive (delete) checked items.
-export async function finishShopping(workspaceId: string) {
+// Finish shopping: archive checked items and create a purchase history record.
+export async function finishShopping(workspaceId: string, completedBy: string) {
   const listItemsCollection = getListItemsCollection(workspaceId);
   const q = query(listItemsCollection, where('checked', '==', true));
   
   const querySnapshot = await getDocs(q);
-  const checkedItems = querySnapshot.docs;
+  const checkedItemsDocs = querySnapshot.docs;
 
-  if (checkedItems.length === 0) {
+  if (checkedItemsDocs.length === 0) {
     console.log('No items to archive.');
     return;
   }
 
   const batch = writeBatch(db);
 
-  for (const itemDoc of checkedItems) {
+  // 1. Create a new purchase history record
+  const purchaseHistoryCollection = getPurchaseHistoryCollection(workspaceId);
+  const newPurchaseRef = doc(purchaseHistoryCollection);
+  
+  const checkedItems: PurchaseItem[] = checkedItemsDocs.map(doc => {
+    const data = doc.data();
+    return {
+      name: data.name,
+      quantity: data.quantity,
+      price: 0, // Price is unknown at this stage
+    };
+  });
+  
+  batch.set(newPurchaseRef, {
+    date: serverTimestamp(),
+    store: 'Unknown Store', // Will be updated via receipt analysis
+    completedBy: completedBy,
+    items: checkedItems,
+  });
+  
+  // 2. Delete the checked items from the active list
+  for (const itemDoc of checkedItemsDocs) {
     batch.delete(itemDoc.ref);
   }
 
   await batch.commit();
 }
 
-
-// Create a new, empty purchase record
-export async function createNewPurchase(workspaceId: string, completedBy: string): Promise<string> {
-  const purchaseHistoryCollection = getPurchaseHistoryCollection(workspaceId);
-  const newPurchaseRef = doc(purchaseHistoryCollection);
-
-  const newPurchase = {
-    date: serverTimestamp(),
-    store: '',
-    completedBy: completedBy,
-    items: [],
-  };
-
-  await setDoc(newPurchaseRef, newPurchase);
-  return newPurchaseRef.id;
-}
+// This function is no longer needed as the main 'finishShopping' handles creation
+// export async function createNewPurchase(workspaceId: string, completedBy: string): Promise<string> {
+//   ...
+// }
 
 
 // Update an entire purchase record

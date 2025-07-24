@@ -9,12 +9,14 @@ import Fuse from 'fuse.js';
 import { addListItem, finishShopping, getListItems, updateListItem, getItemCatalog, seedInitialCatalog } from '@/lib/firestore';
 import { useAuth } from '@/contexts/auth-context';
 import { Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function GroceryListPage() {
   const { user, userProfile, loading } = useAuth();
   const [activeList, setActiveList] = useState<GroceryList>({ id: '', items: []});
   const [searchQuery, setSearchQuery] = useState('');
   const [itemCatalog, setItemCatalog] = useState<string[]>([]);
+  const { toast } = useToast();
 
   const workspaceId = userProfile?.workspaceId;
 
@@ -88,8 +90,12 @@ export default function GroceryListPage() {
   };
 
   const handleFinishShopping = async () => {
-    if (!workspaceId) return;
-    await finishShopping(workspaceId);
+    if (!workspaceId || !userProfile?.name) return;
+    await finishShopping(workspaceId, userProfile.name);
+    toast({
+      title: 'List Archived!',
+      description: 'Your checked items have been moved to your purchase history.',
+    });
   };
 
   const searchPool = useMemo(() => {
