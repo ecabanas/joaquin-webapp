@@ -184,6 +184,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
 
   const CameraView = () => (
     <div className="absolute inset-0 bg-black flex flex-col items-center justify-center">
+      <DialogTitle className="sr-only">Take Receipt Photo</DialogTitle>
       <video ref={videoRef} className="h-full w-full object-cover" autoPlay muted playsInline />
       <canvas ref={canvasRef} className="hidden" />
 
@@ -225,6 +226,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
 
   const PreviewView = () => (
     <div className="absolute inset-0 bg-black flex flex-col items-center justify-center">
+      <DialogTitle className="sr-only">Confirm Receipt Photo</DialogTitle>
       {preview && <Image src={preview} alt="Receipt preview" layout="fill" objectFit="contain" />}
       
       {/* Preview Controls */}
@@ -287,6 +289,7 @@ export function ReceiptAnalyzer({ purchaseId }: ReceiptAnalyzerProps) {
 
   const LoadingView = () => (
      <div className="absolute sm:relative inset-0 flex flex-col items-center justify-center gap-4 text-muted-foreground p-8 bg-background">
+      <DialogTitle className="sr-only">Analyzing Receipt</DialogTitle>
       <h3 className="text-xl font-medium text-foreground">Analyzing Receipt</h3>
       <div className="relative h-24 w-24">
          <Loader2 className="h-24 w-24 animate-spin text-primary/20" />
