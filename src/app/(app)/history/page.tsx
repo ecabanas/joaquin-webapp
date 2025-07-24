@@ -22,9 +22,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 function formatCurrency(amount: number) {
-  return new Intl.NumberFormat('en-US', {
+  // Use the browser's locale to format the currency, making it more international.
+  // It defaults to 'USD' but will adapt if the user's locale is different.
+  return new Intl.NumberFormat(undefined, {
     style: 'currency',
-    currency: 'USD',
+    currency: 'USD', // A default currency is still required.
+    minimumFractionDigits: 2,
   }).format(amount);
 }
 

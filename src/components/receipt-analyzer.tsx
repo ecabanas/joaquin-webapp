@@ -26,6 +26,14 @@ import {
   TableRow,
 } from './ui/table';
 
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+  }).format(amount);
+}
+
 type ReceiptAnalyzerProps = {
   receiptFile: File | null;
   purchaseId: string | null;
@@ -164,7 +172,7 @@ export function ReceiptAnalyzer({
           </div>
         </div>
       </div>
-      <DialogFooter className="p-4 sm:p-6 border-t">
+       <DialogFooter className="p-4 sm:p-6 border-t bg-background shrink-0">
         <Button type="button" variant="ghost" onClick={handleClose} disabled>
           Cancel
         </Button>
@@ -192,7 +200,7 @@ export function ReceiptAnalyzer({
               <TableRow key={index}>
                 <TableCell className="font-medium">{item.name}</TableCell>
                 <TableCell className="text-center">{item.quantity}</TableCell>
-                <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(item.price)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
