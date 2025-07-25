@@ -22,7 +22,7 @@ flowchart TD
         C;
     end
     C -->|Optional| D(User analyzes receipt with AI);
-    D --> E{Comparison data is added<br/>(forgotten items, impulse buys)};
+    D --> E{Comparison data is added<br/>&#40;forgotten items, impulse buys&#41;};
     C --> F[New Active List];
     E --> F;
     subgraph New List
