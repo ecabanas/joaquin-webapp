@@ -36,7 +36,7 @@ import { useCurrency } from '@/hooks/use-currency';
 import { subMonths, startOfMonth, endOfMonth, format, isWithinInterval } from 'date-fns';
 import { Badge } from './ui/badge';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { FileText, ShoppingBag, TrendingUp, Search } from 'lucide-react';
+import { FileText, ShoppingBag, TrendingUp, Search, Lightbulb, X as CloseIcon } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 
 type AnalyticsDashboardProps = {
@@ -48,6 +48,7 @@ type Timeframe = '3months' | '6months' | '12months';
 export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
   const { formatCurrency } = useCurrency();
   const [timeframe, setTimeframe] = useState<Timeframe>('6months');
+  const [showInsight, setShowInsight] = useState(true);
 
   const filteredPurchases = useMemo(() => {
     const now = new Date();
@@ -92,29 +93,37 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
   
 
   const spendingTrendData = useMemo(() => {
-    const data: { [key: string]: { total: number, planned: number, impulse: number } } = {};
+    const data: { [key: string]: { total: number; planned: number; impulse: number; trips: number } } = {};
     filteredPurchases.forEach(p => {
-      const monthYear = format(p.date, 'MMM yyyy');
-      let planned = 0;
-      let impulse = 0;
-      
-      p.items.forEach(item => {
-        const price = (item.price || 0) * item.quantity;
-        const isOnOriginalList = p.originalListItems?.some(orig => orig.name.toLowerCase() === item.name.toLowerCase());
-        if (p.originalListItems && !isOnOriginalList) {
-          impulse += price;
-        } else {
-          planned += price;
+        const monthYear = format(p.date, 'MMM yyyy');
+        if (!data[monthYear]) {
+            data[monthYear] = { total: 0, planned: 0, impulse: 0, trips: 0 };
         }
-      });
-      
-      const total = planned + impulse;
-      data[monthYear] = data[monthYear] || { total: 0, planned: 0, impulse: 0 };
-      data[monthYear].total += total;
-      data[monthYear].planned += planned;
-      data[monthYear].impulse += impulse;
+
+        let planned = 0;
+        let impulse = 0;
+        p.items.forEach(item => {
+            const price = (item.price || 0) * item.quantity;
+            const isOnOriginalList = p.originalListItems?.some(orig => orig.name.toLowerCase() === item.name.toLowerCase());
+            if (p.originalListItems && !isOnOriginalList) {
+                impulse += price;
+            } else {
+                planned += price;
+            }
+        });
+        
+        const total = planned + impulse;
+        data[monthYear].total += total;
+        data[monthYear].planned += planned;
+        data[monthYear].impulse += impulse;
+        data[monthYear].trips += 1;
     });
-    return Object.entries(data).map(([name, values]) => ({ name, ...values })).reverse();
+
+    return Object.entries(data).map(([name, values]) => ({ 
+      name, 
+      ...values, 
+      avgTripCost: values.total / values.trips 
+    })).reverse();
   }, [filteredPurchases]);
   
 
@@ -169,25 +178,30 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
 
   const SpendingTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      const { name, total, planned, impulse } = payload[0].payload;
+      const { name, total, planned, impulse, trips, avgTripCost } = payload[0].payload;
       const plannedPercentage = total > 0 ? Math.round((planned / total) * 100) : 0;
       const impulsePercentage = 100 - plannedPercentage;
 
       return (
-        <div className="p-3 bg-background/80 backdrop-blur-sm border rounded-xl shadow-lg min-w-[200px]">
+        <div className="p-3 bg-background/80 backdrop-blur-sm border rounded-xl shadow-lg min-w-[220px]">
           <p className="font-bold text-lg mb-2">{name}</p>
-          <p className="text-primary text-xl font-bold mb-3">{formatCurrency(total)}</p>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 mb-3">
              <RechartsPieChart width={50} height={50}>
                 <Pie data={[{value: planned}, {value: impulse}]} dataKey="value" cx="50%" cy="50%" outerRadius={25} innerRadius={18}>
                     <Cell fill="hsl(var(--primary))"/>
                     <Cell fill="hsl(var(--primary) / 0.3)"/>
                 </Pie>
             </RechartsPieChart>
-            <div className="text-sm">
-                <p>{plannedPercentage}% Planned</p>
-                <p>{impulsePercentage}% Impulse</p>
+            <div className="flex-1">
+                <p className="text-primary text-xl font-bold">{formatCurrency(total)}</p>
+                <div className="text-xs text-muted-foreground">
+                    <span>{plannedPercentage}% Planned</span>, <span>{impulsePercentage}% Impulse</span>
+                </div>
             </div>
+          </div>
+          <div className="text-sm space-y-1 text-muted-foreground">
+            <p>Trips: <span className="font-medium text-foreground">{trips}</span></p>
+            <p>Avg. Trip: <span className="font-medium text-foreground">{formatCurrency(avgTripCost)}</span></p>
           </div>
         </div>
       );
@@ -227,6 +241,19 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
             <p className="text-5xl font-bold tracking-tight text-primary my-2">{formatCurrency(spendingMetrics.totalSpendThisMonth)}</p>
             <p className="text-muted-foreground animate-in fade-in duration-500">{spendingMetrics.comparisonText}</p>
         </div>
+        
+        {showInsight && (
+            <Alert className="bg-primary/5 border-primary/20 relative">
+                <Lightbulb className="h-4 w-4 text-primary" />
+                <AlertTitle className="font-semibold text-primary/90">Pro Tip</AlertTitle>
+                <AlertDescription>
+                    You've forgotten to buy 'Milk' twice this month. Remember to add it to your list for the next trip!
+                </AlertDescription>
+                <button onClick={() => setShowInsight(false)} className="absolute top-2 right-2 p-1 rounded-full hover:bg-primary/10 transition-colors">
+                    <CloseIcon className="h-4 w-4 text-primary/80" />
+                </button>
+            </Alert>
+        )}
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -358,3 +385,5 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
     </div>
   );
 }
+
+    
