@@ -16,7 +16,7 @@ Instead of creating separate, disposable lists, the app uses a continuous lifecy
 
 ```mermaid
 flowchart TD
-    A[Active List] -->|User clicks "Finish Shopping"| B{Archiving Process};
+    A[Active List] -->|User clicks &quot;Finish Shopping&quot;| B{Archiving Process};
     B --> C{New Purchase Record Created};
     subgraph History
         C;
