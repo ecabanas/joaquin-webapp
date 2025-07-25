@@ -4,6 +4,7 @@
 
 /**
  * @fileOverview Analyzes a grocery receipt image to extract store name, items, quantities, and prices.
+ * It also compares the extracted items with the original shopping list to identify forgotten items and impulse buys.
  *
  * - analyzeReceipt - A function that handles the receipt analysis process.
  * - AnalyzeReceiptInput - The input type for the analyzeReceipt function.
@@ -12,6 +13,15 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import type { ListItem } from '@/lib/types';
+
+const ListItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  quantity: z.number(),
+  notes: z.string().optional(),
+  checked: z.boolean(),
+});
 
 const AnalyzeReceiptInputSchema = z.object({
   receiptDataUri: z
@@ -19,8 +29,10 @@ const AnalyzeReceiptInputSchema = z.object({
     .describe(
       "A photo of a grocery receipt, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
+  originalListItems: z.array(ListItemSchema).describe('The original shopping list items, both checked and unchecked.'),
 });
 export type AnalyzeReceiptInput = z.infer<typeof AnalyzeReceiptInputSchema>;
+
 
 const AnalyzeReceiptOutputSchema = z.object({
   storeName: z.string().describe('The name of the store.'),
@@ -31,6 +43,10 @@ const AnalyzeReceiptOutputSchema = z.object({
       price: z.number().describe('The price of the item.'),
     })
   ).describe('The list of items extracted from the receipt.'),
+  comparison: z.object({
+    forgottenItems: z.array(z.string()).describe("A list of item names from the original list that were checked but do not appear on the receipt."),
+    impulseBuys: z.array(z.string()).describe("A list of item names from the receipt that were not on the original shopping list at all."),
+  }).describe('A comparison between the original list and the receipt.'),
 });
 export type AnalyzeReceiptOutput = z.infer<typeof AnalyzeReceiptOutputSchema>;
 
@@ -42,11 +58,19 @@ const analyzeReceiptPrompt = ai.definePrompt({
   name: 'analyzeReceiptPrompt',
   input: {schema: AnalyzeReceiptInputSchema},
   output: {schema: AnalyzeReceiptOutputSchema},
-  prompt: `You are an expert grocery receipt analyzer.
+  prompt: `You are an expert grocery receipt analyzer and shopping assistant.
 
-You will extract the store name, and a list of all items, quantities, and prices from the receipt image provided.
+Your tasks are:
+1.  Extract the store name, and a list of all items, quantities, and prices from the receipt image provided.
+2.  Compare the items on the receipt with the original shopping list provided in the JSON data. The original list contains items that were planned. Items marked with \`"checked": true\` were intended to be purchased on this trip.
+3.  Identify any items that were checked on the original list but are NOT on the receipt. These are the "forgotten items".
+4.  Identify any items that are on the receipt but were NOT on the original shopping list (neither checked nor unchecked). These are "impulse buys".
+5.  Return the data in the required JSON format, including the store name, the list of purchased items, and the comparison results.
 
-Return the data in JSON format.
+Original Shopping List Data:
+\`\`\`json
+{{{json originalListItems}}}
+\`\`\`
 
 Receipt Image: {{media url=receiptDataUri}}`,
 });

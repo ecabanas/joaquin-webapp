@@ -36,7 +36,7 @@ export default function HistoryPage() {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   
-  const [activePurchaseId, setActivePurchaseId] = useState<string | null>(null);
+  const [activePurchase, setActivePurchase] = useState<Purchase | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -73,8 +73,8 @@ export default function HistoryPage() {
     return fuse.search(searchQuery).map(result => result.item);
   }, [searchQuery, purchases, fuse]);
 
-  const handleInitiateAnalysis = (purchaseId: string) => {
-    setActivePurchaseId(purchaseId);
+  const handleInitiateAnalysis = (purchase: Purchase) => {
+    setActivePurchase(purchase);
     fileInputRef.current?.click();
   };
 
@@ -89,7 +89,7 @@ export default function HistoryPage() {
 
   const handleAnalyzerClose = () => {
     setSelectedFile(null);
-    setActivePurchaseId(null);
+    setActivePurchase(null);
   };
   
   const handleAnalyzerSave = async (purchaseId: string, store: string, items: PurchaseItem[]) => {
@@ -147,7 +147,7 @@ export default function HistoryPage() {
             </CardContent>
             {!hasPrices && (
               <CardFooter>
-                  <Button onClick={() => handleInitiateAnalysis(purchase.id)}>
+                  <Button onClick={() => handleInitiateAnalysis(purchase)}>
                       <ScanLine className="mr-2 h-4 w-4" /> Analyze Receipt
                   </Button>
               </CardFooter>
@@ -205,10 +205,10 @@ export default function HistoryPage() {
       />
       
       {/* Receipt Analyzer Dialog, controlled by state */}
-      {selectedFile && activePurchaseId && userProfile?.workspaceId && (
+      {selectedFile && activePurchase && userProfile?.workspaceId && (
         <ReceiptAnalyzer
           receiptFile={selectedFile}
-          purchaseId={activePurchaseId}
+          purchase={activePurchase}
           workspaceId={userProfile.workspaceId}
           onSave={handleAnalyzerSave}
           onClose={handleAnalyzerClose}

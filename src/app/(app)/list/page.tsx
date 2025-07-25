@@ -91,10 +91,10 @@ export default function GroceryListPage() {
 
   const handleFinishShopping = async () => {
     if (!workspaceId || !userProfile?.name) return;
-    await finishShopping(workspaceId, userProfile.name);
+    await finishShopping(workspaceId, userProfile.name, activeList.items);
     toast({
       title: 'List Archived!',
-      description: 'Your checked items have been moved to your purchase history.',
+      description: 'Your purchased items have been moved to your history.',
     });
   };
 

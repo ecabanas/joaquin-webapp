@@ -24,6 +24,7 @@ export type Purchase = {
   store: string;
   completedBy: string;
   items: PurchaseItem[];
+  originalListItems?: ListItem[];
 };
 
 export type UserProfile = {

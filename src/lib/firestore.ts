@@ -194,53 +194,49 @@ export async function deleteListItem(workspaceId: string, itemId: string) {
   await deleteDoc(itemDoc);
 }
 
-// Finish shopping: archive checked items and create a purchase history record.
-export async function finishShopping(workspaceId: string, completedBy: string) {
-  const listItemsCollection = getListItemsCollection(workspaceId);
-  const q = query(listItemsCollection, where('checked', '==', true));
-  
-  const querySnapshot = await getDocs(q);
-  const checkedItemsDocs = querySnapshot.docs;
-
-  if (checkedItemsDocs.length === 0) {
+// Finish shopping: archive the entire list to a purchase record and clear the active list.
+export async function finishShopping(workspaceId: string, completedBy: string, activeListItems: ListItem[]) {
+  if (activeListItems.length === 0) {
     console.log('No items to archive.');
     return;
   }
-
+  
+  const checkedItems = activeListItems.filter(item => item.checked);
+  if (checkedItems.length === 0) {
+    console.log('No checked items to archive.');
+    // Maybe show a toast to the user? For now, just return.
+    return;
+  }
+  
   const batch = writeBatch(db);
 
   // 1. Create a new purchase history record
   const purchaseHistoryCollection = getPurchaseHistoryCollection(workspaceId);
   const newPurchaseRef = doc(purchaseHistoryCollection);
   
-  const checkedItems: PurchaseItem[] = checkedItemsDocs.map(doc => {
-    const data = doc.data();
-    return {
-      name: data.name,
-      quantity: data.quantity,
-      price: 0, // Price is unknown at this stage
-    };
-  });
+  const purchasedItems: PurchaseItem[] = checkedItems.map(item => ({
+    name: item.name,
+    quantity: item.quantity,
+    price: 0, // Price is unknown at this stage
+  }));
   
   batch.set(newPurchaseRef, {
     date: serverTimestamp(),
     store: 'Unknown Store', // Will be updated via receipt analysis
     completedBy: completedBy,
-    items: checkedItems,
+    items: purchasedItems,
+    originalListItems: activeListItems, // Save the entire list snapshot
   });
   
-  // 2. Delete the checked items from the active list
-  for (const itemDoc of checkedItemsDocs) {
-    batch.delete(itemDoc.ref);
+  // 2. Delete the purchased items from the active list
+  const listItemsCollection = getListItemsCollection(workspaceId);
+  for (const item of checkedItems) {
+    const itemDocRef = doc(listItemsCollection, item.id);
+    batch.delete(itemDocRef);
   }
 
   await batch.commit();
 }
-
-// This function is no longer needed as the main 'finishShopping' handles creation
-// export async function createNewPurchase(workspaceId: string, completedBy: string): Promise<string> {
-//   ...
-// }
 
 
 // Update an entire purchase record
