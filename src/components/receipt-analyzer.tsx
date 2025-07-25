@@ -74,7 +74,7 @@ export function ReceiptAnalyzer({
     try {
         const analysisResult = await analyzeReceipt({ 
           receiptDataUri: preview,
-          originalItems: purchase.items,
+          originalItems: purchase.originalItems || [],
         });
         setStoreName(analysisResult.storeName);
         setItems(analysisResult.items);

@@ -18,12 +18,18 @@ export type PurchaseItem = {
   price: number;
 };
 
+export type OriginalItem = {
+  name: string;
+  quantity: number;
+};
+
 export type Purchase = {
   id: string;
   date: Date;
   store: string;
   completedBy: string;
   items: PurchaseItem[];
+  originalItems?: OriginalItem[];
   comparison?: {
     forgottenItems: string[];
     impulseBuys: string[];

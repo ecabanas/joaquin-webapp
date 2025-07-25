@@ -195,17 +195,17 @@ export async function deleteListItem(workspaceId: string, itemId: string) {
 }
 
 // Finish shopping: archive the entire list to a purchase record and clear the active list.
-export async function finishShopping(workspaceId: string, completedBy: string, activeListItems: ListItem[]) {
+export async function finishShopping(workspaceId: string, completedBy: string, activeListItems: ListItem[]): Promise<string | null> {
   if (activeListItems.length === 0) {
     console.log('No items to archive.');
-    return;
+    return null;
   }
   
   const checkedItems = activeListItems.filter(item => item.checked);
   if (checkedItems.length === 0) {
     console.log('No checked items to archive.');
     // Maybe show a toast to the user? For now, just return.
-    return;
+    return null;
   }
   
   const batch = writeBatch(db);
@@ -225,6 +225,7 @@ export async function finishShopping(workspaceId: string, completedBy: string, a
     store: 'Unknown Store', // Will be updated via receipt analysis
     completedBy: completedBy,
     items: purchasedItems,
+    originalItems: checkedItems.map(item => ({ name: item.name, quantity: item.quantity })),
   });
   
   // 2. Delete the purchased items from the active list
@@ -235,6 +236,7 @@ export async function finishShopping(workspaceId: string, completedBy: string, a
   }
 
   await batch.commit();
+  return newPurchaseRef.id;
 }
 
 

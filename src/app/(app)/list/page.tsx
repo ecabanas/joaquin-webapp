@@ -10,6 +10,8 @@ import { addListItem, finishShopping, getListItems, updateListItem, getItemCatal
 import { useAuth } from '@/contexts/auth-context';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 
 export default function GroceryListPage() {
   const { user, userProfile, loading } = useAuth();
@@ -18,6 +20,7 @@ export default function GroceryListPage() {
   const [itemCatalog, setItemCatalog] = useState<string[]>([]);
   const [isFinishDialogOpen, setIsFinishDialogOpen] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   const workspaceId = userProfile?.workspaceId;
 
@@ -84,12 +87,21 @@ export default function GroceryListPage() {
 
   const handleFinishShopping = async () => {
     if (!workspaceId || !userProfile?.name) return;
-    await finishShopping(workspaceId, userProfile.name, activeList.items);
+    
+    const newPurchaseId = await finishShopping(workspaceId, userProfile.name, activeList.items);
     setIsFinishDialogOpen(false); // Close dialog on success
-    toast({
-      title: 'List Archived!',
-      description: 'Your purchased items have been moved to your history.',
-    });
+
+    if (newPurchaseId) {
+      toast({
+        title: 'List Archived!',
+        description: 'Your purchased items have been moved to your history.',
+        action: (
+          <Button variant="secondary" size="sm" onClick={() => router.push('/history')}>
+            View
+          </Button>
+        ),
+      });
+    }
   };
 
   const searchPool = useMemo(() => {
