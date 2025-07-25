@@ -97,17 +97,24 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
   
 
   const spendingTrendData = useMemo(() => {
-    const data: { [key: string]: { total: number; trips: number } } = {};
+    const data: { [key: string]: { total: number; trips: number, planned: number, impulse: number } } = {};
     filteredPurchases.forEach(p => {
         const monthYear = format(p.date, 'MMM yyyy');
         if (!data[monthYear]) {
-            data[monthYear] = { total: 0, trips: 0 };
+            data[monthYear] = { total: 0, trips: 0, planned: 0, impulse: 0 };
         }
 
         const total = p.items.reduce((acc, item) => acc + (item.price || 0) * item.quantity, 0);
-        
         data[monthYear].total += total;
         data[monthYear].trips += 1;
+        
+        if (p.comparison) {
+          const plannedCount = p.items.length - p.comparison.impulseBuys.length;
+          data[monthYear].planned += plannedCount;
+          data[monthYear].impulse += p.comparison.impulseBuys.length;
+        } else {
+          data[monthYear].planned += p.items.length;
+        }
     });
 
     return Object.entries(data).map(([name, values]) => ({ 
@@ -177,7 +184,12 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
 
   const SpendingTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      const { name, total, trips, avgTripCost } = payload[0].payload;
+      const { name, total, trips, avgTripCost, planned, impulse } = payload[0].payload;
+      const habitsData = [
+        { name: 'Planned', value: planned, color: 'hsl(var(--primary))' },
+        { name: 'Impulse', value: impulse, color: 'hsl(var(--accent))' },
+      ];
+      const hasHabits = planned > 0 || impulse > 0;
 
       return (
         <div className="p-3 bg-background/80 backdrop-blur-sm border rounded-xl shadow-lg min-w-[220px]">
@@ -185,11 +197,38 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
           <div className="flex items-center gap-4 mb-3">
             <div className="flex-1">
                 <p className="text-primary text-2xl font-bold">{formatCurrency(total)}</p>
+                <div className="text-xs space-y-1 text-muted-foreground mt-1">
+                  <p>Trips: <span className="font-medium text-foreground">{trips}</span></p>
+                  <p>Avg. Trip: <span className="font-medium text-foreground">{formatCurrency(avgTripCost)}</span></p>
+                </div>
             </div>
-          </div>
-          <div className="text-sm space-y-1 text-muted-foreground">
-            <p>Trips: <span className="font-medium text-foreground">{trips}</span></p>
-            <p>Avg. Trip: <span className="font-medium text-foreground">{formatCurrency(avgTripCost)}</span></p>
+             {hasHabits && (
+              <div className="relative w-20 h-20">
+                <RechartsPieChart width={80} height={80}>
+                   <Pie
+                    data={habitsData}
+                    cx="50%"
+                    cy="50%"
+                    dataKey="value"
+                    innerRadius={25}
+                    outerRadius={35}
+                    paddingAngle={3}
+                    stroke="hsl(var(--background))"
+                    strokeWidth={2}
+                  >
+                    {habitsData.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
+                    ))}
+                  </Pie>
+                </RechartsPieChart>
+                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <p className="text-xs text-muted-foreground">Impulse</p>
+                  <p className="font-bold text-base">
+                    {Math.round((impulse / (planned + impulse)) * 100)}%
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       );
