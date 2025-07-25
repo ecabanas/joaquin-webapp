@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import type { Purchase } from '@/lib/types';
 import { getPurchaseHistory } from '@/lib/firestore';
 import { useAuth } from '@/contexts/auth-context';
@@ -15,7 +15,12 @@ export default function AnalyticsPage() {
   const workspaceId = userProfile?.workspaceId;
 
   useEffect(() => {
-    if (!workspaceId) return;
+    if (!workspaceId) {
+      if (!authLoading) {
+        setDataLoading(false);
+      }
+      return;
+    };
 
     setDataLoading(true);
     const unsubscribe = getPurchaseHistory(workspaceId, (newPurchases) => {
@@ -24,7 +29,7 @@ export default function AnalyticsPage() {
     });
 
     return () => unsubscribe();
-  }, [workspaceId]);
+  }, [workspaceId, authLoading]);
 
   if (authLoading || dataLoading) {
     return (
