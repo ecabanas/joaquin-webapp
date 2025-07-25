@@ -225,7 +225,6 @@ export async function finishShopping(workspaceId: string, completedBy: string, a
     store: 'Unknown Store', // Will be updated via receipt analysis
     completedBy: completedBy,
     items: purchasedItems,
-    originalListItems: activeListItems, // Save the entire list snapshot
   });
   
   // 2. Delete the purchased items from the active list
@@ -246,7 +245,6 @@ export async function updatePurchase(
   updates: { 
     store: string; 
     items: PurchaseItem[],
-    comparison?: Purchase['comparison'] 
   }
 ) {
   const purchaseDocRef = doc(getPurchaseHistoryCollection(workspaceId), purchaseId);

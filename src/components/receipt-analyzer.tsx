@@ -25,13 +25,12 @@ import {
 } from './ui/table';
 import type { PurchaseItem, Purchase } from '@/lib/types';
 import { Input } from './ui/input';
-import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 type ReceiptAnalyzerProps = {
   receiptFile: File | null;
   purchase: Purchase;
   workspaceId: string;
-  onSave: (purchaseId: string, storeName: string, items: PurchaseItem[], comparison?: Purchase['comparison']) => void;
+  onSave: (purchaseId: string, storeName: string, items: PurchaseItem[]) => void;
   onClose: () => void;
   onRetake: () => void;
 };
@@ -49,7 +48,6 @@ export function ReceiptAnalyzer({
   const [preview, setPreview] = useState<string | null>(null);
   const [storeName, setStoreName] = useState('');
   const [items, setItems] = useState<PurchaseItem[]>([]);
-  const [comparison, setComparison] = useState<AnalyzeReceiptOutput['comparison'] | null>(null);
   const [stage, setStage] = useState<Stage>('preview');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -69,17 +67,15 @@ export function ReceiptAnalyzer({
   }, [receiptFile]);
 
   const handleAnalyze = useCallback(async () => {
-    if (!preview || !purchase.originalListItems) return;
+    if (!preview) return;
 
     setStage('loading');
     try {
         const analysisResult = await analyzeReceipt({ 
           receiptDataUri: preview,
-          originalListItems: purchase.originalListItems,
         });
         setStoreName(analysisResult.storeName);
         setItems(analysisResult.items);
-        setComparison(analysisResult.comparison)
         setStage('results');
     } catch (error) {
         console.error('Error analyzing receipt:', error);
@@ -90,10 +86,9 @@ export function ReceiptAnalyzer({
         });
         setItems([]);
         setStoreName('');
-        setComparison(null);
         setStage('results');
     }
-  }, [preview, toast, purchase.originalListItems]);
+  }, [preview, toast]);
 
   const handleItemChange = (index: number, field: keyof PurchaseItem, value: string | number) => {
     const newItems = [...items];
@@ -113,7 +108,7 @@ export function ReceiptAnalyzer({
   const handleSaveToHistory = async () => {
     setIsSaving(true);
     try {
-      onSave(purchase.id, storeName, items, comparison || undefined);
+      onSave(purchase.id, storeName, items);
       toast({
         title: 'Success!',
         description: 'Purchase history has been updated.',
@@ -161,7 +156,7 @@ export function ReceiptAnalyzer({
     <div className="flex flex-col items-center justify-center text-center h-full w-full">
       <DialogHeader>
         <DialogTitle>Analyzing Receipt</DialogTitle>
-        <DialogDescription>Extracting items and comparing with your list...</DialogDescription>
+        <DialogDescription>Extracting items and prices from your receipt...</DialogDescription>
       </DialogHeader>
       <div className="relative w-full max-w-[200px] aspect-[9/16] rounded-lg overflow-hidden border bg-muted/40 flex items-center justify-center my-auto">
         {preview && (
@@ -193,22 +188,6 @@ export function ReceiptAnalyzer({
         <DialogDescription>Edit the details extracted from your receipt.</DialogDescription>
       </DialogHeader>
       <div className="flex-1 overflow-y-auto border-y px-6 py-4 space-y-4">
-        {comparison && (comparison.forgottenItems.length > 0 || comparison.impulseBuys.length > 0) && (
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertTitle>Shopping Summary</AlertTitle>
-            <AlertDescription>
-              <ul className="list-disc pl-5 space-y-1 mt-2">
-                {comparison.forgottenItems.map(item => (
-                  <li key={item}>You may have forgotten: <span className="font-semibold">{item}</span></li>
-                ))}
-                {comparison.impulseBuys.map(item => (
-                  <li key={item}>Impulse buy: <span className="font-semibold">{item}</span></li>
-                ))}
-              </ul>
-            </AlertDescription>
-          </Alert>
-        )}
         <div>
             <label htmlFor="store-name" className="text-sm font-medium">Store Name</label>
             <Input id="store-name" value={storeName} onChange={(e) => setStoreName(e.target.value)} placeholder="e.g. Super Grocer" />

@@ -12,9 +12,6 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell,
 } from 'recharts';
 import {
   Card,
@@ -30,12 +27,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCurrency } from '@/hooks/use-currency';
 import { subMonths, startOfMonth, endOfMonth, format, isWithinInterval } from 'date-fns';
 import { Badge } from './ui/badge';
-import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { FileText, ShoppingBag, TrendingUp, Search, Users, Trophy } from 'lucide-react';
+import { FileText, Search, Trophy, Users } from 'lucide-react';
 import { Avatar, AvatarFallback } from './ui/avatar';
 
 
@@ -97,24 +92,16 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
   
 
   const spendingTrendData = useMemo(() => {
-    const data: { [key: string]: { total: number; trips: number, planned: number, impulse: number } } = {};
+    const data: { [key: string]: { total: number; trips: number } } = {};
     filteredPurchases.forEach(p => {
         const monthYear = format(p.date, 'MMM yyyy');
         if (!data[monthYear]) {
-            data[monthYear] = { total: 0, trips: 0, planned: 0, impulse: 0 };
+            data[monthYear] = { total: 0, trips: 0 };
         }
 
         const total = p.items.reduce((acc, item) => acc + (item.price || 0) * item.quantity, 0);
         data[monthYear].total += total;
         data[monthYear].trips += 1;
-        
-        if (p.comparison) {
-          const plannedCount = p.items.length - p.comparison.impulseBuys.length;
-          data[monthYear].planned += plannedCount;
-          data[monthYear].impulse += p.comparison.impulseBuys.length;
-        } else {
-          data[monthYear].planned += p.items.length;
-        }
     });
 
     return Object.entries(data).map(([name, values]) => ({ 
@@ -124,27 +111,6 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
     })).reverse();
   }, [filteredPurchases]);
   
-
-  const habitsMetrics = useMemo(() => {
-    const impulseBuys: { [key: string]: number } = {};
-    const forgottenItems: { [key: string]: number } = {};
-
-    filteredPurchases.forEach(p => {
-       if (p.comparison) {
-          p.comparison.impulseBuys.forEach(item => {
-            impulseBuys[item] = (impulseBuys[item] || 0) + 1;
-          });
-           p.comparison.forgottenItems.forEach(item => {
-            forgottenItems[item] = (forgottenItems[item] || 0) + 1;
-          });
-       }
-    });
-
-    const topImpulse = Object.entries(impulseBuys).sort((a, b) => b[1] - a[1]).slice(0, 5);
-    const topForgotten = Object.entries(forgottenItems).sort((a, b) => b[1] - a[1]).slice(0, 5);
-    
-    return { topImpulse, topForgotten };
-  }, [filteredPurchases]);
 
   const topShoppers = useMemo(() => {
     const shopperCounts: { [name: string]: number } = {};
@@ -184,13 +150,7 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
 
   const SpendingTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      const { name, total, trips, avgTripCost, planned, impulse } = payload[0].payload;
-      const habitsData = [
-        { name: 'Planned', value: planned, color: 'hsl(var(--primary))' },
-        { name: 'Impulse', value: impulse, color: 'hsl(var(--primary) / 0.3)' },
-      ];
-      const hasHabits = planned > 0 || impulse > 0;
-      const impulsePercentage = Math.round((impulse / (planned + impulse)) * 100);
+      const { name, total, trips, avgTripCost } = payload[0].payload;
 
       return (
         <div className="p-3 bg-background/80 backdrop-blur-sm border rounded-xl shadow-lg min-w-[220px]">
@@ -203,34 +163,6 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
                   <p>Avg. Trip: <span className="font-medium text-foreground">{formatCurrency(avgTripCost)}</span></p>
                 </div>
             </div>
-             {hasHabits && (
-              <div className="relative w-20 h-20">
-                <RechartsPieChart width={80} height={80}>
-                   <Pie
-                    data={habitsData}
-                    cx="50%"
-                    cy="50%"
-                    dataKey="value"
-                    innerRadius={28}
-                    outerRadius={38}
-                    paddingAngle={3}
-                    stroke="hsl(var(--background))"
-                    strokeWidth={2}
-                  >
-                    {habitsData.map((entry) => (
-                      <Cell key={entry.name} fill={entry.color} />
-                    ))}
-                  </Pie>
-                </RechartsPieChart>
-                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <p className="font-bold text-base leading-none">
-                    {impulsePercentage}
-                    <span className="text-xs font-normal text-muted-foreground">%</span>
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Impulse</p>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       );
@@ -306,7 +238,7 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
                 </ResponsiveContainer>
             ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-                    <TrendingUp className="w-12 h-12 mb-4" />
+                    <Users className="w-12 h-12 mb-4" />
                     <p>Not enough data for this timeframe.</p>
                 </div>
             )}
@@ -357,67 +289,33 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
 
             <Card>
                  <CardHeader>
-                    <CardTitle>Top Insights</CardTitle>
-                    <CardDescription>Your most common shopping habits.</CardDescription>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      Top Shoppers
+                    </CardTitle>
+                    <CardDescription>Who's completed the most trips.</CardDescription>
                  </CardHeader>
                  <CardContent>
-                     <Tabs defaultValue="forgotten">
-                        <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="forgotten">Most Forgotten</TabsTrigger>
-                            <TabsTrigger value="impulse">Top Impulse Buys</TabsTrigger>
-                            <TabsTrigger value="shoppers"><Users className="w-4 h-4 mr-1"/> Shoppers</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="forgotten" className="mt-4">
-                           {habitsMetrics.topForgotten.length > 0 ? (
-                                <ul className="space-y-2">
-                                    {habitsMetrics.topForgotten.map(([name, count]) => (
-                                        <li key={name} className="flex justify-between items-center bg-muted/50 p-3 rounded-md">
-                                            <span className="font-medium">{name}</span>
-                                            <Badge variant="secondary">{count} times</Badge>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p className="text-sm text-muted-foreground text-center py-8">You haven't forgotten any items recently. Great job!</p>
-                            )}
-                        </TabsContent>
-                        <TabsContent value="impulse" className="mt-4">
-                             {habitsMetrics.topImpulse.length > 0 ? (
-                                <ul className="space-y-2">
-                                    {habitsMetrics.topImpulse.map(([name, count]) => (
-                                        <li key={name} className="flex justify-between items-center bg-muted/50 p-3 rounded-md">
-                                            <span className="font-medium">{name}</span>
-                                            <Badge variant="secondary">{count} times</Badge>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p className="text-sm text-muted-foreground text-center py-8">No impulse buys detected. Very disciplined!</p>
-                            )}
-                        </TabsContent>
-                         <TabsContent value="shoppers" className="mt-4">
-                           {topShoppers.length > 0 ? (
-                                <ul className="space-y-3">
-                                    {topShoppers.map(([name, count], index) => (
-                                        <li key={name} className="flex justify-between items-center bg-muted/50 p-2.5 rounded-md">
-                                            <div className="flex items-center gap-3">
-                                                <Avatar className="h-9 w-9">
-                                                    <AvatarFallback>{getInitials(name)}</AvatarFallback>
-                                                </Avatar>
-                                                <span className="font-medium">{name}</span>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                {index === 0 && <Trophy className="w-5 h-5 text-amber-400" />}
-                                                <Badge variant="secondary" className="text-base">{count} trips</Badge>
-                                            </div>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p className="text-sm text-muted-foreground text-center py-8">No shopping trips recorded yet.</p>
-                            )}
-                        </TabsContent>
-                     </Tabs>
+                   {topShoppers.length > 0 ? (
+                        <ul className="space-y-3">
+                            {topShoppers.map(([name, count], index) => (
+                                <li key={name} className="flex justify-between items-center bg-muted/50 p-2.5 rounded-md">
+                                    <div className="flex items-center gap-3">
+                                        <Avatar className="h-9 w-9">
+                                            <AvatarFallback>{getInitials(name)}</AvatarFallback>
+                                        </Avatar>
+                                        <span className="font-medium">{name}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        {index === 0 && <Trophy className="w-5 h-5 text-amber-400" />}
+                                        <Badge variant="secondary" className="text-base">{count} {count === 1 ? 'trip' : 'trips'}</Badge>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-sm text-muted-foreground text-center py-8">No shopping trips recorded yet.</p>
+                    )}
                  </CardContent>
             </Card>
        </div>
