@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Fuse from 'fuse.js';
 import {
   Card,
@@ -33,6 +34,9 @@ function formatDate(date: Date) {
 
 export default function HistoryPage() {
   const { userProfile, loading } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -42,6 +46,19 @@ export default function HistoryPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const workspaceId = userProfile?.workspaceId;
   const { formatCurrency } = useCurrency();
+
+  // Get the ID of the purchase to open from the URL query params
+  const openPurchaseId = searchParams.get('openPurchaseId');
+  
+  useEffect(() => {
+    // If we have an openPurchaseId, remove it from the URL after the component has mounted
+    // so it doesn't stay in the URL bar.
+    if (openPurchaseId) {
+       const newUrl = window.location.pathname;
+       window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
+    }
+  }, [openPurchaseId]);
+
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -107,12 +124,12 @@ export default function HistoryPage() {
     );
   }
 
-  const PurchaseCard = ({ purchase }: { purchase: Purchase }) => {
+  const PurchaseCard = ({ purchase, defaultOpen }: { purchase: Purchase, defaultOpen: boolean }) => {
     const total = purchase.items.reduce((acc, item) => acc + (item.price || 0) * item.quantity, 0);
     const hasPrices = purchase.items.some(item => (item.price || 0) > 0);
 
     return (
-      <Collapsible defaultOpen={false}>
+      <Collapsible defaultOpen={defaultOpen}>
         <Card className="shadow-sm overflow-hidden">
           <CollapsibleTrigger className="w-full text-left group">
              <CardHeader className="flex flex-row items-start justify-between gap-4 p-4 md:p-6 cursor-pointer hover:bg-muted/50 transition-colors">
@@ -178,7 +195,7 @@ export default function HistoryPage() {
       <div className="grid gap-4">
         {filteredPurchases.length > 0 ? (
           filteredPurchases.map((purchase) => (
-            <PurchaseCard key={purchase.id} purchase={purchase} />
+            <PurchaseCard key={purchase.id} purchase={purchase} defaultOpen={purchase.id === openPurchaseId} />
           ))
         ) : (
           <div className="text-center py-16 px-4 bg-card rounded-lg border border-dashed">

@@ -88,15 +88,15 @@ export default function GroceryListPage() {
   const handleFinishShopping = async () => {
     if (!workspaceId || !userProfile?.name) return;
     
+    setIsFinishDialogOpen(false); // Close dialog immediately
     const newPurchaseId = await finishShopping(workspaceId, userProfile.name, activeList.items);
-    setIsFinishDialogOpen(false); // Close dialog on success
-
+    
     if (newPurchaseId) {
       toast({
         title: 'List Archived!',
         description: 'Your purchased items have been moved to your history.',
         action: (
-          <Button variant="secondary" size="sm" onClick={() => router.push('/history')}>
+          <Button variant="secondary" size="sm" onClick={() => router.push(`/history?openPurchaseId=${newPurchaseId}`)}>
             View
           </Button>
         ),
