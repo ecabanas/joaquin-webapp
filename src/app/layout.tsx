@@ -13,8 +13,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Joaquin',
-  description: 'Your shared list, simplified.',
+  title: 'Joaquin | Shared Lists, Simplified',
+  description: 'The intelligent, collaborative grocery list that helps you shop smarter, not harder. Analyze receipts with AI, track spending, and never forget the milk again.',
 };
 
 export default function RootLayout({
