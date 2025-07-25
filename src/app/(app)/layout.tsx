@@ -11,6 +11,7 @@ import {
   LogOut,
   Loader2,
   User,
+  AreaChart,
 } from 'lucide-react';
 import { Logo } from '@/components/icons';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ import { useEffect } from 'react';
 const navItems = [
   { href: '/list', icon: List, label: 'List' },
   { href: '/history', icon: History, label: 'History' },
+  { href: '/analytics', icon: AreaChart, label: 'Analytics' },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -181,7 +183,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       
       {/* --- Mobile Bottom Tab Bar --- */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-background border-t shadow-lg z-50">
-        <div className="h-full grid grid-cols-3">
+        <div className="h-full grid grid-cols-4">
           {mobileNavItems.map((item) => {
             const isActive = pathname.startsWith(item.href);
             return (
