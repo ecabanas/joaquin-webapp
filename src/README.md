@@ -15,7 +15,7 @@ The entire application operates within the context of a shared workspace. All da
 Instead of creating separate, disposable lists, the app uses a continuous lifecycle model with a single **"Active List"**. This process is designed to mirror the natural, recurring rhythm of household shopping.
 
 ```mermaid
-flowchart TD
+flowchart LR
     A[Active List] -->|User clicks &quot;Finish Shopping&quot;| B{Archiving Process};
     B --> C{New Purchase Record Created};
     subgraph History
