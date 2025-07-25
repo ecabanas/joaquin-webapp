@@ -12,7 +12,6 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
-  Legend,
   PieChart as RechartsPieChart,
   Pie,
   Cell,
@@ -36,8 +35,9 @@ import { useCurrency } from '@/hooks/use-currency';
 import { subMonths, startOfMonth, endOfMonth, format, isWithinInterval } from 'date-fns';
 import { Badge } from './ui/badge';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { FileText, ShoppingBag, TrendingUp, Search, Lightbulb, X as CloseIcon } from 'lucide-react';
-import { Skeleton } from './ui/skeleton';
+import { FileText, ShoppingBag, TrendingUp, Search, Users, Trophy } from 'lucide-react';
+import { Avatar, AvatarFallback } from './ui/avatar';
+
 
 type AnalyticsDashboardProps = {
   purchases: Purchase[];
@@ -45,10 +45,14 @@ type AnalyticsDashboardProps = {
 
 type Timeframe = '3months' | '6months' | '12months';
 
+const getInitials = (name = '') => {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase();
+}
+
+
 export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
   const { formatCurrency } = useCurrency();
   const [timeframe, setTimeframe] = useState<Timeframe>('6months');
-  const [showInsight, setShowInsight] = useState(true);
 
   const filteredPurchases = useMemo(() => {
     const now = new Date();
@@ -93,36 +97,23 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
   
 
   const spendingTrendData = useMemo(() => {
-    const data: { [key: string]: { total: number; planned: number; impulse: number; trips: number } } = {};
+    const data: { [key: string]: { total: number; trips: number } } = {};
     filteredPurchases.forEach(p => {
         const monthYear = format(p.date, 'MMM yyyy');
         if (!data[monthYear]) {
-            data[monthYear] = { total: 0, planned: 0, impulse: 0, trips: 0 };
+            data[monthYear] = { total: 0, trips: 0 };
         }
 
-        let planned = 0;
-        let impulse = 0;
-        p.items.forEach(item => {
-            const price = (item.price || 0) * item.quantity;
-            const isOnOriginalList = p.originalListItems?.some(orig => orig.name.toLowerCase() === item.name.toLowerCase());
-            if (p.originalListItems && !isOnOriginalList) {
-                impulse += price;
-            } else {
-                planned += price;
-            }
-        });
+        const total = p.items.reduce((acc, item) => acc + (item.price || 0) * item.quantity, 0);
         
-        const total = planned + impulse;
         data[monthYear].total += total;
-        data[monthYear].planned += planned;
-        data[monthYear].impulse += impulse;
         data[monthYear].trips += 1;
     });
 
     return Object.entries(data).map(([name, values]) => ({ 
       name, 
       ...values, 
-      avgTripCost: values.total / values.trips 
+      avgTripCost: values.trips > 0 ? values.total / values.trips : 0,
     })).reverse();
   }, [filteredPurchases]);
   
@@ -148,10 +139,18 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
     return { topImpulse, topForgotten };
   }, [filteredPurchases]);
 
+  const topShoppers = useMemo(() => {
+    const shopperCounts: { [name: string]: number } = {};
+    filteredPurchases.forEach(p => {
+      shopperCounts[p.completedBy] = (shopperCounts[p.completedBy] || 0) + 1;
+    });
+    return Object.entries(shopperCounts).sort((a, b) => b[1] - a[1]);
+  }, [filteredPurchases]);
+
 
   const allItems = useMemo(() => {
     const itemSet = new Set<string>();
-    purchases.forEach(p => p.items.forEach(i => i.price > 0 && itemSet.add(i.name)));
+    purchases.forEach(p => p.items.forEach(i => (i.price || 0) > 0 && itemSet.add(i.name)));
     return Array.from(itemSet).sort();
   }, [purchases]);
 
@@ -162,7 +161,7 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
     return purchases
       .map(p => {
         const item = p.items.find(i => i.name === selectedItem);
-        if (item && item.price > 0) {
+        if (item && (item.price || 0) > 0) {
           return {
             date: format(p.date, 'dd MMM yy'),
             price: item.price,
@@ -178,25 +177,14 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
 
   const SpendingTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      const { name, total, planned, impulse, trips, avgTripCost } = payload[0].payload;
-      const plannedPercentage = total > 0 ? Math.round((planned / total) * 100) : 0;
-      const impulsePercentage = 100 - plannedPercentage;
+      const { name, total, trips, avgTripCost } = payload[0].payload;
 
       return (
         <div className="p-3 bg-background/80 backdrop-blur-sm border rounded-xl shadow-lg min-w-[220px]">
           <p className="font-bold text-lg mb-2">{name}</p>
           <div className="flex items-center gap-4 mb-3">
-             <RechartsPieChart width={50} height={50}>
-                <Pie data={[{value: planned}, {value: impulse}]} dataKey="value" cx="50%" cy="50%" outerRadius={25} innerRadius={18}>
-                    <Cell fill="hsl(var(--primary))"/>
-                    <Cell fill="hsl(var(--primary) / 0.3)"/>
-                </Pie>
-            </RechartsPieChart>
             <div className="flex-1">
-                <p className="text-primary text-xl font-bold">{formatCurrency(total)}</p>
-                <div className="text-xs text-muted-foreground">
-                    <span>{plannedPercentage}% Planned</span>, <span>{impulsePercentage}% Impulse</span>
-                </div>
+                <p className="text-primary text-2xl font-bold">{formatCurrency(total)}</p>
             </div>
           </div>
           <div className="text-sm space-y-1 text-muted-foreground">
@@ -242,19 +230,6 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
             <p className="text-muted-foreground animate-in fade-in duration-500">{spendingMetrics.comparisonText}</p>
         </div>
         
-        {showInsight && (
-            <Alert className="bg-primary/5 border-primary/20 relative">
-                <Lightbulb className="h-4 w-4 text-primary" />
-                <AlertTitle className="font-semibold text-primary/90">Pro Tip</AlertTitle>
-                <AlertDescription>
-                    You've forgotten to buy 'Milk' twice this month. Remember to add it to your list for the next trip!
-                </AlertDescription>
-                <button onClick={() => setShowInsight(false)} className="absolute top-2 right-2 p-1 rounded-full hover:bg-primary/10 transition-colors">
-                    <CloseIcon className="h-4 w-4 text-primary/80" />
-                </button>
-            </Alert>
-        )}
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
@@ -313,7 +288,7 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
                     </SelectContent>
                 </Select>
                 <div className="h-[250px] w-full mt-4">
-                    {priceWatchData.length > 1 ? (
+                    {priceWatchData && priceWatchData.length > 1 ? (
                         <ResponsiveContainer>
                             <LineChart data={priceWatchData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                             <XAxis dataKey="date" tick={{ fill: 'hsl(var(--muted-foreground))' }} fontSize={12} />
@@ -346,9 +321,10 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
                  </CardHeader>
                  <CardContent>
                      <Tabs defaultValue="forgotten">
-                        <TabsList className="grid w-full grid-cols-2">
+                        <TabsList className="grid w-full grid-cols-3">
                             <TabsTrigger value="forgotten">Most Forgotten</TabsTrigger>
                             <TabsTrigger value="impulse">Top Impulse Buys</TabsTrigger>
+                            <TabsTrigger value="shoppers"><Users className="w-4 h-4 mr-1"/> Shoppers</TabsTrigger>
                         </TabsList>
                         <TabsContent value="forgotten" className="mt-4">
                            {habitsMetrics.topForgotten.length > 0 ? (
@@ -378,6 +354,28 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
                                 <p className="text-sm text-muted-foreground text-center py-8">No impulse buys detected. Very disciplined!</p>
                             )}
                         </TabsContent>
+                         <TabsContent value="shoppers" className="mt-4">
+                           {topShoppers.length > 0 ? (
+                                <ul className="space-y-3">
+                                    {topShoppers.map(([name, count], index) => (
+                                        <li key={name} className="flex justify-between items-center bg-muted/50 p-2.5 rounded-md">
+                                            <div className="flex items-center gap-3">
+                                                <Avatar className="h-9 w-9">
+                                                    <AvatarFallback>{getInitials(name)}</AvatarFallback>
+                                                </Avatar>
+                                                <span className="font-medium">{name}</span>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                {index === 0 && <Trophy className="w-5 h-5 text-amber-400" />}
+                                                <Badge variant="secondary" className="text-base">{count} trips</Badge>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-sm text-muted-foreground text-center py-8">No shopping trips recorded yet.</p>
+                            )}
+                        </TabsContent>
                      </Tabs>
                  </CardContent>
             </Card>
@@ -385,5 +383,3 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
     </div>
   );
 }
-
-    
