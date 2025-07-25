@@ -40,12 +40,9 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div>
-      <header className="space-y-1.5 mb-8">
+    <div className="max-w-2xl mx-auto">
+      <header className="space-y-1.5 mb-8 text-center">
         <h1 className="text-3xl font-bold tracking-tight">Your Shopping Story</h1>
-        <p className="text-muted-foreground">
-          Insights into your spending, habits, and favorite items.
-        </p>
       </header>
 
       <AnalyticsDashboard purchases={purchases} />

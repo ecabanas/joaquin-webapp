@@ -43,16 +43,13 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <header className="space-y-1.5">
+    <div className="max-w-2xl mx-auto space-y-8">
+      <header className="space-y-1.5 text-center">
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your account, notifications, and list settings.
-        </p>
       </header>
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        <Card className="lg:col-span-3">
+      <div className="grid gap-8">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-3">
               <User className="w-6 h-6" />

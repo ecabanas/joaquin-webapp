@@ -133,16 +133,12 @@ export default function GroceryListPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <header className="space-y-1.5 mb-6">
-        <h1 className="text-3xl font-bold tracking-tight text-center">Grocery List</h1>
+      <header className="space-y-1.5 mb-6 text-center">
+        <h1 className="text-3xl font-bold tracking-tight">Grocery List</h1>
         <div className="h-10 flex items-center justify-center">
-            {allItemsComplete ? (
+            {allItemsComplete && (
               <p className="text-center text-lg font-medium text-primary animate-in fade-in-25">
                 You've got everything! 🎉
-              </p>
-            ) : (
-               <p className="text-muted-foreground text-center">
-                A shared list to keep your shopping organized.
               </p>
             )}
         </div>
