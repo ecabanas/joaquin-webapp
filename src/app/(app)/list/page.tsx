@@ -16,6 +16,7 @@ export default function GroceryListPage() {
   const [activeList, setActiveList] = useState<GroceryList>({ id: '', items: []});
   const [searchQuery, setSearchQuery] = useState('');
   const [itemCatalog, setItemCatalog] = useState<string[]>([]);
+  const [isFinishDialogOpen, setIsFinishDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const workspaceId = userProfile?.workspaceId;
@@ -53,14 +54,6 @@ export default function GroceryListPage() {
   }, [activeList]);
 
   const progressValue = totalItems > 0 ? (checkedItems / totalItems) * 100 : 0;
-  const allItemsComplete = totalItems > 0 && checkedItems === totalItems;
-
-  const handleItemsChange = (items: ListItem[]) => {
-    // This function is now primarily for batch updates if ever needed,
-    // but individual updates are handled by more specific functions.
-    // For now, we can use updateListItem for individual changes.
-    // The main listener will update the state.
-  };
   
   const handleItemUpdate = (itemId: string, updates: Partial<ListItem>) => {
     if (!workspaceId) return;
@@ -92,6 +85,7 @@ export default function GroceryListPage() {
   const handleFinishShopping = async () => {
     if (!workspaceId || !userProfile?.name) return;
     await finishShopping(workspaceId, userProfile.name, activeList.items);
+    setIsFinishDialogOpen(false); // Close dialog on success
     toast({
       title: 'List Archived!',
       description: 'Your purchased items have been moved to your history.',
@@ -135,13 +129,6 @@ export default function GroceryListPage() {
     <div className="max-w-2xl mx-auto">
       <header className="space-y-1.5 mb-6 text-center">
         <h1 className="text-3xl font-bold tracking-tight">Grocery List</h1>
-        <div className="h-10 flex items-center justify-center">
-            {allItemsComplete && (
-              <p className="text-center text-lg font-medium text-primary animate-in fade-in-25">
-                You've got everything! 🎉
-              </p>
-            )}
-        </div>
       </header>
       
       <GlobalSearchInput
@@ -155,11 +142,11 @@ export default function GroceryListPage() {
       <div className="mt-4">
         <GroceryListClient 
           list={activeList} 
-          onItemsChange={handleItemsChange}
           onItemUpdate={handleItemUpdate}
           onFinishShopping={handleFinishShopping}
           progress={progressValue} 
-          onAddItem={handleAddItem}
+          isFinishDialogOpen={isFinishDialogOpen}
+          setIsFinishDialogOpen={setIsFinishDialogOpen}
         />
       </div>
     </div>

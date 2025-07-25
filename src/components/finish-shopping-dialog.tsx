@@ -16,11 +16,13 @@ import { CheckCircle } from 'lucide-react';
 type FinishShoppingDialogProps = {
   onConfirm: () => void;
   disabled?: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 };
 
-export function FinishShoppingDialog({ onConfirm, disabled }: FinishShoppingDialogProps) {
+export function FinishShoppingDialog({ onConfirm, disabled, open, onOpenChange }: FinishShoppingDialogProps) {
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button size="lg" disabled={disabled} className="w-full">
           <CheckCircle className="mr-2" />
@@ -35,6 +37,9 @@ export function FinishShoppingDialog({ onConfirm, disabled }: FinishShoppingDial
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
+           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
           <Button type="button" onClick={onConfirm}>
             Confirm and Archive
           </Button>

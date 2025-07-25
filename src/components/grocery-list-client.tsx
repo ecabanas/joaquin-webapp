@@ -13,14 +13,14 @@ import { deleteListItem } from '@/lib/firestore';
 
 type GroceryListClientProps = {
   list: GroceryList;
-  onItemsChange: (items: ListItem[]) => void;
   onItemUpdate: (itemId: string, updates: Partial<ListItem>) => void;
   onFinishShopping: () => void;
   progress: number;
-  onAddItem: (itemName: string) => void;
+  isFinishDialogOpen: boolean;
+  setIsFinishDialogOpen: (open: boolean) => void;
 };
 
-export function GroceryListClient({ list, onItemsChange, onItemUpdate, onFinishShopping, progress, onAddItem }: GroceryListClientProps) {
+export function GroceryListClient({ list, onItemUpdate, onFinishShopping, progress, isFinishDialogOpen, setIsFinishDialogOpen }: GroceryListClientProps) {
 
   const { checkedItems, uncheckedItems } = useMemo(() => {
     const sorted = [...list.items].sort((a, b) => a.name.localeCompare(b.name));
@@ -130,6 +130,8 @@ export function GroceryListClient({ list, onItemsChange, onItemUpdate, onFinishS
          {list.items.length > 0 && (
           <div className="p-4 sm:p-6 pt-0">
              <FinishShoppingDialog
+                open={isFinishDialogOpen}
+                onOpenChange={setIsFinishDialogOpen}
                 onConfirm={onFinishShopping}
                 disabled={checkedItems.length === 0}
               />
