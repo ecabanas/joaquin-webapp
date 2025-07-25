@@ -54,15 +54,18 @@ export function LandingPage() {
       </section>
 
       {/* --- Scrollytelling Section --- */}
-      <section ref={targetRef} className="relative h-[400vh] w-full">
+      <section ref={targetRef} className="relative h-[500vh] w-full">
         <div className="sticky top-0 h-screen w-full overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/50 to-background" />
 
-          {/* Phone Mockup */}
-          <PhoneMockup scrollYProgress={scrollYProgress} />
+          {/* Grid Layout for Text and Phone */}
+          <div className="grid grid-cols-1 md:grid-cols-2 h-full w-full items-center">
+            {/* Feature Text on Left (Desktop), on Top (Mobile) */}
+            <FeatureText scrollYProgress={scrollYProgress} />
 
-          {/* Feature Text */}
-          <FeatureText scrollYProgress={scrollYProgress} />
+            {/* Phone Mockup on Right (Desktop), Below (Mobile) */}
+            <PhoneMockup scrollYProgress={scrollYProgress} />
+          </div>
         </div>
       </section>
 
@@ -89,15 +92,14 @@ export function LandingPage() {
 
 // --- Phone Mockup Component ---
 const PhoneMockup = ({ scrollYProgress }: { scrollYProgress: any }) => {
-    // Animate Y position and scale to zoom in/out
-  const y = useTransform(scrollYProgress, [0, 1], ['5%', '-5%']);
+  const y = useTransform(scrollYProgress, [0, 1], ['0%', '0%']);
   const scale = useTransform(scrollYProgress, [0, 0.1, 0.9, 1], [0.8, 1, 1, 0.8]);
   const rotate = useTransform(scrollYProgress, [0, 1], [5, -5]);
 
   return (
     <motion.div
       style={{ y, scale, rotate }}
-      className="absolute inset-0 flex items-center justify-center"
+      className="flex items-center justify-center row-start-2 md:row-start-1"
     >
       <div className="relative w-72 h-[580px] sm:w-80 sm:h-[620px] bg-card/80 backdrop-blur-sm border-8 border-gray-800 rounded-[40px] shadow-2xl overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-gray-800 rounded-b-xl z-10" />
@@ -111,25 +113,27 @@ const PhoneMockup = ({ scrollYProgress }: { scrollYProgress: any }) => {
 
 // --- Screen Content Component ---
 const ScreenContent = ({ scrollYProgress }: { scrollYProgress: any }) => {
-  const opacityScene1 = useTransform(scrollYProgress, [0, 0.2, 0.25], [1, 1, 0]);
-  const opacityScene2 = useTransform(scrollYProgress, [0.25, 0.3, 0.45, 0.5], [0, 1, 1, 0]);
-  const opacityScene3 = useTransform(scrollYProgress, [0.5, 0.55, 0.9, 1], [0, 1, 1, 0]);
+  const opacityScene1 = useTransform(scrollYProgress, [0, 0.2, 0.3], [1, 1, 0]);
+  const opacityScene2 = useTransform(scrollYProgress, [0.3, 0.4, 0.6], [0, 1, 0]);
+  const opacityScene3 = useTransform(scrollYProgress, [0.6, 0.7, 0.9, 1], [0, 1, 1, 0]);
 
   return (
     <>
       {/* Scene 1: Collaborative List */}
       <motion.div style={{ opacity: opacityScene1 }} className="absolute inset-0 p-4 pt-8 space-y-3">
         <p className="text-center font-bold text-lg mb-4">Grocery List</p>
-        <FakeListItem text="Milk" delay={0} />
-        <FakeListItem text="Bread" delay={0.2} checked />
-        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0, transition: { delay: 0.4 }}}>
-             <div className="flex items-center gap-3 bg-primary/10 p-2.5 rounded-lg border border-primary/20">
-                <Users className="w-5 h-5 text-primary" />
-                <p className="text-sm font-medium">Partner added Avocados</p>
-            </div>
+        <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0, transition: { delay: 0.4, duration: 0.5 } }}
+            className="flex items-center gap-3 bg-primary/10 p-2.5 rounded-lg border border-primary/20"
+        >
+            <Users className="w-5 h-5 text-primary" />
+            <p className="text-sm font-medium">Partner added Avocados</p>
         </motion.div>
-        <FakeListItem text="Avocados" delay={0.6} />
-        <FakeListItem text="Chicken Breast" delay={0.8} />
+        <FakeListItem text="Milk" delay={0.6} />
+        <FakeListItem text="Bread" delay={0.8} checked />
+        <FakeListItem text="Avocados" delay={1.0} />
+        <FakeListItem text="Chicken Breast" delay={1.2} />
       </motion.div>
 
       {/* Scene 2: AI Receipt Scan */}
@@ -203,23 +207,22 @@ const features = [
 ];
 
 const FeatureText = ({ scrollYProgress }: { scrollYProgress: any }) => {
-    // Opacity for each feature text based on scroll position
-    const opacityFeature1 = useTransform(scrollYProgress, [0, 0.2, 0.25], [0, 1, 0]);
-    const opacityFeature2 = useTransform(scrollYProgress, [0.25, 0.4, 0.5], [0, 1, 0]);
-    const opacityFeature3 = useTransform(scrollYProgress, [0.5, 0.7, 0.9], [0, 1, 0]);
+    const opacityFeature1 = useTransform(scrollYProgress, [0, 0.2, 0.3], [0, 1, 0]);
+    const opacityFeature2 = useTransform(scrollYProgress, [0.3, 0.5, 0.6], [0, 1, 0]);
+    const opacityFeature3 = useTransform(scrollYProgress, [0.6, 0.8, 0.9], [0, 1, 0]);
 
     const featureOpacities = [opacityFeature1, opacityFeature2, opacityFeature3];
 
     return (
-        <div className="absolute inset-0 flex items-center justify-start p-8 md:p-12 lg:p-20">
-            <div className="max-w-md space-y-2">
+        <div className="relative flex items-center justify-center p-8 md:p-12 lg:p-20 row-start-1 md:col-start-1 h-full">
+            <div className="max-w-md space-y-2 text-center md:text-left">
             {features.map((feature, index) => (
                 <motion.div
                     key={feature.title}
                     style={{ opacity: featureOpacities[index] }}
                     className="absolute"
                 >
-                    <feature.icon className="w-10 h-10 text-primary mb-4" />
+                    <feature.icon className="w-10 h-10 text-primary mb-4 mx-auto md:mx-0" />
                     <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
                         {feature.title}
                     </h2>
