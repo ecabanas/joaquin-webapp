@@ -1,4 +1,4 @@
-# **App Name**: Aisle Together
+# **App Name**: Joaquin
 
 ## Core Features:
 
