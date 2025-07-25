@@ -28,7 +28,7 @@ flowchart TD
     subgraph New List
         F;
     end
-    A --> F;
+    A --- F;
 ```
 
 1.  **Active List:** There is always one, and only one, active grocery list for the workspace. All users in the workspace can view and add items to this list in real-time. This is the primary focus of the `/list` page.
