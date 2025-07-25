@@ -24,6 +24,10 @@ export type Purchase = {
   store: string;
   completedBy: string;
   items: PurchaseItem[];
+  comparison?: {
+    forgottenItems: string[];
+    impulseBuys: string[];
+  };
 };
 
 export type UserProfile = {

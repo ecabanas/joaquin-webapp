@@ -30,7 +30,7 @@ type ReceiptAnalyzerProps = {
   receiptFile: File | null;
   purchase: Purchase;
   workspaceId: string;
-  onSave: (purchaseId: string, storeName: string, items: PurchaseItem[]) => void;
+  onSave: (purchaseId: string, storeName: string, items: PurchaseItem[], comparison?: Purchase['comparison']) => void;
   onClose: () => void;
   onRetake: () => void;
 };
@@ -48,6 +48,7 @@ export function ReceiptAnalyzer({
   const [preview, setPreview] = useState<string | null>(null);
   const [storeName, setStoreName] = useState('');
   const [items, setItems] = useState<PurchaseItem[]>([]);
+  const [comparison, setComparison] = useState<Purchase['comparison'] | undefined>(undefined);
   const [stage, setStage] = useState<Stage>('preview');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -73,9 +74,11 @@ export function ReceiptAnalyzer({
     try {
         const analysisResult = await analyzeReceipt({ 
           receiptDataUri: preview,
+          originalItems: purchase.items,
         });
         setStoreName(analysisResult.storeName);
         setItems(analysisResult.items);
+        setComparison(analysisResult.comparison);
         setStage('results');
     } catch (error) {
         console.error('Error analyzing receipt:', error);
@@ -84,11 +87,11 @@ export function ReceiptAnalyzer({
             description: 'Could not analyze the receipt. Please enter details manually.',
             variant: 'destructive',
         });
-        setItems([]);
-        setStoreName('');
+        setItems(purchase.items); // Fallback to original items
+        setStoreName(purchase.store);
         setStage('results');
     }
-  }, [preview, toast]);
+  }, [preview, toast, purchase]);
 
   const handleItemChange = (index: number, field: keyof PurchaseItem, value: string | number) => {
     const newItems = [...items];
@@ -108,7 +111,7 @@ export function ReceiptAnalyzer({
   const handleSaveToHistory = async () => {
     setIsSaving(true);
     try {
-      onSave(purchase.id, storeName, items);
+      onSave(purchase.id, storeName, items, comparison);
       toast({
         title: 'Success!',
         description: 'Purchase history has been updated.',
@@ -156,7 +159,7 @@ export function ReceiptAnalyzer({
     <div className="flex flex-col items-center justify-center text-center h-full w-full">
       <DialogHeader>
         <DialogTitle>Analyzing Receipt</DialogTitle>
-        <DialogDescription>Extracting items and prices from your receipt...</DialogDescription>
+        <DialogDescription>Extracting items, prices, and insights...</DialogDescription>
       </DialogHeader>
       <div className="relative w-full max-w-[200px] aspect-[9/16] rounded-lg overflow-hidden border bg-muted/40 flex items-center justify-center my-auto">
         {preview && (

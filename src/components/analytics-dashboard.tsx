@@ -33,8 +33,9 @@ import {
 import { useCurrency } from '@/hooks/use-currency';
 import { subMonths, startOfMonth, endOfMonth, format, isWithinInterval } from 'date-fns';
 import { Badge } from './ui/badge';
-import { FileText, Search, Trophy, Users } from 'lucide-react';
+import { FileText, Search, Trophy, Users, AlertCircle, ShoppingBasket } from 'lucide-react';
 import { Avatar, AvatarFallback } from './ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 type AnalyticsDashboardProps = {
@@ -95,29 +96,40 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
   
 
   const spendingTrendData = useMemo(() => {
-    const data: { [key: string]: { total: number; trips: number } } = {};
+    const data: { [key: string]: { total: number; trips: number, impulseCount: number, plannedCount: number } } = {};
     filteredPurchases.forEach(p => {
         const monthYear = format(p.date, 'MMM yyyy');
         if (!data[monthYear]) {
-            data[monthYear] = { total: 0, trips: 0 };
+            data[monthYear] = { total: 0, trips: 0, impulseCount: 0, plannedCount: 0 };
         }
 
         const total = p.items.reduce((acc, item) => acc + (item.price || 0) * item.quantity, 0);
         data[monthYear].total += total;
         data[monthYear].trips += 1;
+
+        if (p.comparison) {
+          data[monthYear].impulseCount += p.comparison.impulseBuys.length;
+          // Planned items = total items on receipt - impulse buys
+          const plannedItems = p.items.length - p.comparison.impulseBuys.length;
+          data[monthYear].plannedCount += Math.max(0, plannedItems);
+        } else {
+          // If no comparison, assume all items were planned
+          data[monthYear].plannedCount += p.items.length;
+        }
     });
 
-    // For demonstration, adding placeholder donut data
     return Object.entries(data).map(([name, values]) => {
-      const planned = Math.random() * 0.7 + 0.2; // 20% to 90%
-      const impulse = 1 - planned;
+      const totalItems = values.plannedCount + values.impulseCount;
+      const plannedPercentage = totalItems > 0 ? (values.plannedCount / totalItems) * 100 : 100;
+      
       return { 
         name, 
-        ...values, 
+        total: values.total,
+        trips: values.trips,
         avgTripCost: values.trips > 0 ? values.total / values.trips : 0,
         donutData: [
-          { name: 'Planned', value: planned * 100 },
-          { name: 'Impulse', value: impulse * 100 },
+          { name: 'Planned', value: plannedPercentage },
+          { name: 'Impulse', value: 100 - plannedPercentage },
         ]
       }
     }).reverse();
@@ -129,6 +141,26 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
       shopperCounts[p.completedBy] = (shopperCounts[p.completedBy] || 0) + 1;
     });
     return Object.entries(shopperCounts).sort((a, b) => b[1] - a[1]);
+  }, [filteredPurchases]);
+
+  const topForgottenItems = useMemo(() => {
+    const itemCounts: { [name: string]: number } = {};
+    filteredPurchases.forEach(p => {
+        p.comparison?.forgottenItems.forEach(item => {
+            itemCounts[item] = (itemCounts[item] || 0) + 1;
+        });
+    });
+    return Object.entries(itemCounts).sort((a, b) => b[1] - a[1]);
+  }, [filteredPurchases]);
+
+  const topImpulseBuys = useMemo(() => {
+    const itemCounts: { [name: string]: number } = {};
+    filteredPurchases.forEach(p => {
+        p.comparison?.impulseBuys.forEach(item => {
+            itemCounts[item] = (itemCounts[item] || 0) + 1;
+        });
+    });
+    return Object.entries(itemCounts).sort((a, b) => b[1] - a[1]);
   }, [filteredPurchases]);
 
 
@@ -218,6 +250,10 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
     }
     return null;
   };
+
+  const hasComparisonData = useMemo(() => {
+    return purchases.some(p => p.comparison);
+  }, [purchases]);
   
   if (purchases.length === 0) {
     return (
@@ -230,6 +266,23 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
       </div>
     )
   }
+  
+  const InsightListItem = ({ item, count, icon: Icon }: { item: string, count: number, icon: React.ElementType }) => (
+    <li className="flex justify-between items-center bg-muted/50 p-2.5 rounded-md">
+      <div className="flex items-center gap-3">
+        <Icon className="w-5 h-5 text-primary/80" />
+        <span className="font-medium">{item}</span>
+      </div>
+      <Badge variant="secondary" className="text-base">{count}</Badge>
+    </li>
+  );
+  
+  const InsightEmptyState = ({ title, description }: { title: string, description: string }) => (
+    <div className="text-center py-8 px-4">
+      <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+      <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">{description}</p>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -325,38 +378,68 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
 
             <Card>
                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Users className="w-5 h-5" />
-                      Top Shoppers
-                    </CardTitle>
-                    <CardDescription>Who's completed the most trips.</CardDescription>
+                    <CardTitle>Top Insights</CardTitle>
+                    <CardDescription>Habits and highlights from your shopping trips.</CardDescription>
                  </CardHeader>
                  <CardContent>
-                   {topShoppers.length > 0 ? (
-                        <ul className="space-y-3">
-                            {topShoppers.map(([name, count], index) => (
-                                <li key={name} className="flex justify-between items-center bg-muted/50 p-2.5 rounded-md">
-                                    <div className="flex items-center gap-3">
-                                        <Avatar className="h-9 w-9">
-                                            <AvatarFallback>{getInitials(name)}</AvatarFallback>
-                                        </Avatar>
-                                        <span className="font-medium">{name}</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        {index === 0 && <Trophy className="w-5 h-5 text-amber-400" />}
-                                        <Badge variant="secondary" className="text-base">{count} {count === 1 ? 'trip' : 'trips'}</Badge>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p className="text-sm text-muted-foreground text-center py-8">No shopping trips recorded yet.</p>
-                    )}
+                     <Tabs defaultValue="shoppers" className="w-full">
+                        <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="shoppers"><Users className="mr-2 h-4 w-4" /> Shoppers</TabsTrigger>
+                            <TabsTrigger value="forgotten"><AlertCircle className="mr-2 h-4 w-4" /> Forgotten</TabsTrigger>
+                            <TabsTrigger value="impulse"><ShoppingBasket className="mr-2 h-4 w-4" /> Impulse</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="shoppers" className="mt-4">
+                            {topShoppers.length > 0 ? (
+                                <ul className="space-y-3">
+                                    {topShoppers.map(([name, count], index) => (
+                                        <li key={name} className="flex justify-between items-center bg-muted/50 p-2.5 rounded-md">
+                                            <div className="flex items-center gap-3">
+                                                <Avatar className="h-9 w-9">
+                                                    <AvatarFallback>{getInitials(name)}</AvatarFallback>
+                                                </Avatar>
+                                                <span className="font-medium">{name}</span>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                {index === 0 && <Trophy className="w-5 h-5 text-amber-400" />}
+                                                <Badge variant="secondary" className="text-base">{count} {count === 1 ? 'trip' : 'trips'}</Badge>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                               <InsightEmptyState title="No Trips Yet" description="Complete a shopping trip to see who the top shoppers are." />
+                            )}
+                        </TabsContent>
+                        <TabsContent value="forgotten" className="mt-4">
+                            {!hasComparisonData ? (
+                               <InsightEmptyState title="No Data for Insights" description="Analyze a receipt from your history to see which items you forget most often." />
+                            ) : topForgottenItems.length > 0 ? (
+                                <ul className="space-y-3">
+                                    {topForgottenItems.slice(0, 5).map(([name, count]) => (
+                                        <InsightListItem key={name} item={name} count={count} icon={AlertCircle} />
+                                    ))}
+                                </ul>
+                            ) : (
+                               <InsightEmptyState title="Nothing Forgotten!" description="You've remembered to buy everything from your lists. Great job!" />
+                            )}
+                        </TabsContent>
+                        <TabsContent value="impulse" className="mt-4">
+                            {!hasComparisonData ? (
+                                <InsightEmptyState title="No Data for Insights" description="Analyze a receipt from your history to discover your top impulse buys." />
+                            ) : topImpulseBuys.length > 0 ? (
+                                <ul className="space-y-3">
+                                    {topImpulseBuys.slice(0, 5).map(([name, count]) => (
+                                       <InsightListItem key={name} item={name} count={count} icon={ShoppingBasket} />
+                                    ))}
+                                </ul>
+                            ) : (
+                                <InsightEmptyState title="No Impulse Buys" description="You're sticking to the list! Excellent discipline." />
+                            )}
+                        </TabsContent>
+                    </Tabs>
                  </CardContent>
             </Card>
        </div>
     </div>
   );
 }
-
-    
