@@ -187,9 +187,10 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
       const { name, total, trips, avgTripCost, planned, impulse } = payload[0].payload;
       const habitsData = [
         { name: 'Planned', value: planned, color: 'hsl(var(--primary))' },
-        { name: 'Impulse', value: impulse, color: 'hsl(var(--accent))' },
+        { name: 'Impulse', value: impulse, color: 'hsl(var(--primary) / 0.3)' },
       ];
       const hasHabits = planned > 0 || impulse > 0;
+      const impulsePercentage = Math.round((impulse / (planned + impulse)) * 100);
 
       return (
         <div className="p-3 bg-background/80 backdrop-blur-sm border rounded-xl shadow-lg min-w-[220px]">
@@ -210,8 +211,8 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
                     cx="50%"
                     cy="50%"
                     dataKey="value"
-                    innerRadius={25}
-                    outerRadius={35}
+                    innerRadius={28}
+                    outerRadius={38}
                     paddingAngle={3}
                     stroke="hsl(var(--background))"
                     strokeWidth={2}
@@ -222,10 +223,11 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
                   </Pie>
                 </RechartsPieChart>
                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <p className="text-xs text-muted-foreground">Impulse</p>
-                  <p className="font-bold text-base">
-                    {Math.round((impulse / (planned + impulse)) * 100)}%
+                  <p className="font-bold text-base leading-none">
+                    {impulsePercentage}
+                    <span className="text-xs font-normal text-muted-foreground">%</span>
                   </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Impulse</p>
                 </div>
               </div>
             )}
