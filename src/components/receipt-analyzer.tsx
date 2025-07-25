@@ -31,7 +31,7 @@ type ReceiptAnalyzerProps = {
   receiptFile: File | null;
   purchase: Purchase;
   workspaceId: string;
-  onSave: (purchaseId: string, storeName: string, items: PurchaseItem[]) => void;
+  onSave: (purchaseId: string, storeName: string, items: PurchaseItem[], comparison?: Purchase['comparison']) => void;
   onClose: () => void;
   onRetake: () => void;
 };
@@ -113,7 +113,7 @@ export function ReceiptAnalyzer({
   const handleSaveToHistory = async () => {
     setIsSaving(true);
     try {
-      onSave(purchase.id, storeName, items);
+      onSave(purchase.id, storeName, items, comparison || undefined);
       toast({
         title: 'Success!',
         description: 'Purchase history has been updated.',

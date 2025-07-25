@@ -92,9 +92,9 @@ export default function HistoryPage() {
     setActivePurchase(null);
   };
   
-  const handleAnalyzerSave = async (purchaseId: string, store: string, items: PurchaseItem[]) => {
+  const handleAnalyzerSave = async (purchaseId: string, store: string, items: PurchaseItem[], comparison?: Purchase['comparison']) => {
     if (!workspaceId) return;
-    await updatePurchase(workspaceId, purchaseId, { store, items });
+    await updatePurchase(workspaceId, purchaseId, { store, items, comparison });
     handleAnalyzerClose();
   };
 

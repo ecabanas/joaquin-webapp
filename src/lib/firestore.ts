@@ -243,7 +243,11 @@ export async function finishShopping(workspaceId: string, completedBy: string, a
 export async function updatePurchase(
   workspaceId: string,
   purchaseId: string,
-  updates: { store: string; items: PurchaseItem[] }
+  updates: { 
+    store: string; 
+    items: PurchaseItem[],
+    comparison?: Purchase['comparison'] 
+  }
 ) {
   const purchaseDocRef = doc(getPurchaseHistoryCollection(workspaceId), purchaseId);
   await updateDoc(purchaseDocRef, updates);
