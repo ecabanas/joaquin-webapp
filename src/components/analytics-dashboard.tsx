@@ -12,6 +12,9 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
+  PieChart,
+  Pie,
+  Cell,
 } from 'recharts';
 import {
   Card,
@@ -104,14 +107,22 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
         data[monthYear].trips += 1;
     });
 
-    return Object.entries(data).map(([name, values]) => ({ 
-      name, 
-      ...values, 
-      avgTripCost: values.trips > 0 ? values.total / values.trips : 0,
-    })).reverse();
+    // For demonstration, adding placeholder donut data
+    return Object.entries(data).map(([name, values]) => {
+      const planned = Math.random() * 0.7 + 0.2; // 20% to 90%
+      const impulse = 1 - planned;
+      return { 
+        name, 
+        ...values, 
+        avgTripCost: values.trips > 0 ? values.total / values.trips : 0,
+        donutData: [
+          { name: 'Planned', value: planned * 100 },
+          { name: 'Impulse', value: impulse * 100 },
+        ]
+      }
+    }).reverse();
   }, [filteredPurchases]);
   
-
   const topShoppers = useMemo(() => {
     const shopperCounts: { [name: string]: number } = {};
     filteredPurchases.forEach(p => {
@@ -150,7 +161,8 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
 
   const SpendingTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      const { name, total, trips, avgTripCost } = payload[0].payload;
+      const { name, total, trips, avgTripCost, donutData } = payload[0].payload;
+      const plannedPercentage = Math.round(donutData[0].value);
 
       return (
         <div className="p-3 bg-background/80 backdrop-blur-sm border rounded-xl shadow-lg min-w-[220px]">
@@ -163,6 +175,30 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
                   <p>Avg. Trip: <span className="font-medium text-foreground">{formatCurrency(avgTripCost)}</span></p>
                 </div>
             </div>
+             <div className="relative h-20 w-20">
+               <PieChart width={80} height={80}>
+                <Pie
+                  data={donutData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={24}
+                  outerRadius={32}
+                  dataKey="value"
+                  strokeWidth={2}
+                  stroke="hsl(var(--background))"
+                >
+                  <Cell fill="hsl(var(--primary))" opacity={0.8} />
+                  <Cell fill="hsl(var(--accent))" />
+                </Pie>
+              </PieChart>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-lg font-bold text-foreground">{plannedPercentage}<span className="text-xs text-muted-foreground">%</span></span>
+              </div>
+            </div>
+          </div>
+          <div className="text-xs text-muted-foreground flex items-center justify-center gap-4">
+              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-primary/80"></span> Planned</div>
+              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-accent"></span> Impulse</div>
           </div>
         </div>
       );
@@ -322,3 +358,5 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
     </div>
   );
 }
+
+    
