@@ -10,8 +10,6 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
-  Line,
   PieChart,
   Pie,
   Cell,
@@ -97,7 +95,9 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
 
   const spendingTrendData = useMemo(() => {
     const data: { [key: string]: { total: number; trips: number, impulseCount: number, plannedCount: number } } = {};
-    filteredPurchases.forEach(p => {
+    const purchaseWithComparison = filteredPurchases.filter(p => p.comparison);
+    
+    purchaseWithComparison.forEach(p => {
         const monthYear = format(p.date, 'MMM yyyy');
         if (!data[monthYear]) {
             data[monthYear] = { total: 0, trips: 0, impulseCount: 0, plannedCount: 0 };
@@ -109,11 +109,9 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
 
         if (p.comparison) {
           data[monthYear].impulseCount += p.comparison.impulseBuys.length;
-          // Planned items = total items on receipt - impulse buys
           const plannedItems = p.items.length - p.comparison.impulseBuys.length;
           data[monthYear].plannedCount += Math.max(0, plannedItems);
         } else {
-          // If no comparison, assume all items were planned
           data[monthYear].plannedCount += p.items.length;
         }
     });
@@ -186,7 +184,7 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
         }
         return null;
       })
-      .filter(Boolean)
+      .filter((p): p is { date: string; price: number; store: string } => p !== null)
       .reverse();
   }, [purchases, selectedItem]);
 
@@ -241,10 +239,10 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
   const PriceWatchTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="p-2 bg-background/80 backdrop-blur-sm border rounded-lg shadow-lg">
-          <p className="font-bold">{label}</p>
-          <p className="text-primary">{`Price: ${formatCurrency(payload[0].value)}`}</p>
-          <p className="text-muted-foreground">{`Store: ${payload[0].payload.store}`}</p>
+        <div className="p-3 bg-background/80 backdrop-blur-sm border rounded-xl shadow-lg min-w-[180px]">
+          <p className="font-bold text-lg mb-1">{formatCurrency(payload[0].value)}</p>
+          <p className="text-sm text-muted-foreground">{payload[0].payload.store}</p>
+          <p className="text-xs text-muted-foreground mt-2">{label}</p>
         </div>
       );
     }
@@ -322,7 +320,7 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
                     <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))' }} fontSize={12} axisLine={false} tickLine={false} />
                     <YAxis tickFormatter={(value) => formatCurrency(value as number, {notation: 'compact'})} tick={{ fill: 'hsl(var(--muted-foreground))' }} fontSize={12} axisLine={false} tickLine={false} />
                     <Tooltip content={<SpendingTooltip />} cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '3 3' }} />
-                    <Area type="monotone" dataKey="total" stroke="hsl(var(--primary))" strokeWidth={2} fillOpacity={1} fill="url(#colorTotal)" />
+                    <Area type="monotone" dataKey="total" stroke="hsl(var(--primary))" strokeWidth={2} fillOpacity={1} fill="url(#colorTotal)" dot={{ r: 4, fill: 'hsl(var(--primary))' }} activeDot={{ r: 6, stroke: 'hsl(var(--background))', strokeWidth: 2 }} />
                 </AreaChart>
                 </ResponsiveContainer>
             ) : (
@@ -352,12 +350,18 @@ export function AnalyticsDashboard({ purchases }: AnalyticsDashboardProps) {
                 <div className="h-[250px] w-full mt-4">
                     {priceWatchData && priceWatchData.length > 1 ? (
                         <ResponsiveContainer>
-                            <LineChart data={priceWatchData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                            <XAxis dataKey="date" tick={{ fill: 'hsl(var(--muted-foreground))' }} fontSize={12} />
-                            <YAxis tickFormatter={(value) => formatCurrency(value as number)} tick={{ fill: 'hsl(var(--muted-foreground))' }} fontSize={12} domain={['dataMin - 1', 'dataMax + 1']} />
-                            <Tooltip content={<PriceWatchTooltip />} />
-                            <Line type="monotone" dataKey="price" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: 'hsl(var(--primary))' }} activeDot={{ r: 6 }} name={selectedItem || 'Price'} />
-                            </LineChart>
+                            <AreaChart data={priceWatchData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                               <defs>
+                                <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                                </linearGradient>
+                                </defs>
+                            <XAxis dataKey="date" tick={{ fill: 'hsl(var(--muted-foreground))' }} fontSize={12} axisLine={false} tickLine={false} />
+                            <YAxis tickFormatter={(value) => formatCurrency(value as number)} tick={{ fill: 'hsl(var(--muted-foreground))' }} fontSize={12} domain={['dataMin - 1', 'dataMax + 1']} axisLine={false} tickLine={false} />
+                            <Tooltip content={<PriceWatchTooltip />} cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '3 3' }} />
+                            <Area type="monotone" dataKey="price" stroke="hsl(var(--primary))" strokeWidth={2} fillOpacity={1} fill="url(#colorPrice)" dot={{ r: 4, fill: 'hsl(var(--primary))' }} activeDot={{ r: 6, stroke: 'hsl(var(--background))', strokeWidth: 2 }} name={selectedItem || 'Price'} />
+                            </AreaChart>
                         </ResponsiveContainer>
                     ) : (
                        <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-4">
