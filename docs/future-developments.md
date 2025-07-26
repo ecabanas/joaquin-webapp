@@ -53,6 +53,12 @@ These tasks ensure the app remains stable and continues to evolve.
     *   **Goal:** Allow users to personalize their profile with a custom photo.
     *   **Implementation:** Use Firebase Storage to host uploaded images. Add client-side logic for file handling, previewing, and compression before uploading. Update the user's profile with the new photo URL.
 
+### Tier 4: Monetization
+
+9.  **Implement Pricing Model with Stripe:**
+    *   **Goal:** Introduce a "Pro" tier to generate revenue and support the app's growth.
+    *   **Implementation:** Integrate the official "Run Payments with Stripe" Firebase Extension to handle subscriptions. The app will conditionally unlock features based on the user's subscription status, which will be stored in their Firestore user profile. See the [Pricing Model documentation](./pricing-model.md) for a full breakdown of the tiers.
+
 ---
 
 ## Other Ideas & Backlog
