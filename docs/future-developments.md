@@ -53,12 +53,6 @@ These tasks ensure the app remains stable and continues to evolve.
     *   **Goal:** Allow users to personalize their profile with a custom photo.
     *   **Implementation:** Use Firebase Storage to host uploaded images. Add client-side logic for file handling, previewing, and compression before uploading. Update the user's profile with the new photo URL.
 
-### Tier 4: Monetization
-
-9.  **Implement Pricing Model with Stripe:**
-    *   **Goal:** Introduce a "Pro" tier to generate revenue and support the app's growth.
-    *   **Implementation:** Integrate the official "Run Payments with Stripe" Firebase Extension to handle subscriptions. The app will conditionally unlock features based on the user's subscription status, which will be stored in their Firestore user profile. See the [Pricing Model documentation](./pricing-model.md) for a full breakdown of the tiers.
-
 ---
 
 ## Other Ideas & Backlog
@@ -66,6 +60,9 @@ These tasks ensure the app remains stable and continues to evolve.
 - Push Notifications: Implement push notifications for key events (e.g., when a partner adds an item to the list).
 - Advanced Budgeting: Allow users to set a monthly budget and track spending against it. Add a "Deal Finder" to notify users of good prices.
 - Recipe Integration: A dedicated section for planning weekly meals and automatically generating a grocery list from that plan.
+- **Implement Analytics (GA4 & Clarity):** Integrate Google Analytics for quantitative event tracking (the "what") and Microsoft Clarity for qualitative session recordings and heatmaps (the "why"). This will enable data-driven product decisions.
+- **User Feedback & Public Roadmap:** Create a simple in-app mechanism (e.g., a "Feedback" button) for users to submit bug reports and feature ideas. Consider making a public-facing version of this roadmap to show users what's being worked on.
+- **Implement Pricing Model with Stripe:** Introduce a "Pro" tier to generate revenue. This will involve integrating the "Run Payments with Stripe" Firebase Extension to handle subscriptions and conditionally unlocking advanced features based on a user's subscription status in Firestore.
 
 ---
 
