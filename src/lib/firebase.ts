@@ -1,6 +1,7 @@
 // src/lib/firebase.ts
 import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -11,8 +12,19 @@ const firebaseConfig = {
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
 };
 
-// Initialize Firebase App only if it's not already initialized
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
+// Singleton pattern to ensure a single instance of Firebase services
+function getFirebaseServices() {
+  const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+  return { app, db, auth };
+}
 
-export { app, db };
+// Check if we are on the client-side before initializing
+const canInitialize = typeof window !== 'undefined';
+
+const { app, db, auth } = canInitialize
+  ? getFirebaseServices()
+  : { app: null, db: null, auth: null };
+
+export { app, db, auth };

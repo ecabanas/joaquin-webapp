@@ -3,14 +3,13 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { 
-  getAuth, 
   onAuthStateChanged, 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   signOut,
   User 
 } from 'firebase/auth';
-import { app } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { createUserProfile, getUserProfile, updateUserProfile } from '@/lib/firestore';
 import type { UserProfile } from '@/lib/types';
 
@@ -26,14 +25,17 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const auth = getAuth(app);
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    };
+    
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       if (user) {
@@ -73,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
   
   const signup = async (name: string, email: string, pass: string) => {
+    if (!auth) throw new Error("Firebase not initialized");
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     if (userCredential.user) {
       // Create user profile in Firestore
@@ -83,10 +86,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const login = (email: string, pass: string) => {
+    if (!auth) throw new Error("Firebase not initialized");
     return signInWithEmailAndPassword(auth, email, pass);
   };
   
   const logout = async () => {
+    if (!auth) throw new Error("Firebase not initialized");
     await signOut(auth);
   };
   
