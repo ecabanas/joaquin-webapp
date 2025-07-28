@@ -154,7 +154,7 @@ export default function GroceryListPage() {
       <div className="mt-4">
         <GroceryListClient 
           list={activeList} 
-          onItemUpdate={onItemUpdate}
+          onItemUpdate={handleItemUpdate}
           onFinishShopping={handleFinishShopping}
           progress={progressValue} 
           isFinishDialogOpen={isFinishDialogOpen}
