@@ -140,7 +140,7 @@ export default function GroceryListPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <header className="space-y-1.5 mb-6 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">Grocery Listooo</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Grocery Listoo</h1>
       </header>
       
       <GlobalSearchInput
