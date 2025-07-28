@@ -11,26 +11,30 @@ on:
       - production
 
 jobs:
-  build_and_deploy:
+  build_and_deploy_dev:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    environment: development
     steps:
       - uses: actions/checkout@v4
       - run: npm ci && npm run build
-      
-      # Deploy to DEV environment
       - uses: FirebaseExtended/action-hosting-deploy@v0
-        if: github.ref == 'refs/heads/main'
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_DEV }} # Use DEV project secret
-          projectId: joaquin-dev # Use DEV project ID directly
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_DEV }}
+          projectId: joaquin-dev
           channelId: live
 
-      # Deploy to PROD environment
+  build_and_deploy_prod:
+    if: github.ref == 'refs/heads/production'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci && npm run build
       - uses: FirebaseExtended/action-hosting-deploy@v0
-        if: github.ref == 'refs/heads/production'
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }} # Use PROD project secret
-          projectId: joaquin-prod # Use PROD project ID directly
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}
+          projectId: joaquin-prod
           channelId: live
