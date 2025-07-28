@@ -140,7 +140,7 @@ export default function GroceryListPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <header className="space-y-1.5 mb-6 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">Grocery List</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Grocery Listtttttt</h1>
       </header>
       
       <GlobalSearchInput
@@ -154,7 +154,7 @@ export default function GroceryListPage() {
       <div className="mt-4">
         <GroceryListClient 
           list={activeList} 
-          onItemUpdate={handleItemUpdate}
+          onItemUpdate={onItemUpdate}
           onFinishShopping={handleFinishShopping}
           progress={progressValue} 
           isFinishDialogOpen={isFinishDialogOpen}
