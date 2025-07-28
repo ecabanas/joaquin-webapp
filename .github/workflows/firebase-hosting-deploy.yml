@@ -23,7 +23,7 @@ jobs:
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_DEV }} # Use DEV project secret
-          projectId: ${{ secrets.FIREBASE_PROJECT_ID_DEV }} # Use DEV project ID
+          projectId: joaquin-dev # Use DEV project ID directly
           channelId: live
 
       # Deploy to PROD environment
@@ -32,5 +32,5 @@ jobs:
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }} # Use PROD project secret
-          projectId: ${{ secrets.FIREBASE_PROJECT_ID_PROD }} # Use PROD project ID
+          projectId: joaquin-prod # Use PROD project ID directly
           channelId: live
