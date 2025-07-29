@@ -35,5 +35,10 @@ jobs:
         with:
           credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}'
 
+      - name: Activate Service Account for Firebase CLI
+        run: |
+          gcloud auth activate-service-account --key-file=${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
+          gcloud config set project joaquin-q0wvv
+
       - name: Trigger App Hosting Rollout
         run: firebase apphosting:rollouts:create joaquin-prod --project joaquin-q0wvv --git-branch production --git-commit ${{ github.sha }}
