@@ -26,14 +26,14 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
       - name: Authenticate with Google Cloud
+        id: auth
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}'
-          project_id: 'joaquin-q0wvv'
-
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
 
       - name: Trigger App Hosting Rollout
         run: firebase apphosting:rollouts:create joaquin-prod --project joaquin-q0wvv --git-branch production --git-commit ${{ github.sha }}
