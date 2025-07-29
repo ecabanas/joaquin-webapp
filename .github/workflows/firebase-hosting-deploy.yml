@@ -16,11 +16,22 @@ jobs:
       - uses: actions/checkout@v4
       - run: npm ci && npm run build
       - uses: FirebaseExtended/action-hosting-deploy@v0
+        id: deploy
+        continue-on-error: true
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}
           projectId: joaquin-q0wvv
           channelId: live
-          args: --only functions,hosting --force
-        env:
-          FIREBASE_CLI_EXPERIMENTS: webframeworks
+          args: --only functions,hosting
+
+      - name: Check for known non-critical error
+        if: steps.deploy.outcome == 'failure' && contains(steps.deploy.outputs.error, 'Functions successfully deployed but could not set up cleanup policy')
+        run: echo "Deployment succeeded, but cleanup policy failed. This is a known issue and is being ignored."
+
+      - name: Fail on other errors
+        if: steps.deploy.outcome == 'failure' && !contains(steps.deploy.outputs.error, 'Functions successfully deployed but could not set up cleanup policy')
+        run: |
+          echo "Deployment failed with an unexpected error:"
+          echo "${{ steps.deploy.outputs.error }}"
+          exit 1
