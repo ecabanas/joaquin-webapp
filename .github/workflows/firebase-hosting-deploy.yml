@@ -37,4 +37,5 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}
 
       - name: Trigger App Hosting Rollout
-        run: firebase apphosting:backends:update joaquin-q0wvv --project joaquin-q0wvv --branch production --source-git-commit ${{ github.sha }}
+        # CRITICAL FIX: Using 'apphosting:rollouts:create' to trigger a new build and deployment.
+        run: firebase apphosting:rollouts:create joaquin-q0wvv --project joaquin-q0wvv --git-branch production --git-commit ${{ github.sha }}
