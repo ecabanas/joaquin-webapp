@@ -1,4 +1,3 @@
-
 # This workflow triggers a new rollout for your Firebase App Hosting backend
 # when changes are pushed to the 'production' branch.
 
@@ -16,31 +15,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Install Node.js if your build step requires it
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18' # Or your preferred Node.js version
+          node-version: '18'
 
       - name: Install dependencies
         run: npm ci
 
       - name: Build project
-        run: npm run build # This assumes your build command creates your production-ready app
+        run: npm run build
 
-      # Install Firebase CLI
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      # Authenticate Firebase CLI using your service account
-      # The FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD secret should contain the JSON key
-      - name: Authenticate Firebase CLI
-        run: echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}" | firebase login:ci
+      - name: Authenticate with Google Cloud
+        run: |
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}" > gcloud-credentials.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/gcloud-credentials.json" >> $GITHUB_ENV
         env:
           FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}
 
-      # Trigger a new rollout for your App Hosting backend
-      # Replace 'joaquin-q0wvv' with your Backend ID if it's different.
-      # We use github.sha to ensure the specific commit that triggered the workflow is rolled out.
       - name: Trigger App Hosting Rollout
         run: firebase apphosting:backends:update joaquin-q0wvv --project joaquin-q0wvv --branch production --source-git-commit ${{ github.sha }}
