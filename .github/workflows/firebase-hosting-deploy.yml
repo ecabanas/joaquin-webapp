@@ -27,7 +27,7 @@ jobs:
         run: npm run build
 
       - name: Authenticate with Google Cloud
-        uses: 'FirebaseExtended/setup-gcloud-auth@v0'
+        uses: 'FirebaseExtended/setup-gcloud-auth@v1'
         with:
           credentials_base64: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}'
           project_id: 'joaquin-q0wvv'
