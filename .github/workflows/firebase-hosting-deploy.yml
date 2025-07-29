@@ -27,9 +27,9 @@ jobs:
         run: npm run build
 
       - name: Authenticate with Google Cloud
-        uses: 'FirebaseExtended/setup-gcloud-auth@v1'
+        uses: 'google-github-actions/auth@v2'
         with:
-          credentials_base64: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}'
+          credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}'
           project_id: 'joaquin-q0wvv'
 
       - name: Install Firebase CLI
