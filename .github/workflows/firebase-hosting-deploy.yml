@@ -35,7 +35,7 @@ jobs:
       # Authenticate Firebase CLI using your service account
       # The FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD secret should contain the JSON key
       - name: Authenticate Firebase CLI
-        run: echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}" | firebase login:ci --json
+        run: echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}" | firebase login:ci
         env:
           FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}
 
