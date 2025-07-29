@@ -38,4 +38,5 @@ jobs:
 
       - name: Trigger App Hosting Rollout
         # CRITICAL FIX: Using 'apphosting:rollouts:create' to trigger a new build and deployment.
-        run: firebase apphosting:rollouts:create joaquin-q0wvv --project joaquin-q0wvv --git-branch production --git-commit ${{ github.sha }}
+        # You MUST replace 'YOUR_NEW_BACKEND_ID' with the ID of the new, Git-integrated backend you create in the Firebase console.
+        run: firebase apphosting:rollouts:create YOUR_NEW_BACKEND_ID --project joaquin-q0wvv --git-branch production --git-commit ${{ github.sha }}
