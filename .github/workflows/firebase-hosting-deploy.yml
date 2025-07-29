@@ -26,16 +26,14 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: Authenticate with Google Cloud
+        uses: 'FirebaseExtended/setup-gcloud-auth@v0'
+        with:
+          credentials_base64: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}'
+          project_id: 'joaquin-q0wvv'
+
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      - name: Authenticate with Google Cloud
-        run: |
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}" > gcloud-credentials.json
-          echo "GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/gcloud-credentials.json" >> $GITHUB_ENV
-        env:
-          FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}
-
       - name: Trigger App Hosting Rollout
-        # CRITICAL FIX: Using 'apphosting:rollouts:create' to trigger a new build and deployment.
         run: firebase apphosting:rollouts:create joaquin-prod --project joaquin-q0wvv --git-branch production --git-commit ${{ github.sha }}
