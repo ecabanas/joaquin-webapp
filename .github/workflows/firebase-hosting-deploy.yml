@@ -1,3 +1,4 @@
+
 # This workflow deploys your site to Firebase Hosting on a push to the 'production' branch
 # https://github.com/firebase/firebase-tools
 
@@ -19,7 +20,5 @@ jobs:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}'
           projectId: joaquin-q0wvv
-          channelId: live
-          deploymentId: '${{ github.sha }}'
         env:
           FIREBASE_CLI_EXPERIMENTS: webframeworks
