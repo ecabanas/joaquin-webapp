@@ -37,7 +37,6 @@ function SettingsPageContent({ user, userProfile, workspaceId }: { user: any, us
   const [isInviting, setIsInviting] = useState(false);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
-  const [deletingInviteId, setDeletingInviteId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -97,13 +96,6 @@ function SettingsPageContent({ user, userProfile, workspaceId }: { user: any, us
       return;
     }
 
-    const originalInvites = invites;
-    
-    setDeletingInviteId(inviteToDelete.id);
-    
-    // Optimistic UI update
-    setInvites(currentInvites => currentInvites.filter(i => i.id !== inviteToDelete.id));
-
     try {
       await deleteInvite(workspaceId, inviteToDelete.id);
       toast({
@@ -116,10 +108,6 @@ function SettingsPageContent({ user, userProfile, workspaceId }: { user: any, us
         description: 'Could not delete the invitation. Please try again.',
         variant: 'destructive',
       });
-      // Revert if error
-      setInvites(originalInvites);
-    } finally {
-      setDeletingInviteId(null);
     }
   };
 
@@ -276,16 +264,12 @@ function SettingsPageContent({ user, userProfile, workspaceId }: { user: any, us
                                 </div>
                             </div>
                             <div className="flex items-center gap-1">
-                                <Button variant="ghost" size="icon" onClick={() => handleCopyInvite(invite.token)} disabled={deletingInviteId === invite.id}>
+                                <Button variant="ghost" size="icon" onClick={() => handleCopyInvite(invite.token)}>
                                     <Copy className="h-4 w-4" />
                                     <span className="sr-only">Copy invite link</span>
                                 </Button>
-                                <Button variant="ghost" size="icon" onClick={() => handleDeleteInvite(invite)} disabled={deletingInviteId === invite.id}>
-                                    {deletingInviteId === invite.id ? (
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                    )}
+                                <Button variant="ghost" size="icon" onClick={() => handleDeleteInvite(invite)}>
+                                    <Trash2 className="h-4 w-4 text-destructive" />
                                     <span className="sr-only">Delete invitation</span>
                                 </Button>
                             </div>
