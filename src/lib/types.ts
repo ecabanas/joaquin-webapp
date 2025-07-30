@@ -42,3 +42,18 @@ export type UserProfile = {
   workspaceId: string;
   currency?: string;
 };
+
+export type WorkspaceMember = {
+  id: string;
+  name: string;
+  email: string;
+  photoURL: string;
+  role: 'owner' | 'member';
+}
+
+export type Invite = {
+  id: string;
+  email: string;
+  token: string;
+  createdAt: Date;
+}

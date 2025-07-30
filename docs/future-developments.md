@@ -18,10 +18,6 @@ These features define what Joaquin *is*: an intelligent, accessible, and collabo
     *   **Goal:** Sort the grocery list based on the typical layout of a supermarket to make shopping more efficient.
     *   **Implementation:** Start with a heuristic-based approach. Create a dictionary mapping grocery items to categories (e.g., "Produce", "Dairy", "Frozen"). Define a fixed sort order for these categories to apply to the list. This provides immediate value before a more complex machine-learning model is needed.
 
-3.  **Implement Sharing & Invitations:**
-    *   **Goal:** Allow users to securely invite others to their workspace.
-    *   **Implementation:** Create a secure, email-based invitation flow. An invite generates a unique token stored in Firestore. When the new user signs up using the invite link, a Cloud Function will verify the token and add them to the workspace.
-
 ### Tier 2: Major UX Enhancements
 
 With the core in place, we focus on delighting the user and making the app feel effortless.
@@ -64,6 +60,9 @@ These tasks ensure the app remains stable and continues to evolve.
 
 ### ===Completed===
 
+- **Implement Sharing & Invitations:**
+    *   **Goal:** Allow users to securely invite others to their workspace.
+    *   **Implementation:** Created a secure, token-based invitation flow. An owner can invite a new member via email from the settings page. A unique token is generated and stored in Firestore. When the new user signs up using the invite link, their account is automatically added to the correct workspace. The invite system is now live.
 - **Set Up Multiple Environments (Dev/Prod):**
     *   **Goal:** To create separate, isolated environments for development and production to ensure production data is always safe.
     *   **Implementation:** Created a second Firebase project to serve as the `dev` environment. Used `.env.local` to store development Firebase config keys and use hosting provider environment variables for production keys. The app will dynamically use the correct configuration based on the environment it's running in.

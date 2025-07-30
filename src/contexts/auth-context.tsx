@@ -10,7 +10,7 @@ import {
   User 
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { createUserProfile, getUserProfile, updateUserProfile } from '@/lib/firestore';
+import { createUserProfile, getUserProfile, updateUserProfile, acceptInvite } from '@/lib/firestore';
 import type { UserProfile } from '@/lib/types';
 
 interface AuthContextType {
@@ -18,7 +18,7 @@ interface AuthContextType {
   userProfile: UserProfile | null;
   loading: boolean;
   login: (email: string, pass: string) => Promise<any>;
-  signup: (name: string, email: string, pass: string) => Promise<any>;
+  signup: (name: string, email: string, pass: string, inviteToken?: string | null) => Promise<any>;
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
 }
@@ -45,22 +45,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUserProfile(profile);
             setLoading(false);
           } else {
-            // If profile doesn't exist, this is likely a first-time login
-            // after data was cleared or a new auth provider was used.
-            // We'll create a profile for them.
-            try {
-              console.log('No profile found for existing user. Creating one...');
-              const newProfile = await createUserProfile(user.uid, {
-                name: user.displayName || 'New User',
-                email: user.email!,
-                photoURL: user.photoURL
-              });
-              setUserProfile(newProfile);
-            } catch (error) {
-               console.error("Error creating user profile:", error);
-            } finally {
-              setLoading(false);
-            }
+            // This case should ideally not be hit if signup is handled correctly.
+            // But as a fallback, we check if a profile needs to be created.
+            // This might happen if Firestore profile creation failed after auth creation.
+            // We won't auto-create it here to avoid potential issues,
+            // the user might need to re-register.
+            console.warn("User is authenticated but no profile was found.");
+            setLoading(false);
           }
         });
         return () => unsubProfile(); // Cleanup profile listener
@@ -74,13 +65,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe(); // Cleanup auth listener
   }, []);
   
-  const signup = async (name: string, email: string, pass: string) => {
+  const signup = async (name: string, email: string, pass: string, inviteToken: string | null = null) => {
     if (!auth) throw new Error("Firebase not initialized");
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-    if (userCredential.user) {
-      // Create user profile in Firestore
-      const profile = await createUserProfile(userCredential.user.uid, { name, email });
-      setUserProfile(profile);
+    const { user } = userCredential;
+
+    if (user) {
+        if (inviteToken) {
+            // If the user is signing up with an invite, accept it
+            const profile = await acceptInvite(inviteToken, {
+                id: user.uid,
+                name: name,
+                email: email,
+                photoURL: user.photoURL || ''
+            });
+            setUserProfile(profile);
+        } else {
+            // Otherwise, create a brand new profile and workspace
+            const profile = await createUserProfile(user.uid, { name, email, photoURL: user.photoURL });
+            setUserProfile(profile);
+        }
     }
     return userCredential;
   };
@@ -115,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }

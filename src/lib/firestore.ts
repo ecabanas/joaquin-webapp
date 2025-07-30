@@ -15,9 +15,12 @@ import {
   orderBy,
   Timestamp,
   setDoc,
+  limit,
+  runTransaction
 } from 'firebase/firestore';
 import { db } from './firebase';
-import type { ListItem, Purchase, PurchaseItem, UserProfile } from './types';
+import type { ListItem, Purchase, PurchaseItem, UserProfile, WorkspaceMember, Invite } from './types';
+import { customAlphabet } from 'nanoid';
 
 // User Management
 export async function createUserProfile(userId: string, data: Omit<UserProfile, 'workspaceId' | 'currency'> & { email: string }) {
@@ -32,6 +35,8 @@ export async function createUserProfile(userId: string, data: Omit<UserProfile, 
   const userMemberRef = doc(membersCollection, userId);
   batch.set(userMemberRef, {
     name: data.name,
+    email: data.email,
+    photoURL: data.photoURL || `https://placehold.co/100x100?text=${data.name[0]}`,
     role: 'owner',
   });
   
@@ -82,6 +87,13 @@ const getPurchaseHistoryCollection = (workspaceId: string) =>
 
 const getItemCatalogCollection = (workspaceId: string) =>
   collection(db, 'workspaces', workspaceId, 'itemCatalog');
+
+const getMembersCollection = (workspaceId: string) =>
+  collection(db, 'workspaces', workspaceId, 'members');
+
+const getInvitesCollection = (workspaceId: string) =>
+  collection(db, 'workspaces', workspaceId, 'invites');
+
 
 const defaultCatalogData = [
   'Leche', 'Pan', 'Atún', 'Salmón', 'Yoghurt', 'Plátanos', 'Café', 'Bien dormir', 'Pasta', 'Miel', 
@@ -254,4 +266,115 @@ export async function updatePurchase(
 export async function deletePurchase(workspaceId: string, purchaseId: string) {
   const purchaseDocRef = doc(getPurchaseHistoryCollection(workspaceId), purchaseId);
   await deleteDoc(purchaseDocRef);
+}
+
+
+// Sharing & Invitations
+const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 24);
+
+export async function createInvite(workspaceId: string, email: string): Promise<string> {
+    const invitesCollection = getInvitesCollection(workspaceId);
+
+    // Check if an invite for this email already exists
+    const q = query(invitesCollection, where('email', '==', email), limit(1));
+    const existingInvites = await getDocs(q);
+    if (!existingInvites.empty) {
+        throw new Error('An invitation for this email address already exists.');
+    }
+
+    const token = nanoid();
+    await addDoc(invitesCollection, {
+        email,
+        token,
+        createdAt: serverTimestamp(),
+    });
+
+    const inviteUrl = `${window.location.origin}/signup?inviteToken=${token}`;
+    return inviteUrl;
+}
+
+export function getInvitesForWorkspace(workspaceId: string, callback: (invites: Invite[]) => void) {
+    const invitesCollection = getInvitesCollection(workspaceId);
+    const q = query(invitesCollection, orderBy('createdAt', 'desc'));
+
+    return onSnapshot(q, (snapshot) => {
+        const invites = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invite));
+        callback(invites);
+    });
+}
+
+export function getMembersForWorkspace(workspaceId: string, callback: (members: WorkspaceMember[]) => void) {
+    const membersCollection = getMembersCollection(workspaceId);
+
+    return onSnapshot(membersCollection, (snapshot) => {
+        const members = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                name: data.name,
+                email: data.email,
+                photoURL: data.photoURL,
+                role: data.role,
+            } as WorkspaceMember;
+        });
+        callback(members);
+    });
+}
+
+export async function acceptInvite(inviteToken: string, newUser: { id: string; name: string; email: string, photoURL: string }): Promise<UserProfile> {
+    const inviteQuery = query(collection(db, 'workspaces'), where('__name__', '!=', '')); // Query all workspaces
+    const workspacesSnapshot = await getDocs(inviteQuery);
+
+    let foundInvite = null;
+    let workspaceId = '';
+
+    for (const workspaceDoc of workspacesSnapshot.docs) {
+        const invitesCollection = getInvitesCollection(workspaceDoc.id);
+        const inviteQ = query(invitesCollection, where('token', '==', inviteToken), limit(1));
+        const inviteSnapshot = await getDocs(inviteQ);
+        if (!inviteSnapshot.empty) {
+            foundInvite = inviteSnapshot.docs[0];
+            workspaceId = workspaceDoc.id;
+            break;
+        }
+    }
+
+    if (!foundInvite) {
+        throw new Error('Invalid or expired invitation token.');
+    }
+
+    const inviteData = foundInvite.data();
+    if (inviteData.email.toLowerCase() !== newUser.email.toLowerCase()) {
+        throw new Error('This invitation is for a different email address.');
+    }
+    
+    // Use a transaction to ensure atomicity
+    await runTransaction(db, async (transaction) => {
+        const userRef = doc(db, 'users', newUser.id);
+        const memberRef = doc(getMembersCollection(workspaceId), newUser.id);
+
+        // 1. Create the user's profile
+        const userProfile: UserProfile = {
+            name: newUser.name,
+            photoURL: newUser.photoURL || `https://placehold.co/100x100?text=${newUser.name[0]}`,
+            workspaceId: workspaceId,
+            currency: 'USD',
+        };
+        transaction.set(userRef, userProfile);
+
+        // 2. Add the user to the workspace's members subcollection
+        transaction.set(memberRef, {
+            name: newUser.name,
+            email: newUser.email,
+            photoURL: userProfile.photoURL,
+            role: 'member',
+        });
+
+        // 3. Delete the invitation
+        transaction.delete(foundInvite.ref);
+    });
+    
+    // Return the newly created profile
+    const userProfileDoc = await getDoc(doc(db, 'users', newUser.id));
+    return userProfileDoc.data() as UserProfile;
 }

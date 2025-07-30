@@ -13,6 +13,8 @@ The Document ID is the `userId` (the Firebase Auth UID) of the member.
 | Field Name | Type   | Description                                     |
 |------------|--------|-------------------------------------------------|
 | `name`     | String | The display name of the user.                   |
+| `email`    | String | The user's email address.                       |
+| `photoURL` | String | URL to the user's profile picture.              |
 | `role`     | String | The user's role in the workspace (e.g., "owner", "member"). |
 
 ## Security Rules

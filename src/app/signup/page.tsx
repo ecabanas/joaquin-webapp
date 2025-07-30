@@ -1,9 +1,9 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,6 +19,8 @@ import { Logo } from '@/components/icons';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAuthErrorMessage } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
@@ -27,13 +29,23 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const { signup } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
+  
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const token = searchParams.get('inviteToken');
+    if (token) {
+      setInviteToken(token);
+    }
+  }, [searchParams]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await signup(name, email, password);
+      await signup(name, email, password, inviteToken);
       router.push('/list');
     } catch (error: any) {
       console.error(error);
@@ -60,6 +72,15 @@ export default function SignupPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {inviteToken && (
+            <Alert className="mb-4">
+              <Info className="h-4 w-4" />
+              <AlertTitle>You've been invited!</AlertTitle>
+              <AlertDescription>
+                Complete your registration to join your new workspace.
+              </AlertDescription>
+            </Alert>
+          )}
           <form onSubmit={handleSignup} className="grid gap-4">
              <div className="grid gap-2">
               <Label htmlFor="name">Name</Label>

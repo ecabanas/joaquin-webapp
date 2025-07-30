@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,14 +24,38 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/auth-context';
-import { User, Bell, Users, Loader2, Landmark } from 'lucide-react';
+import { User, Bell, Users, Loader2, Landmark, Mail, Send } from 'lucide-react';
 import { useCurrency } from '@/hooks/use-currency';
+import { createInvite, getInvitesForWorkspace, getMembersForWorkspace } from '@/lib/firestore';
+import { useToast } from '@/hooks/use-toast';
+import type { WorkspaceMember, Invite } from '@/lib/types';
+
 
 export default function SettingsPage() {
   const { user, userProfile, loading } = useAuth();
   const { currency, setCurrency } = useCurrency();
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [isInviting, setIsInviting] = useState(false);
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [invites, setInvites] = useState<Invite[]>([]);
+  const { toast } = useToast();
   
-  if (loading || !user || !userProfile) {
+  const workspaceId = userProfile?.workspaceId;
+
+  useEffect(() => {
+    if (!workspaceId) return;
+    
+    const unsubscribeMembers = getMembersForWorkspace(workspaceId, setMembers);
+    const unsubscribeInvites = getInvitesForWorkspace(workspaceId, setInvites);
+
+    return () => {
+      unsubscribeMembers();
+      unsubscribeInvites();
+    }
+  }, [workspaceId]);
+
+
+  if (loading || !user || !userProfile || !workspaceId) {
     return (
       <div className="flex justify-center items-center h-48">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -40,6 +65,33 @@ export default function SettingsPage() {
 
   const getInitials = (name = '') => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase() || <User className="w-5 h-5" />;
+  }
+
+  const handleInvite = async () => {
+    if (!workspaceId || !inviteEmail) return;
+    
+    setIsInviting(true);
+    try {
+      const inviteUrl = await createInvite(workspaceId, inviteEmail);
+
+      // In a real app, you'd email this URL. For now, we'll show a toast
+      // and let the user copy it.
+      navigator.clipboard.writeText(inviteUrl);
+
+      toast({
+        title: 'Invitation Sent (Copied to Clipboard!)',
+        description: `An invite for ${inviteEmail} has been created. The URL has been copied to your clipboard.`,
+      });
+      setInviteEmail('');
+    } catch (error: any) {
+       toast({
+        title: 'Invite Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsInviting(false);
+    }
   }
 
   return (
@@ -143,27 +195,63 @@ export default function SettingsPage() {
             <CardDescription>Manage who has access to your list.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-             <div className="flex items-center gap-2">
+             <form action={handleInvite} className="flex items-center gap-2">
                 <Label htmlFor="invite-email" className="sr-only">Invite by email</Label>
-                <Input id="invite-email" placeholder="partner@example.com" type="email" />
-                <Button>Invite</Button>
-            </div>
+                <Input 
+                    id="invite-email" 
+                    placeholder="partner@example.com" 
+                    type="email" 
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    disabled={isInviting}
+                />
+                <Button type="submit" disabled={isInviting || !inviteEmail}>
+                    {isInviting ? <Loader2 className="animate-spin" /> : <Send />}
+                    <span className="sr-only">Invite</span>
+                </Button>
+            </form>
             <Separator />
             <div className="space-y-4">
               <h4 className="font-medium">People with access</h4>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                   <Avatar>
-                    <AvatarImage src={userProfile.photoURL} alt={userProfile.name} />
-                    <AvatarFallback>{getInitials(userProfile.name)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">{userProfile.name}</p>
-                    <p className="text-sm text-muted-foreground">you</p>
-                  </div>
-                </div>
-                <span className="text-sm text-muted-foreground">Owner</span>
-              </div>
+              <ul className="space-y-3">
+                 {members.map(member => (
+                    <li key={member.id} className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <Avatar>
+                                <AvatarImage src={member.photoURL} alt={member.name} />
+                                <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <p className="font-medium">{member.name}</p>
+                                <p className="text-sm text-muted-foreground">{member.id === user.uid ? 'you' : member.email}</p>
+                            </div>
+                        </div>
+                        <span className="text-sm text-muted-foreground capitalize">{member.role}</span>
+                    </li>
+                 ))}
+              </ul>
+
+              {invites.length > 0 && (
+                <>
+                  <Separator />
+                  <h4 className="font-medium">Pending Invitations</h4>
+                   <ul className="space-y-3">
+                    {invites.map(invite => (
+                        <li key={invite.id} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <Avatar>
+                                    <Mail className="text-muted-foreground" />
+                                </Avatar>
+                                <div>
+                                    <p className="font-medium">{invite.email}</p>
+                                </div>
+                            </div>
+                            <span className="text-sm text-muted-foreground">Invited</span>
+                        </li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
