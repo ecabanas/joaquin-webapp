@@ -32,7 +32,7 @@ import type { WorkspaceMember, Invite } from '@/lib/types';
 
 
 export default function SettingsPage() {
-  const { user, userProfile, loading } = useAuth();
+  const { user, userProfile, loading } from useAuth();
   const { currency, setCurrency } = useCurrency();
   const [inviteEmail, setInviteEmail] = useState('');
   const [isInviting, setIsInviting] = useState(false);
