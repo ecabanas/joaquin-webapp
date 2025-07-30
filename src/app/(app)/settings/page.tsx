@@ -28,19 +28,16 @@ import { User, Bell, Users, Loader2, Landmark, Mail, Send, Trash2, Copy } from '
 import { useCurrency } from '@/hooks/use-currency';
 import { createInvite, getInvitesForWorkspace, getMembersForWorkspace, deleteInvite } from '@/lib/firestore';
 import { useToast } from '@/hooks/use-toast';
-import type { WorkspaceMember, Invite } from '@/lib/types';
+import type { WorkspaceMember, Invite, UserProfile } from '@/lib/types';
 
 
-export default function SettingsPage() {
-  const { user, userProfile, loading } from useAuth();
+function SettingsPageContent({ user, userProfile, workspaceId }: { user: any, userProfile: UserProfile, workspaceId: string }) {
   const { currency, setCurrency } = useCurrency();
   const [inviteEmail, setInviteEmail] = useState('');
   const [isInviting, setIsInviting] = useState(false);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
   const { toast } = useToast();
-  
-  const workspaceId = userProfile?.workspaceId;
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -53,15 +50,6 @@ export default function SettingsPage() {
       unsubscribeInvites();
     }
   }, [workspaceId]);
-
-
-  if (loading || !user || !userProfile || !workspaceId) {
-    return (
-      <div className="flex justify-center items-center h-48">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   const getInitials = (name = '') => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase() || <User className="w-5 h-5" />;
@@ -120,7 +108,6 @@ export default function SettingsPage() {
       }
     }
   };
-
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
@@ -296,3 +283,19 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+export default function SettingsPage() {
+  const { user, userProfile, loading } = useAuth();
+  
+  if (loading || !user || !userProfile || !userProfile.workspaceId) {
+    return (
+      <div className="flex justify-center items-center h-48">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return <SettingsPageContent user={user} userProfile={userProfile} workspaceId={userProfile.workspaceId} />;
+}
+
+    
