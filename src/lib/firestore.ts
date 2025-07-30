@@ -289,7 +289,10 @@ export async function createInvite(workspaceId: string, email: string): Promise<
         createdAt: serverTimestamp(),
     });
 
-    const inviteUrl = `${window.location.origin}/signup?inviteToken=${token}`;
+    // In a browser environment, window.location.origin can be used.
+    // For server-side or other environments, you might need a config variable.
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:9002';
+    const inviteUrl = `${origin}/signup?inviteToken=${token}`;
     return inviteUrl;
 }
 
@@ -298,9 +301,22 @@ export function getInvitesForWorkspace(workspaceId: string, callback: (invites: 
     const q = query(invitesCollection, orderBy('createdAt', 'desc'));
 
     return onSnapshot(q, (snapshot) => {
-        const invites = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invite));
+        const invites = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return { 
+                id: doc.id,
+                ...data,
+                // Ensure token is always a string
+                token: data.token || '', 
+            } as Invite
+        });
         callback(invites);
     });
+}
+
+export async function deleteInvite(workspaceId: string, inviteId: string) {
+    const inviteDocRef = doc(getInvitesCollection(workspaceId), inviteId);
+    await deleteDoc(inviteDocRef);
 }
 
 export function getMembersForWorkspace(workspaceId: string, callback: (members: WorkspaceMember[]) => void) {
@@ -322,8 +338,11 @@ export function getMembersForWorkspace(workspaceId: string, callback: (members: 
 }
 
 export async function acceptInvite(inviteToken: string, newUser: { id: string; name: string; email: string, photoURL: string }): Promise<UserProfile> {
-    const inviteQuery = query(collection(db, 'workspaces'), where('__name__', '!=', '')); // Query all workspaces
-    const workspacesSnapshot = await getDocs(inviteQuery);
+    // This is a cross-collection query, which is inefficient.
+    // A better schema would be a top-level `invites` collection.
+    // Given the current schema, we have to query all workspaces.
+    const workspacesQuery = query(collection(db, 'workspaces'));
+    const workspacesSnapshot = await getDocs(workspacesQuery);
 
     let foundInvite = null;
     let workspaceId = '';
@@ -349,32 +368,32 @@ export async function acceptInvite(inviteToken: string, newUser: { id: string; n
     }
     
     // Use a transaction to ensure atomicity
-    await runTransaction(db, async (transaction) => {
+    const userProfile = await runTransaction(db, async (transaction) => {
         const userRef = doc(db, 'users', newUser.id);
         const memberRef = doc(getMembersCollection(workspaceId), newUser.id);
 
         // 1. Create the user's profile
-        const userProfile: UserProfile = {
+        const profile: UserProfile = {
             name: newUser.name,
             photoURL: newUser.photoURL || `https://placehold.co/100x100?text=${newUser.name[0]}`,
             workspaceId: workspaceId,
             currency: 'USD',
         };
-        transaction.set(userRef, userProfile);
+        transaction.set(userRef, profile);
 
         // 2. Add the user to the workspace's members subcollection
         transaction.set(memberRef, {
             name: newUser.name,
             email: newUser.email,
-            photoURL: userProfile.photoURL,
+            photoURL: profile.photoURL,
             role: 'member',
         });
 
         // 3. Delete the invitation
         transaction.delete(foundInvite.ref);
+        
+        return profile;
     });
     
-    // Return the newly created profile
-    const userProfileDoc = await getDoc(doc(db, 'users', newUser.id));
-    return userProfileDoc.data() as UserProfile;
+    return userProfile;
 }

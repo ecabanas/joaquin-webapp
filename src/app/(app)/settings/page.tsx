@@ -24,9 +24,9 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/auth-context';
-import { User, Bell, Users, Loader2, Landmark, Mail, Send } from 'lucide-react';
+import { User, Bell, Users, Loader2, Landmark, Mail, Send, Trash2, Copy } from 'lucide-react';
 import { useCurrency } from '@/hooks/use-currency';
-import { createInvite, getInvitesForWorkspace, getMembersForWorkspace } from '@/lib/firestore';
+import { createInvite, getInvitesForWorkspace, getMembersForWorkspace, deleteInvite } from '@/lib/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { WorkspaceMember, Invite } from '@/lib/types';
 
@@ -67,15 +67,14 @@ export default function SettingsPage() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase() || <User className="w-5 h-5" />;
   }
 
-  const handleInvite = async () => {
+  const handleInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!workspaceId || !inviteEmail) return;
     
     setIsInviting(true);
     try {
       const inviteUrl = await createInvite(workspaceId, inviteEmail);
 
-      // In a real app, you'd email this URL. For now, we'll show a toast
-      // and let the user copy it.
       navigator.clipboard.writeText(inviteUrl);
 
       toast({
@@ -93,6 +92,35 @@ export default function SettingsPage() {
       setIsInviting(false);
     }
   }
+
+  const handleCopyInvite = (token: string) => {
+    const inviteUrl = `${window.location.origin}/signup?inviteToken=${token}`;
+    navigator.clipboard.writeText(inviteUrl);
+    toast({
+      title: 'Link Copied!',
+      description: 'The invitation link has been copied to your clipboard.',
+    });
+  };
+
+  const handleDeleteInvite = async (inviteId: string) => {
+    if (!workspaceId) return;
+    if (window.confirm('Are you sure you want to delete this invitation?')) {
+      try {
+        await deleteInvite(workspaceId, inviteId);
+        toast({
+          title: 'Invitation Deleted',
+          description: 'The pending invitation has been removed.',
+        });
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: 'Could not delete the invitation.',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
@@ -195,7 +223,7 @@ export default function SettingsPage() {
             <CardDescription>Manage who has access to your list.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-             <form action={handleInvite} className="flex items-center gap-2">
+             <form onSubmit={handleInvite} className="flex items-center gap-2">
                 <Label htmlFor="invite-email" className="sr-only">Invite by email</Label>
                 <Input 
                     id="invite-email" 
@@ -246,7 +274,16 @@ export default function SettingsPage() {
                                     <p className="font-medium">{invite.email}</p>
                                 </div>
                             </div>
-                            <span className="text-sm text-muted-foreground">Invited</span>
+                            <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="icon" onClick={() => handleCopyInvite(invite.token)}>
+                                    <Copy className="h-4 w-4" />
+                                    <span className="sr-only">Copy invite link</span>
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleDeleteInvite(invite.id)}>
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                    <span className="sr-only">Delete invitation</span>
+                                </Button>
+                            </div>
                         </li>
                     ))}
                   </ul>
