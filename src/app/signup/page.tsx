@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
@@ -22,7 +22,7 @@ import { getAuthErrorMessage } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
 
-export default function SignupPage() {
+function SignupForm() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -59,7 +59,6 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
            <div className="flex items-center gap-3 justify-center mb-2">
@@ -130,6 +129,15 @@ export default function SignupPage() {
           </div>
         </CardContent>
       </Card>
+  )
+}
+
+export default function SignupPage() {
+  return (
+    <main className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
+      <Suspense fallback={<Loader2 className="h-12 w-12 animate-spin" />}>
+        <SignupForm />
+      </Suspense>
     </main>
   );
 }

@@ -18,6 +18,19 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+        // Exclude server-only packages from client-side bundle
+        config.resolve.fallback = {
+            ...config.resolve.fallback,
+            '@opentelemetry/exporter-jaeger': false,
+            '@genkit-ai/firebase': false,
+            'firebase-admin': false,
+        };
+    }
+
+    return config;
+  },
 };
 
 export default nextConfig;

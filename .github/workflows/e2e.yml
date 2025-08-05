@@ -37,7 +37,6 @@ jobs:
           start: npm start
           wait-on: 'http://localhost:3000' # Default port for `npm start`
           browser: chrome
-          headless: true
         env:
           # Pass development Firebase keys to the test environment
           NEXT_PUBLIC_FIREBASE_PROJECT_ID_DEV: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID_DEV }}
