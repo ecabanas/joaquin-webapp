@@ -26,7 +26,7 @@ describe('Login and Logout Flow', () => {
     cy.contains('Log out').click();
 
     // Assert we are back on the landing page
-    cy.get('h1').contains('gets it.').should('be.visible');
+    cy.get('h1').contains('Finally, a shared list that gets it.').should('be.visible');
   });
 
   it('should allow a registered user to log in and log out', () => {
@@ -56,6 +56,6 @@ describe('Login and Logout Flow', () => {
     cy.contains('Log out').click();
 
     // 6. Assert we are back on the landing page
-    cy.get('h1').contains('gets it.').should('be.visible');
+    cy.get('h1').contains('Finally, a shared list that gets it.').should('be.visible');
   });
 });
