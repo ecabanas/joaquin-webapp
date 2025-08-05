@@ -29,7 +29,12 @@ describe('Add Item to List Flow', () => {
     //    We check for the label associated with the checkbox for the item.
     cy.get('label').contains(newItem).should('be.visible');
 
-    // 5. Verify the quantity is correct.
-    cy.contains(newItem).siblings().find('span').should('contain.text', 'x1');
+    // 5. Verify the quantity is correct by finding the label,
+    //    traversing up to the parent list item, and then finding the span.
+    cy.contains('label', newItem)
+      .parents('li')
+      .first()
+      .find('span')
+      .should('contain.text', 'x1');
   });
 });

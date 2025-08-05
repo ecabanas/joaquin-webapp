@@ -18,7 +18,9 @@ describe('Login and Logout Flow', () => {
     cy.url().should('include', '/list');
     cy.get('h1').contains('Grocery List').should('be.visible');
 
-    // Now, log the user out to set up for the login test
+    // Now, log the user out to set up for the login test.
+    // In CI, we need to be more direct than simulating a hover.
+    // We will click the button to open the dropdown.
     cy.get('button[aria-label="Account Options"]').click();
     cy.contains('Log out').click();
 
@@ -39,10 +41,13 @@ describe('Login and Logout Flow', () => {
     cy.url().should('include', '/list');
     cy.get('h1').contains('Grocery List').should('be.visible');
 
-    // 4. Assert that the user's name is visible in the sidebar, confirming login
-     cy.get('button[aria-label="Account Options"]').trigger('mouseover');
-     cy.get('p').contains(name).should('be.visible');
-     cy.get('button[aria-label="Account Options"]').trigger('mouseout');
+    // 4. Assert that the user's name is visible in the sidebar, confirming login.
+    //    Since hovering can be flaky in CI, we'll click to open the dropdown
+    //    and verify the content.
+    cy.get('button[aria-label="Account Options"]').click();
+    cy.get('p').contains(name).should('be.visible');
+    // Close the dropdown to continue
+    cy.get('body').click(0, 0);
 
 
     // 5. Log the user out
