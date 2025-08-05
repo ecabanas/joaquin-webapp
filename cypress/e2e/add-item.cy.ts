@@ -5,7 +5,7 @@ describe('Add Item to List Flow', () => {
   const newItem = 'Milk';
 
   before(() => {
-    // Create a user and log in before the tests run
+    // Create a user and log in before the tests run.
     cy.visit('/signup');
     cy.get('input#name').type(name);
     cy.get('input#email').type(uniqueEmail);
