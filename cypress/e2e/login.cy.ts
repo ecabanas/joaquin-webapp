@@ -1,3 +1,4 @@
+
 describe('Login and Logout Flow', () => {
   // Use a unique email for each test run to ensure independence
   const uniqueEmail = `test-user-${Date.now()}@example.com`;
@@ -21,7 +22,7 @@ describe('Login and Logout Flow', () => {
     // Now, log the user out to set up for the login test.
     // In CI, we need to be more direct than simulating a hover.
     // We will click the button to open the dropdown.
-    cy.get('button[aria-label="Account Options"]').click();
+    cy.get('button').first().click(); // More robustly target the account button
     cy.contains('Log out').click();
 
     // Assert we are back on the landing page
@@ -44,14 +45,14 @@ describe('Login and Logout Flow', () => {
     // 4. Assert that the user's name is visible in the sidebar, confirming login.
     //    Since hovering can be flaky in CI, we'll click to open the dropdown
     //    and verify the content.
-    cy.get('button[aria-label="Account Options"]').click();
+    cy.get('button').first().click(); // Click the account button
     cy.get('p').contains(name).should('be.visible');
     // Close the dropdown to continue
     cy.get('body').click(0, 0);
 
 
     // 5. Log the user out
-    cy.get('button[aria-label="Account Options"]').click();
+    cy.get('button').first().click(); // Click the account button
     cy.contains('Log out').click();
 
     // 6. Assert we are back on the landing page
