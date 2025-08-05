@@ -9,7 +9,7 @@ import {
   signOut,
   User 
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { getFirebaseServices } from '@/lib/firebase';
 import { createUserProfile, getUserProfile, updateUserProfile, acceptInvite } from '@/lib/firestore';
 import type { UserProfile } from '@/lib/types';
 
@@ -31,11 +31,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!auth) {
+    // Only run on the client
+    if (typeof window === 'undefined') {
       setLoading(false);
       return;
     };
     
+    const { auth } = getFirebaseServices();
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       if (user) {
@@ -45,11 +48,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUserProfile(profile);
             setLoading(false);
           } else {
-            // This case should ideally not be hit if signup is handled correctly.
-            // But as a fallback, we check if a profile needs to be created.
-            // This might happen if Firestore profile creation failed after auth creation.
-            // We won't auto-create it here to avoid potential issues,
-            // the user might need to re-register.
             console.warn("User is authenticated but no profile was found.");
             setLoading(false);
           }
@@ -66,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
   
   const signup = async (name: string, email: string, pass: string, inviteToken: string | null = null) => {
-    if (!auth) throw new Error("Firebase not initialized");
+    const { auth } = getFirebaseServices();
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     const { user } = userCredential;
 
@@ -90,12 +88,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const login = (email: string, pass: string) => {
-    if (!auth) throw new Error("Firebase not initialized");
+    const { auth } = getFirebaseServices();
     return signInWithEmailAndPassword(auth, email, pass);
   };
   
   const logout = async () => {
-    if (!auth) throw new Error("Firebase not initialized");
+    const { auth } = getFirebaseServices();
     await signOut(auth);
   };
   

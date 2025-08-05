@@ -18,12 +18,13 @@ import {
   limit,
   runTransaction
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { getFirebaseServices } from './firebase';
 import type { ListItem, Purchase, PurchaseItem, UserProfile, WorkspaceMember, Invite } from './types';
 import { customAlphabet } from 'nanoid';
 
 // User Management
 export async function createUserProfile(userId: string, data: Omit<UserProfile, 'workspaceId' | 'currency'> & { email: string }) {
+  const { db } = getFirebaseServices();
   const userRef = doc(db, 'users', userId);
   
   // Create a new workspace for the user
@@ -61,6 +62,7 @@ export function getUserProfile(
   userId: string,
   callback: (profile: UserProfile | null) => void
 ) {
+  const { db } = getFirebaseServices();
   const userDocRef = doc(db, 'users', userId);
   const unsubscribe = onSnapshot(userDocRef, (doc) => {
     if (doc.exists()) {
@@ -73,26 +75,37 @@ export function getUserProfile(
 }
 
 export async function updateUserProfile(userId: string, updates: Partial<UserProfile>) {
+  const { db } = getFirebaseServices();
   const userDocRef = doc(db, 'users', userId);
   await updateDoc(userDocRef, updates);
 }
 
 
 // Workspace-specific getters
-const getListItemsCollection = (workspaceId: string) =>
-  collection(db, 'workspaces', workspaceId, 'listItems');
+const getListItemsCollection = (workspaceId: string) => {
+  const { db } = getFirebaseServices();
+  return collection(db, 'workspaces', workspaceId, 'listItems');
+}
 
-const getPurchaseHistoryCollection = (workspaceId: string) =>
-  collection(db, 'workspaces', workspaceId, 'purchaseHistory');
+const getPurchaseHistoryCollection = (workspaceId: string) => {
+  const { db } = getFirebaseServices();
+  return collection(db, 'workspaces', workspaceId, 'purchaseHistory');
+}
 
-const getItemCatalogCollection = (workspaceId: string) =>
-  collection(db, 'workspaces', workspaceId, 'itemCatalog');
+const getItemCatalogCollection = (workspaceId: string) => {
+  const { db } = getFirebaseServices();
+  return collection(db, 'workspaces', workspaceId, 'itemCatalog');
+}
 
-const getMembersCollection = (workspaceId: string) =>
-  collection(db, 'workspaces', workspaceId, 'members');
+const getMembersCollection = (workspaceId: string) => {
+  const { db } = getFirebaseServices();
+  return collection(db, 'workspaces', workspaceId, 'members');
+}
 
-const getInvitesCollection = (workspaceId: string) =>
-  collection(db, 'workspaces', workspaceId, 'invites');
+const getInvitesCollection = (workspaceId: string) => {
+  const { db } = getFirebaseServices();
+  return collection(db, 'workspaces', workspaceId, 'invites');
+}
 
 
 const defaultCatalogData = [
@@ -106,6 +119,7 @@ const defaultCatalogData = [
 ];
 
 export async function seedInitialCatalog(workspaceId: string) {
+  const { db } = getFirebaseServices();
   const catalogCollection = getItemCatalogCollection(workspaceId);
   const snapshot = await getDocs(catalogCollection);
   if (snapshot.empty) {
@@ -220,6 +234,7 @@ export async function finishShopping(workspaceId: string, completedBy: string, a
     return null;
   }
   
+  const { db } = getFirebaseServices();
   const batch = writeBatch(db);
 
   // 1. Create a new purchase history record
@@ -338,6 +353,7 @@ export function getMembersForWorkspace(workspaceId: string, callback: (members: 
 }
 
 export async function acceptInvite(inviteToken: string, newUser: { id: string; name: string; email: string, photoURL: string }): Promise<UserProfile> {
+    const { db } = getFirebaseServices();
     // This is a cross-collection query, which is inefficient.
     // A better schema would be a top-level `invites` collection.
     // Given the current schema, we have to query all workspaces.
