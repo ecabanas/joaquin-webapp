@@ -10,8 +10,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "cypress:open": "cypress open",
-    "cypress:run": "cypress run"
+    "e2e": "cypress run"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.14.1",

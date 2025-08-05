@@ -34,14 +34,7 @@ With the core in place, we focus on delighting the user and making the app feel 
 
 These tasks ensure the app remains stable and continues to evolve.
 
-6.  **Create and Implement a Testing Strategy:**
-    *   **Goal:** Ensure code quality and prevent regressions as the app grows.
-    *   **Implementation:** Adopt a multi-tiered testing strategy and integrate it into a CI/CD workflow (e.g., GitHub Actions):
-        *   **Unit Tests (Jest/Vitest):** For utility functions and hooks.
-        *   **Integration Tests (React Testing Library):** For testing how components work together.
-        *   **E2E Tests (Cypress/Playwright):** For critical user flows like login and signup.
-
-7.  **Profile Picture Upload:**
+6.  **Profile Picture Upload:**
     *   **Goal:** Allow users to personalize their profile with a custom photo.
     *   **Implementation:** Use Firebase Storage to host uploaded images. Add client-side logic for file handling, previewing, and compression before uploading. Update the user's profile with the new photo URL.
 
@@ -60,6 +53,9 @@ These tasks ensure the app remains stable and continues to evolve.
 
 ### ===Completed===
 
+- **Create and Implement a Testing Strategy:**
+    *   **Goal:** Ensure code quality and prevent regressions as the app grows.
+    *   **Implementation:** An initial set of E2E tests using Cypress have been created for critical user flows (Signup, Login, Add Item). These are automatically run on every push to the `main` branch via GitHub Actions.
 - **Implement Sharing & Invitations:**
     *   **Goal:** Allow users to securely invite others to their workspace.
     *   **Implementation:** Created a secure, token-based invitation flow. An owner can invite a new member via email from the settings page. A unique token is generated and stored in Firestore. When the new user signs up using the invite link, their account is automatically added to the correct workspace. The invite system is now live.
@@ -69,3 +65,4 @@ These tasks ensure the app remains stable and continues to evolve.
 - **Automate Deployments (CI/CD):**
     *   **Goal:** To automate the deployment process to ensure reliability and speed.
     *   **Implementation:** Created a GitHub Actions workflow that deploys the `main` branch to the `dev` environment and the `production` branch to the `prod` environment. This is triggered on pushes to these branches.
+
