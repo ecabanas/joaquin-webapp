@@ -2,14 +2,15 @@ name: Cypress E2E Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
-  cypress-run:
+  e2e:
     runs-on: ubuntu-latest
-    
+
+    # Expose Firebase vars to all steps
     env:
       NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID_DEV }}
       NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID_DEV }}
@@ -22,38 +23,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Use Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Enhanced Debug
-        run: |
-          echo "=== Secret Existence Check ==="
-          echo "Project ID exists: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID_DEV != '' }}"
-          echo "API Key exists: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY_DEV != '' }}"
-          echo "Auth Domain exists: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN_DEV != '' }}"
-          
-          echo "=== Environment Variable Lengths ==="
-          echo "Project ID length: ${#NEXT_PUBLIC_FIREBASE_PROJECT_ID}"
-          echo "API Key length: ${#NEXT_PUBLIC_FIREBASE_API_KEY}"
-          echo "Auth Domain: $NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN"
-          
-          echo "=== Context Info ==="
-          echo "Actor: ${{ github.actor }}"
-          echo "Repository: ${{ github.repository }}"
-          echo "Event: ${{ github.event_name }}"
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Next.js application
+      - name: Build application
         run: npm run build
 
       - name: Run Cypress tests
         uses: cypress-io/github-action@v6
         with:
-          install: false
+          install: false       # dependencies already installed
+          build: npm run build # ensure build step
           start: npm start
           wait-on: 'http://localhost:3000'
           browser: chrome
