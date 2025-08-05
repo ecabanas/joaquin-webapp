@@ -44,7 +44,7 @@ describe('Login and Logout Flow', () => {
 
     // 4. Assert that the user's name is visible in the sidebar, confirming login.
     //    Since hovering can be flaky in CI, we'll click to open the dropdown
-    //    and verify the content.
+    //    and verify the content
     cy.get('button').first().click(); // Click the account button
     cy.get('p').contains(name).should('be.visible');
     // Close the dropdown to continue
