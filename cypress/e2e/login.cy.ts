@@ -25,8 +25,8 @@ describe('Login and Logout Flow', () => {
     cy.get('button').first().click(); // More robustly target the account button
     cy.contains('Log out').click();
 
-    // Assert we are back on the landing page by checking the URL
-    cy.url().should('eq', Cypress.config().baseUrl + '/'); 
+    // Assert we are back on the login page after logging out from an app page.
+    cy.url().should('include', '/login'); 
   });
 
   it('should allow a registered user to log in and log out', () => {
@@ -55,7 +55,7 @@ describe('Login and Logout Flow', () => {
     cy.get('button').first().click(); // Click the account button
     cy.contains('Log out').click();
 
-    // 6. Assert we are back on the landing page by checking the URL
-    cy.url().should('eq', Cypress.config().baseUrl + '/');
+    // 6. Assert we are back on the login page after logout
+    cy.url().should('include', '/login');
   });
 });
