@@ -10,38 +10,35 @@ on:
 jobs:
   cypress-run:
     runs-on: ubuntu-latest
-    # These environment variables will be available to all steps in this job
-    env:
-      NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID_DEV }}
-      NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID_DEV }}
-      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET_DEV }}
-      NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY_DEV }}
-      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN_DEV }}
-      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID_DEV }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Install Node.js
+      # Create .env file from secrets
+      - name: Create .env file
+        run: |
+          echo "NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID_DEV }}" >> .env
+          echo "NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID_DEV }}" >> .env
+          echo "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET_DEV }}" >> .env
+          echo "NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY_DEV }}" >> .env
+          echo "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN_DEV }}" >> .env
+          echo "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID_DEV }}" >> .env
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '18'
 
-      # Install dependencies (using 'ci' for faster, deterministic installs)
       - name: Install dependencies
         run: npm ci
       
-      # Install Cypress system dependencies
       - name: Install Cypress dependencies
         run: npx cypress install --force
 
-      # Run Cypress tests
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
-          # We'll run the tests on the production build of the app
           build: npm run build
           start: npm start
-          wait-on: 'http://localhost:3000' # Default port for `npm start`
+          wait-on: 'http://localhost:3000'
           browser: chrome
