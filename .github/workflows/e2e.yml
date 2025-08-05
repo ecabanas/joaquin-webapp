@@ -10,7 +10,6 @@ jobs:
   cypress-run:
     runs-on: ubuntu-latest
     
-    # Set environment variables at job level
     env:
       NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID_DEV }}
       NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID_DEV }}
@@ -28,13 +27,22 @@ jobs:
         with:
           node-version: '20'
 
-      # Debug step to verify environment variables
-      - name: Debug environment variables
+      - name: Enhanced Debug
         run: |
-          echo "Checking environment variables:"
-          echo "Project ID: ${NEXT_PUBLIC_FIREBASE_PROJECT_ID:0:10}..." # Show first 10 chars only
-          echo "API Key: ${NEXT_PUBLIC_FIREBASE_API_KEY:0:10}..."
+          echo "=== Secret Existence Check ==="
+          echo "Project ID exists: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID_DEV != '' }}"
+          echo "API Key exists: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY_DEV != '' }}"
+          echo "Auth Domain exists: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN_DEV != '' }}"
+          
+          echo "=== Environment Variable Lengths ==="
+          echo "Project ID length: ${#NEXT_PUBLIC_FIREBASE_PROJECT_ID}"
+          echo "API Key length: ${#NEXT_PUBLIC_FIREBASE_API_KEY}"
           echo "Auth Domain: $NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN"
+          
+          echo "=== Context Info ==="
+          echo "Actor: ${{ github.actor }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Event: ${{ github.event_name }}"
 
       - name: Install dependencies
         run: npm ci
@@ -45,7 +53,7 @@ jobs:
       - name: Run Cypress tests
         uses: cypress-io/github-action@v6
         with:
-          install: false  # Already installed
+          install: false
           start: npm start
           wait-on: 'http://localhost:3000'
           browser: chrome
