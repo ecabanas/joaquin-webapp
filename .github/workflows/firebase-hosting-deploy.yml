@@ -39,21 +39,26 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      # --- NEW STEP: Set Firebase Project Context ---
-      - name: Set Firebase Project Context
-        run: firebase use joaquin-q0wvv
-
-      # --- NEW STEP: Verify Firebase CLI Authentication ---
-      - name: Verify Firebase CLI Authentication
+      # --- NEW/REVISED STEP: Generate Firebase Access Token ---
+      # This step gets a short-lived access token using gcloud,
+      # which correctly picks up the WIF credentials.
+      - name: Generate Firebase Access Token
+        id: generate_token # Add an ID to this step to access its outputs
         run: |
-          echo "Checking who Firebase CLI is authenticated as:"
-          firebase whoami
-          echo "Listing Firebase projects accessible:"
-          firebase projects:list --json # Using --json for more robust output in CI
+          # Use gcloud to print an access token. This command will use the ADC set up by the 'auth' step.
+          # We capture its output into a variable that can be accessed by later steps.
+          echo "ACCESS_TOKEN=$(gcloud auth print-access-token)" >> "$GITHUB_OUTPUT"
+        env:
+          # Ensure gcloud uses the specific project for authentication context
+          CLOUDSDK_CORE_PROJECT: joaquin-q0wvv
 
       - name: Trigger App Hosting Rollout
-        # No need for --project here since we've used 'firebase use' earlier
+        # Pass the generated ACCESS_TOKEN as an environment variable to the Firebase CLI.
+        # This is the most reliable way to authenticate firebase-tools in CI/CD.
+        env:
+          FIREBASE_TOKEN: ${{ steps.generate_token.outputs.ACCESS_TOKEN }}
         run: |
           firebase apphosting:rollouts:create joaquin-prod \
+            --project=joaquin-q0wvv \
             --git-branch=${{ github.ref_name }} \
             --git-commit=${{ github.sha }}
