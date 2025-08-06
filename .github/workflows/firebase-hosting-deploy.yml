@@ -1,6 +1,3 @@
-# This workflow triggers a new rollout for your Firebase App Hosting backend
-# when changes are pushed to the 'production' branch.
-
 name: Deploy to Firebase App Hosting on Production Push
 
 on:
@@ -12,24 +9,32 @@ jobs:
   build_and_deploy_prod:
     runs-on: ubuntu-latest
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: read
+      id-token: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v2'
+      - name: Debug secrets
+        run: |
+          echo "FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD exists: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD != '' }}"
+          echo "FIREBASE_TOKEN exists: ${{ secrets.FIREBASE_TOKEN != '' }}"
+          echo "Service account size: ${#SERVICE_ACCOUNT}"
+        env:
+          SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}
+
+      - id: auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}'
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          cache: 'npm'
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -41,10 +46,10 @@ jobs:
         run: npm install -g firebase-tools
 
       - name: Trigger App Hosting Rollout
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: |
           firebase apphosting:rollouts:create joaquin-prod \
             --project=joaquin-q0wvv \
             --git-branch=${{ github.ref_name }} \
             --git-commit=${{ github.sha }}
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
