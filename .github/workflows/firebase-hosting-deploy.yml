@@ -22,17 +22,33 @@ jobs:
         with:
           workload_identity_provider: 'projects/371246421587/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider'
           service_account: 'github-actions-apphosting@joaquin-q0wvv.iam.gserviceaccount.com'
-          create_credentials_file: true # This creates the file and sets GOOGLE_APPLICATION_CREDENTIALS
+          create_credentials_file: true # This creates the WIF credentials file and sets GOOGLE_APPLICATION_CREDENTIALS
 
-      # --- NEW CRITICAL STEP: Explicitly Activate Service Account in gcloud ---
-      - name: Activate Service Account for gcloud
+      # --- REVERTED: Remove the problematic 'gcloud auth activate-service-account' step ---
+      # This step should no longer be present.
+
+      # --- You can keep this debug step, or remove it for a cleaner log after confirming it works ---
+      - name: Verify GCloud Authentication Context
         run: |
-          gcloud auth activate-service-account --key-file="${{ steps.auth.outputs.credentials_file_path }}"
-          # You can optionally add 'gcloud auth list' here to verify it's now active
-          gcloud auth list
-      # --- END NEW CRITICAL STEP ---
-
-      # Remove the 'Verify GCloud Authentication Context' step, its job is done.
+          echo "--- GOOGLE_APPLICATION_CREDENTIALS file exists and content (masked) ---"
+          if [ -f "${{ env.GOOGLE_APPLICATION_CREDENTIALS }}" ]; then
+            cat "${{ env.GOOGLE_APPLICATION_CREDENTIALS }}" | head -n 5 # Show first few lines
+            echo "..."
+          else
+            echo "ERROR: GOOGLE_APPLICATION_CREDENTIALS file not found!"
+          fi
+          echo ""
+          echo "--- gcloud auth list (Active Account) ---"
+          gcloud auth list --format="yaml" # This might still be empty, but it's okay now.
+          echo ""
+          echo "--- gcloud config list project ---"
+          gcloud config list project
+          echo ""
+          echo "--- Attempting gcloud auth print-access-token (explicitly using key-file) ---"
+          # This command should now succeed!
+          gcloud auth print-access-token --credential-file-override="${{ steps.auth.outputs.credentials_file_path }}" || true
+          echo "Finished gcloud auth print-access-token attempt."
+      # --- END Debug step ---
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -44,20 +60,26 @@ jobs:
         run: npm ci
 
       - name: Build project
-        run: npm npm run build
+        run: npm run build
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
+      # --- REVISED STEP: Generate Firebase Access Token ---
+      # Now, we explicitly tell gcloud where the WIF credentials file is located.
       - name: Generate Firebase Access Token
-        id: generate_token
+        id: generate_token # Add an ID to this step to access its outputs
         run: |
-          # This command should now succeed as gcloud has an active identity.
-          echo "ACCESS_TOKEN=$(gcloud auth print-access-token)" >> "$GITHUB_OUTPUT"
+          # Explicitly use the WIF credentials file for this gcloud command.
+          # This bypasses gcloud's auto-detection issues for the GOOGLE_APPLICATION_CREDENTIALS env var.
+          ACCESS_TOKEN=$(gcloud auth print-access-token --credential-file-override="${{ steps.auth.outputs.credentials_file_path }}")
+          echo "ACCESS_TOKEN=$ACCESS_TOKEN" >> "$GITHUB_OUTPUT"
         env:
           CLOUDSDK_CORE_PROJECT: joaquin-q0wvv
 
       - name: Trigger App Hosting Rollout
+        # Pass the generated ACCESS_TOKEN as an environment variable to the Firebase CLI.
+        # This is the most reliable way to authenticate firebase-tools in CI/CD.
         env:
           FIREBASE_TOKEN: ${{ steps.generate_token.outputs.ACCESS_TOKEN }}
         run: |
