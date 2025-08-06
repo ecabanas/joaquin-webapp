@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - production
-    # Ignore workflow-file changes so editing this file doesn’t trigger it
     paths-ignore:
       - '.github/workflows/**'
 
@@ -12,8 +11,10 @@ jobs:
   deploy:
     if: github.ref == 'refs/heads/production'
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
@@ -36,7 +37,8 @@ jobs:
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: joaquin-q0wvv
-          install_components: ['beta']
+          install_components:
+            - beta
           export_default_credentials: true
 
       - name: Install Firebase CLI
