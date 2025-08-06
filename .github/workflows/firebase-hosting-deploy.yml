@@ -16,13 +16,42 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - id: auth
+      - id: auth # Keep this ID for accessing its outputs
         name: Authenticate to Google Cloud (Workload Identity Federation)
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: 'projects/371246421587/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider'
           service_account: 'github-actions-apphosting@joaquin-q0wvv.iam.gserviceaccount.com'
           create_credentials_file: true # This creates the file and sets GOOGLE_APPLICATION_CREDENTIALS
+
+      # --- NEW CRITICAL DEBUGGING STEP ---
+      - name: Verify GCloud Authentication Context
+        run: |
+          echo "--- GOOGLE_APPLICATION_CREDENTIALS file exists and content (masked) ---"
+          # This should show the temporary JSON key created by the 'auth' step
+          if [ -f "${{ env.GOOGLE_APPLICATION_CREDENTIALS }}" ]; then
+            cat "${{ env.GOOGLE_APPLICATION_CREDENTIALS }}" | head -n 5 # Show first few lines
+            echo "..."
+          else
+            echo "ERROR: GOOGLE_APPLICATION_CREDENTIALS file not found!"
+          fi
+          echo ""
+
+          echo "--- gcloud auth list (Active Account) ---"
+          # THIS IS THE MOST CRITICAL PART: It MUST show your service account as active.
+          gcloud auth list --format="yaml"
+          echo ""
+
+          echo "--- gcloud config list project ---"
+          gcloud config list project
+          echo ""
+
+          echo "--- Attempting gcloud auth print-access-token (will likely fail here) ---"
+          # This command will trigger the permission error if it's still there.
+          # Using || true prevents the step from failing immediately so we see all debug output.
+          gcloud auth print-access-token || true
+          echo "Finished gcloud auth print-access-token attempt."
+      # --- END NEW CRITICAL DEBUGGING STEP ---
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -39,9 +68,6 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      # --- NEW/REVISED STEP: Generate Firebase Access Token ---
-      # This step gets a short-lived access token using gcloud,
-      # which correctly picks up the WIF credentials.
       - name: Generate Firebase Access Token
         id: generate_token # Add an ID to this step to access its outputs
         run: |
@@ -49,12 +75,9 @@ jobs:
           # We capture its output into a variable that can be accessed by later steps.
           echo "ACCESS_TOKEN=$(gcloud auth print-access-token)" >> "$GITHUB_OUTPUT"
         env:
-          # Ensure gcloud uses the specific project for authentication context
           CLOUDSDK_CORE_PROJECT: joaquin-q0wvv
 
       - name: Trigger App Hosting Rollout
-        # Pass the generated ACCESS_TOKEN as an environment variable to the Firebase CLI.
-        # This is the most reliable way to authenticate firebase-tools in CI/CD.
         env:
           FIREBASE_TOKEN: ${{ steps.generate_token.outputs.ACCESS_TOKEN }}
         run: |
