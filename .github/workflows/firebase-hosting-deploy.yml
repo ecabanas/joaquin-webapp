@@ -1,24 +1,22 @@
-# This workflow triggers a new rollout for your Firebase App Hosting backend
-# when changes are pushed to the 'production' branch.
-
 name: Deploy to Firebase App Hosting on Production Push
 
 on:
   push:
-    branches:
-      - production
+    branches: [ production ]
 
 jobs:
-  build_and_deploy_prod:
+  deploy:
     runs-on: ubuntu-latest
+    env:
+      # (optional) make your NEXT_PUBLIC_… secrets available here too
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
@@ -26,19 +24,25 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Authenticate with Google Cloud
-        id: auth
-        uses: 'google-github-actions/auth@v2'
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
         with:
-          credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}'
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}
 
-      - name: Set up gcloud for Firebase
-        run: |
-          gcloud auth activate-service-account --key-file=${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
-          gcloud config set project joaquin-q0wvv
+      - name: Install gcloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: joaquin-q0wvv
+          install_components: ['beta']        # needed for apphosting
+          export_default_credentials: true   # sets GOOGLE_APPLICATION_CREDENTIALS
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
-      
+
       - name: Trigger App Hosting Rollout
-        run: firebase apphosting:rollouts:create joaquin-prod --project joaquin-q0wvv --git-branch production --git-commit ${{ github.sha }}
+        run: |
+          firebase apphosting:rollouts:create \
+            joaquin-prod \
+            --project=joaquin-q0wvv \
+            --git-branch=production \
+            --git-commit=${{ github.sha }}
