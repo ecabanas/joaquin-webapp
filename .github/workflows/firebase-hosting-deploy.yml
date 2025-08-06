@@ -10,25 +10,24 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
+      id-token: write # This permission is essential for Workload Identity Federation!
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Debug secrets
-        run: |
-          echo "FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD exists: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD != '' }}"
-          echo "FIREBASE_TOKEN exists: ${{ secrets.FIREBASE_TOKEN != '' }}"
-          echo "Service account size: ${#SERVICE_ACCOUNT}"
-        env:
-          SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}
+      # Removed Debug secrets as it's less relevant with WIF, but you can keep it for initial debugging.
 
       - id: auth
-        name: Authenticate to Google Cloud
+        name: Authenticate to Google Cloud (Workload Identity Federation)
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JOAQUIN_PROD }}
+          # Replace with your Workload Identity Provider resource name from Step 1.3
+          workload_identity_provider: 'projects/371246421587/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider'
+          # Replace with the email of the Service Account created in Step 1.1
+          service_account: 'github-actions-apphosting@joaquin-q0wvv.iam.gserviceaccount.com'
+          # This creates a credentials file that the Firebase CLI will automatically use.
+          create_credentials_file: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -46,8 +45,7 @@ jobs:
         run: npm install -g firebase-tools
 
       - name: Trigger App Hosting Rollout
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        # No need for FIREBASE_TOKEN here, as ADC will be used.
         run: |
           firebase apphosting:rollouts:create joaquin-prod \
             --project=joaquin-q0wvv \
