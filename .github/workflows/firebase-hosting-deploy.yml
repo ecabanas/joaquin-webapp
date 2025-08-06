@@ -3,11 +3,11 @@ name: Deploy to Firebase App Hosting on Production Push
 
 on:
   push:
-    branches:
-      - production
+    branches: [ production ]
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/production'
     runs-on: ubuntu-latest
     env:
       # (optional) make your NEXT_PUBLIC_… secrets available here too
