@@ -24,34 +24,15 @@ jobs:
           service_account: 'github-actions-apphosting@joaquin-q0wvv.iam.gserviceaccount.com'
           create_credentials_file: true # This creates the file and sets GOOGLE_APPLICATION_CREDENTIALS
 
-      # --- NEW CRITICAL DEBUGGING STEP ---
-      - name: Verify GCloud Authentication Context
+      # --- NEW CRITICAL STEP: Explicitly Activate Service Account in gcloud ---
+      - name: Activate Service Account for gcloud
         run: |
-          echo "--- GOOGLE_APPLICATION_CREDENTIALS file exists and content (masked) ---"
-          # This should show the temporary JSON key created by the 'auth' step
-          if [ -f "${{ env.GOOGLE_APPLICATION_CREDENTIALS }}" ]; then
-            cat "${{ env.GOOGLE_APPLICATION_CREDENTIALS }}" | head -n 5 # Show first few lines
-            echo "..."
-          else
-            echo "ERROR: GOOGLE_APPLICATION_CREDENTIALS file not found!"
-          fi
-          echo ""
+          gcloud auth activate-service-account --key-file="${{ steps.auth.outputs.credentials_file_path }}"
+          # You can optionally add 'gcloud auth list' here to verify it's now active
+          gcloud auth list
+      # --- END NEW CRITICAL STEP ---
 
-          echo "--- gcloud auth list (Active Account) ---"
-          # THIS IS THE MOST CRITICAL PART: It MUST show your service account as active.
-          gcloud auth list --format="yaml"
-          echo ""
-
-          echo "--- gcloud config list project ---"
-          gcloud config list project
-          echo ""
-
-          echo "--- Attempting gcloud auth print-access-token (will likely fail here) ---"
-          # This command will trigger the permission error if it's still there.
-          # Using || true prevents the step from failing immediately so we see all debug output.
-          gcloud auth print-access-token || true
-          echo "Finished gcloud auth print-access-token attempt."
-      # --- END NEW CRITICAL DEBUGGING STEP ---
+      # Remove the 'Verify GCloud Authentication Context' step, its job is done.
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -63,16 +44,15 @@ jobs:
         run: npm ci
 
       - name: Build project
-        run: npm run build
+        run: npm npm run build
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
       - name: Generate Firebase Access Token
-        id: generate_token # Add an ID to this step to access its outputs
+        id: generate_token
         run: |
-          # Use gcloud to print an access token. This command will use the ADC set up by the 'auth' step.
-          # We capture its output into a variable that can be accessed by later steps.
+          # This command should now succeed as gcloud has an active identity.
           echo "ACCESS_TOKEN=$(gcloud auth print-access-token)" >> "$GITHUB_OUTPUT"
         env:
           CLOUDSDK_CORE_PROJECT: joaquin-q0wvv
