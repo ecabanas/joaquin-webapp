@@ -1,7 +1,10 @@
+
 name: Deploy to Firebase App Hosting on Production Push
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - production
 
 jobs:
   deploy:
@@ -43,5 +46,5 @@ jobs:
           firebase apphosting:rollouts:create \
             joaquin-prod \
             --project=joaquin-q0wvv \
-            --git-branch=production \
+            --git-branch=${{ github.ref_name }} \
             --git-commit=${{ github.sha }}
