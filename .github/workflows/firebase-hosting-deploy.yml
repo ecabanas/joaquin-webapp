@@ -10,45 +10,42 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # This permission is essential for Workload Identity Federation!
+      id-token: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - id: auth
-        name: Authenticate to Google Cloud (Workload Identity Federation)
+        name: Authenticate to Google Cloud (WIF)
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: 'projects/371246421587/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider'
-          service_account: 'github-actions-apphosting@joaquin-q0wvv.iam.gserviceaccount.com'
-          # This line is KEY! It creates the credentials file and sets GOOGLE_APPLICATION_CREDENTIALS.
-          create_credentials_file: true 
+          workload_identity_provider: projects/371246421587/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
+          service_account: github-actions-apphosting@joaquin-q0wvv.iam.gserviceaccount.com
+          create_credentials_file: true
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build project
-        run: npm run build
+      - name: Install dependencies & build
+        run: |
+          npm ci
+          npm run build
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      # --- REMOVED THE "Authenticate Firebase CLI using direct Access Token" STEP ---
-      # No more firebase login --token needed!
-      # The Firebase CLI will now automatically pick up the credentials
-      # set by the 'auth' step via the GOOGLE_APPLICATION_CREDENTIALS environment variable.
+      - name: Authenticate Firebase CLI with service account
+        run: |
+          firebase login --service-account $GOOGLE_APPLICATION_CREDENTIALS
 
       - name: Trigger App Hosting Rollout
-        # This command should now be able to authenticate directly!
         run: |
-          firebase apphosting:rollouts:create joaquin-prod \
+          firebase apphosting:rollouts:create \
+            joaquin-prod \
             --project=joaquin-q0wvv \
             --git-branch=${{ github.ref_name }} \
             --git-commit=${{ github.sha }}
