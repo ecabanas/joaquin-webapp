@@ -16,17 +16,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Removed Debug secrets as it's less relevant with WIF, but you can keep it for initial debugging.
-
       - id: auth
         name: Authenticate to Google Cloud (Workload Identity Federation)
         uses: google-github-actions/auth@v2
         with:
-          # Replace with your Workload Identity Provider resource name from Step 1.3
           workload_identity_provider: 'projects/371246421587/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider'
-          # Replace with the email of the Service Account created in Step 1.1
           service_account: 'github-actions-apphosting@joaquin-q0wvv.iam.gserviceaccount.com'
-          # This creates a credentials file that the Firebase CLI will automatically use.
           create_credentials_file: true
 
       - name: Setup Node.js
@@ -44,8 +39,19 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
+      # --- NEW STEP HERE ---
+      - name: Authenticate Firebase CLI with Service Account
+        run: |
+          # Use gcloud to print an access token, which automatically uses the credentials
+          # set up by the google-github-actions/auth step (via GOOGLE_APPLICATION_CREDENTIALS).
+          ACCESS_TOKEN=$(gcloud auth print-access-token)
+
+          # Log in the Firebase CLI using this short-lived access token.
+          firebase login --token "$ACCESS_TOKEN" --project=joaquin-q0wvv
+      # --- END NEW STEP ---
+
       - name: Trigger App Hosting Rollout
-        # No need for FIREBASE_TOKEN here, as ADC will be used.
+        # Now, the Firebase CLI should be authenticated!
         run: |
           firebase apphosting:rollouts:create joaquin-prod \
             --project=joaquin-q0wvv \
