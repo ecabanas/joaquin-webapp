@@ -39,6 +39,6 @@ jobs:
       - name: Deploy to Firebase App Hosting
         run: |
           firebase use ${{ env.FIREBASE_PROJECT_ID }}
-          firebase deploy --only hosting
+          firebase apphosting:rollouts:create joaquin-prod --location=europe-west4
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
