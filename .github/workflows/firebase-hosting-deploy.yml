@@ -30,17 +30,8 @@ jobs:
         run: npm run build
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
-      - name: Authenticate Firebase CLI with ADC
+      - name: Deploy to Firebase App Hosting
         run: |
-          # The google-github-actions/auth action has set up Application Default Credentials (ADC)
-          # Firebase CLI will automatically use these credentials when GOOGLE_APPLICATION_CREDENTIALS is set
-          # We just need to verify the authentication is working
-          firebase --version
-          firebase projects:list
-          echo "Firebase CLI authenticated successfully using Application Default Credentials"
-      - name: Trigger App Hosting Rollout
-        run: |
-          firebase apphosting:rollouts:create joaquin-prod \
-            --project joaquin-q0wvv \
-            --git-branch=${{ github.ref_name }} \
-            --git-commit=${{ github.sha }}
+          # Firebase CLI automatically uses Application Default Credentials
+          # No gcloud config or manual authentication needed
+          firebase apphosting:backends:deploy --project joaquin-q0wvv
