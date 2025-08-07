@@ -34,5 +34,5 @@ jobs:
         run: |
           echo "Verifying authentication status..."
           gcloud info
-      - name: Deploy to Firebase
-        run: firebase deploy --only hosting
+      - name: Deploy to Firebase App Hosting
+        run: firebase apphosting:rollouts:create
