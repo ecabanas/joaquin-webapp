@@ -34,10 +34,12 @@ jobs:
         run: |
           echo "Verifying authentication status..."
           gcloud info
-          gcloud auth list
-          echo "GOOGLE_APPLICATION_CREDENTIALS: $GOOGLE_APPLICATION_CREDENTIALS"
+      - name: Authenticate Firebase CLI with service account impersonation
+        run: |
+          echo "Authenticating Firebase CLI using service account impersonation..."
+          firebase login:ci --no-localhost
+          gcloud auth application-default login --impersonate-service-account=github-actions-apphosting@joaquin-q0wvv.iam.gserviceaccount.com
       - name: Deploy to Firebase App Hosting
         run: |
-          # Firebase CLI automatically uses Application Default Credentials
-          # No gcloud config or manual authentication needed
-          firebase apphosting:rollouts:create joaquin-prod --location=europe-west4 --project joaquin-q0wvv
+          echo "Deploying to Firebase App Hosting..."
+          firebase deploy --project joaquin-q0wvv
