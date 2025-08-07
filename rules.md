@@ -1,81 +1,99 @@
-# Development Agent Rules
+# Joaquin Project Development Agent Rules
 
-## 1. Role and Scope
-You are a Development Agent responsible for generating and maintaining Next.js applications using React, TypeScript, Firebase Client SDK, and Google Cloud. Always prioritize modularity, performance, maintainability, and scalability.
+---
 
-## 2. Firebase First
-- **Client SDK** for all authentication (login/logout), Firestore, and Storage operations.
-- Only use Admin SDK or Cloud Functions when not possible or secure from the client side.
-- Apply security rules and proper environment variable configuration.
+## 1. Agent Role & Scope
+You (the agent) are responsible for maintaining and evolving this Next.js, TypeScript, and Firebase-based SaaS. Every action should prioritize modularity, performance, maintainability, and long-term scalability.
 
-## 3. Authentication and RBAC
-- Use Firebase Auth Client SDK, manage state through an AuthContext.
-- Implement Role-Based Access Control in Firestore:
-  - Permissions named `perm:<resource>:<action>`.
-  - Page-level protection through `withAuthProtection`.
-  - Component-level conditional rendering based on permissions.
+---
 
-## 4. Data and Fetching
-- Always confirm authentication before any Firestore read/write.
-- Provide loading states and error handling.
-- Use real-time listeners when appropriate; paginate and limit queries.
+## 2. Firebase-First Principle
+- Use the **Firebase Client SDK** for all authentication (login, logout), Firestore, and Storage operations.  
+- Use the Admin SDK or Cloud Functions only when strictly necessary and securely.
+- Always apply security rules and proper environment configs.
 
-## 5. Code Organization
-- Follow DRY and SOLID principles.
-- Break down complex logic into reusable hooks, services, and components.
-- Define TypeScript types everywhere; avoid `any`.
+---
 
-## 6. Schemas and Validation
-- Save all data model definitions in `docs/schemas/`; link them from `docs/schemas/index.md`.
-- Before changing data structures, review existing schemas and document any updates.
-- Use Zod (or equivalent) for runtime input/output validation.
+## 3. Authentication & Role-Based Access Control (RBAC)
+- Use Firebase Auth and manage state via an AuthContext.
+- Implement RBAC using Firestore permissions structured as `perm:<resource>:<action>`.
+- Protect pages with `withAuthProtection` and render UI based on user permissions.
 
-## 7. Documentation
-Maintain these files in `docs/`:
+---
 
-- **changelog.md**
-  Track every change; split by version or year if it grows too large.
+## 4. Data Access & Loading Patterns
+- Always check authentication before Firestore access.
+- Implement strong loading and error states for all async flows.
+- Use real-time Firestore listeners only when needed, always paginate/limit queries.
 
-- **schemas/index.md** + individual schema files
-  Document collection names, fields, types, indexes, and security rules.
+---
 
-- **future-developments.md**
-  Record ideas, mockups, and placeholders; move completed items to `===Completed===`.
+## 5. Code Organization & Standards
+- Apply DRY and SOLID principles throughout.
+- Structure code into reusable hooks, services, and components.
+- Use explicit TypeScript types everywhere; avoid `any`.
 
-- **blueprint.md**
-  Capture UX/UI guidelines (colors, typography, layouts).
+---
 
-- **help-builder.md**
-  Describe each screen/component: purpose, inputs, key interactions.
+## 6. Schemas & Validation
+- Store all data models in `docs/schemas/`, linking back to `docs/schemas/index.md`.
+- Change schemas only after reviewing docs and updating all definitions.
+- Use Zod (or similar) for runtime validation in all entry points.
 
-- **rbac.md**
-  Outline the RBAC plan, phases, decisions, and progress.
+---
 
-- **formulas.md**
-  Record any business logic formulas or calculations (inputs, logic, outputs).
+## 7. Documentation: /docs is the Source of Truth
+- **changelog.md**: Versioned list of every change, split if too large.
+- **schemas/index.md** (+ sub-schema files): Document collections, fields, indexes, and security.
+- **future-developments.md**: Ideas, mockups, pending features. Move completed to `===Completed===`.
+- **blueprint.md**: UX/UI standards (colors, layouts).
+- **help-builder.md**: Purpose/inputs/logic for all components/screens.
+- **rbac.md**: RBAC plan and history.
+- **formulas.md**: Business logic formulas.
 
-## 8. .md File Management
-- Split large markdown files into smaller, focused documents to keep AI fluid and maintainable.
-- Ensure new content is included and sections are not omitted; confirm changes have been saved and uploaded.
+**Keep documentation current, granular, and actionable.**
 
-## 9. Translations and Styles
-- **Translations**: Keep localization files in `locales/` or `src/i18n/`; update translations alongside UI changes.
-- **SCSS Management**:
-  - Save styles in `styles/`, organized into partials (e.g., `_variables.scss`, `_mixins.scss`, `_layout.scss`).
-  - Use consistent naming and import partials into a central `main.scss`.
+---
 
-## 10. Firestore and Storage Rules
-- Keep `firestore.indexes.json`, `firestore.rules`, and `storage.rules` synchronized with schema changes.
-- Document any new indexes in `docs/schemas/indexes.md` and save updates.
+## 8. Markdown & Doc Management
+- Split large files to maintain AI and human usability.
+- New/updated docs must be saved and reviewed—no lost sections.
+- Summarize/extract any important architectural/product info from tickets, PRs, and chat into relevant `/docs` files.
 
-## 11. Architecture Review
-- Always review the current project architecture (folder structure, dependencies, modules) before proposing solutions or changes.
+---
 
-## 12. Before Coding
-> **Always** review:
-> 1. Project structure
-> 2. All schemas (`docs/schemas/`)
-> 3. Pending items in `future-developments.md`
-> 4. UX/UI notes in `blueprint.md`
+## 9. Translations & Styles
+- Store i18n files in `locales/` or `src/i18n/`; always update alongside UI.
+- Place SCSS partials in `styles/`, naming consistently and importing to `main.scss`.
 
-Only then implement the changes.
+---
+
+## 10. Firestore & Storage Index/Rules
+- Keep `firestore.indexes.json`, `firestore.rules`, and `storage.rules` in sync with docs and schemas.
+- Document new indexes in `docs/schemas/indexes.md`.
+
+---
+
+## 11. Architecture Review Before Change
+- Always review the current folder structure, dependencies, modules, and schemas before implementing changes or proposing major new features.
+
+---
+
+## 12. Pre-Implementation Checklist
+> Before starting any work, **always review and reference**:  
+> 1. The app structure (as implemented).  
+> 2. All relevant schemas (`docs/schemas/`).  
+> 3. `future-developments.md` for pending ideas/features.  
+> 4. `blueprint.md` for UI/UX patterns.  
+>  5. RBAC plan and changelog for security/flow.
+
+---
+
+## 13. AI Agent Collaboration
+- **Any code or document suggestion by agents (AI or human) should cite the relevant doc sections/definitions used.**
+- **If an external project management tool is ever used, its relevant documentation/decisions must be echoed into `/docs` within the codebase.**
+- **Agents should proactively update diagrams, docs, and changelogs following accepted changes.**
+
+---
+
+*Maintaining detailed, actionable `/docs` is crucial for both AI and human contributors. This enables Gemini, Comet, or future assistants to always have the full project context and history, ensuring reliable, scalable SaaS development.*
