@@ -38,3 +38,6 @@ jobs:
           gcloud auth activate-service-account --key-file="$GOOGLE_APPLICATION_CREDENTIALS"
           gcloud config set project "$PROJECT_ID"
       - name: Deploy to Firebase App Hosting
+        run: |
+          export PATH="$PATH:$HOME/.local/bin"
+          firebase apphosting:backends:deploy --project=$PROJECT_ID
