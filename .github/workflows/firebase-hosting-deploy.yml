@@ -26,3 +26,13 @@ jobs:
           if [ -f "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
             echo "Credentials file exists"
             echo "File size: $(stat -c%s "$GOOGLE_APPLICATION_CREDENTIALS") bytes"
+          else
+            echo "Credentials file not found!"
+          fi
+      - name: Install Firebase CLI
+        run: |
+          curl -sL https://firebase.tools | bash
+          export PATH="$PATH:$HOME/.local/bin"
+      - name: Deploy to Firebase App Hosting
+        run: |
+          firebase deploy --project $PROJECT_ID --token "${{ secrets.FIREBASE_TOKEN }}"
