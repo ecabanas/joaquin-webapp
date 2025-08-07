@@ -3,6 +3,11 @@ on:
   push:
     branches:
       - production
+
+env:
+  PROJECT_ID: joaquin-q0wvv
+  FIREBASE_PROJECT_ID: joaquin-q0wvv
+  
 jobs:
   build_and_deploy_prod:
     runs-on: ubuntu-latest
@@ -34,5 +39,11 @@ jobs:
         run: |
           echo "Verifying authentication status..."
           gcloud info
-      - name: Deploy to Firebase App Hosting
-        run: firebase apphosting:rollouts:create joaquin-prod --location=europe-west4
+      - name: Generate Firebase access token and deploy
+        env:
+          FIREBASE_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          echo "Generating access token for Firebase CLI..."
+          export FIREBASE_TOKEN=$(gcloud auth print-access-token)
+          echo "Deploying to Firebase with access token..."
+          firebase deploy --token "$FIREBASE_TOKEN" --project "$PROJECT_ID"
