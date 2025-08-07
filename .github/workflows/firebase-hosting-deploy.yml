@@ -38,6 +38,8 @@ jobs:
             echo "Credentials file does not exist"
           fi
           gcloud auth list
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
       - name: Deploy to Firebase App Hosting
         run: firebase apphosting:rollouts:create joaquin-prod --project joaquin-q0wvv --location europe-west4
         env:
