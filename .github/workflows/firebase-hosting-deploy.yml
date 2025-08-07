@@ -30,8 +30,14 @@ jobs:
         run: npm run build
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
+      - name: Debug authentication status
+        run: |
+          echo "Verifying authentication status..."
+          gcloud info
+          gcloud auth list
+          echo "GOOGLE_APPLICATION_CREDENTIALS: $GOOGLE_APPLICATION_CREDENTIALS"
       - name: Deploy to Firebase App Hosting
         run: |
           # Firebase CLI automatically uses Application Default Credentials
           # No gcloud config or manual authentication needed
-          firebase apphosting:rollouts:create joaquin-prod --location=europe-west4
+          firebase apphosting:rollouts:create joaquin-prod --location=europe-west4 --project joaquin-q0wvv
