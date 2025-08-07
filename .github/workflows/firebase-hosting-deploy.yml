@@ -34,4 +34,4 @@ jobs:
         run: |
           # Firebase CLI automatically uses Application Default Credentials
           # No gcloud config or manual authentication needed
-          firebase apphosting:rollouts:create --location=us-central1
+          firebase apphosting:rollouts:create joaquin-prod --location=europe-west4
