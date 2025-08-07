@@ -34,10 +34,9 @@ jobs:
         run: |
           echo "Verifying authentication status..."
           gcloud info
-      - name: Authenticate Firebase CLI with service account impersonation
+      - name: Configure application default credentials with service account impersonation
         run: |
-          echo "Authenticating Firebase CLI using service account impersonation..."
-          firebase login:ci --no-localhost
+          echo "Configuring application default credentials with service account impersonation..."
           gcloud auth application-default login --impersonate-service-account=github-actions-apphosting@joaquin-q0wvv.iam.gserviceaccount.com
       - name: Deploy to Firebase App Hosting
         run: |
