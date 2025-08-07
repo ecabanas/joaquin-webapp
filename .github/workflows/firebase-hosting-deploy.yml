@@ -33,6 +33,8 @@ jobs:
         run: |
           curl -sL https://firebase.tools | bash
           export PATH="$PATH:$HOME/.local/bin"
-      - name: Deploy to Firebase App Hosting
+      - name: Activate service account with gcloud
         run: |
-          firebase deploy --project $PROJECT_ID
+          gcloud auth activate-service-account --key-file="$GOOGLE_APPLICATION_CREDENTIALS"
+          gcloud config set project "$PROJECT_ID"
+      - name: Deploy to Firebase App Hosting
