@@ -23,6 +23,8 @@ jobs:
           workload_identity_provider: 'projects/371246421587/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider'
           service_account: 'github-actions-apphosting@joaquin-q0wvv.iam.gserviceaccount.com'
           create_credentials_file: true # This creates the WIF credentials file and sets GOOGLE_APPLICATION_CREDENTIALS
+      - name: Activate Service Account
+        run: gcloud auth activate-service-account github-actions-apphosting@joaquin-q0wvv.iam.gserviceaccount.com --key-file=$GOOGLE_APPLICATION_CREDENTIALS
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -34,11 +36,3 @@ jobs:
         run: npm run build
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
-      - name: Deploy to Firebase App Hosting
-        run: |
-          firebase use ${{ env.FIREBASE_PROJECT_ID }}
-          firebase apphosting:rollouts:create joaquin-prod --location=europe-west4
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
