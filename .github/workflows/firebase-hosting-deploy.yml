@@ -35,4 +35,4 @@ jobs:
           echo "Verifying authentication status..."
           gcloud info
       - name: Deploy to Firebase App Hosting
-        run: firebase apphosting:rollouts:create
+        run: firebase apphosting:rollouts:create joaquin-prod --location=europe-west4
